@@ -1,7 +1,12 @@
+import io
 import json
-from io import BytesIO
-from pypdf import PdfWriter
 from datetime import date
+from io import BytesIO
+from unittest.mock import patch
+
+from django.core.management import call_command
+from django.core.management.base import CommandError
+from pypdf import PdfWriter
 
 from django.contrib.auth.models import Group
 from django.core import mail
@@ -229,3 +234,46 @@ class MembershipApiTests(TestCase):
 
         cv = self.csrf_client(self.officer).get(f"/api/v1/membership/staff/applications/{application['reference']}/cv/")
         self.assertEqual(cv.status_code, 404)
+
+
+class DirectoryImportCommandTests(TestCase):
+    def payload(self):
+        return {
+            "entries": [
+                {
+                    "id": "9d8aa9cf-1fd3-4dbd-a92a-0979a90ab2f0",
+                    "full_name": "Ama Mensah",
+                    "designation": "MIoD",
+                    "as_of_date": "2026-09-30",
+                    "is_published": True,
+                    "sort_order": 2,
+                },
+                {
+                    "id": "b3b0eac8-02ae-4fc5-952d-11659695997b",
+                    "full_name": "Kojo Owusu",
+                    "designation": "FIoD",
+                    "as_of_date": "2026-09-30",
+                    "is_published": True,
+                    "sort_order": 1,
+                },
+            ]
+        }
+
+    def run_command(self, *arguments):
+        with patch("sys.stdin", io.StringIO(json.dumps(self.payload()))):
+            call_command("import_member_directory", *arguments)
+
+    def test_directory_import_validates_then_creates_entries_in_an_empty_register(self):
+        self.run_command("--dry-run")
+        self.assertEqual(MemberDirectoryEntry.objects.count(), 0)
+
+        self.run_command("--confirm")
+
+        self.assertEqual(MemberDirectoryEntry.objects.count(), 2)
+        self.assertTrue(MemberDirectoryEntry.objects.get(full_name="Ama Mensah").is_published)
+
+    def test_directory_import_refuses_to_overwrite_existing_entries(self):
+        MemberDirectoryEntry.objects.create(full_name="Existing member", designation="MIoD", as_of_date=date(2026, 9, 30))
+
+        with self.assertRaisesMessage(CommandError, "target member directory is not empty"):
+            self.run_command("--dry-run")
