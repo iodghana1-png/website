@@ -19,7 +19,7 @@ export const navigation: NavigationItem[] = [
   ] },
   { label: "Training", href: "/training", children: [
     { label: "Professional training", href: "/training/professional", description: "Learning for the boardroom" },
-    { label: "CPD & Seminars", href: "/training/cpd" }, { label: "Examinations", href: examinationPortalUrl, description: "Secure examination portal" }, { label: "Customized programmes", href: "/training/customized" }, { label: "All programmes", href: "/training" },
+    { label: "CPD & Seminars", href: "/training/cpd" }, { label: "Examinations", href: examinationPortalUrl, description: "Secure examination portal" }, { label: "All programmes", href: "/training" },
   ] },
   { label: "Events", href: "/events", children: [
     { label: "Upcoming events", href: "/events", description: "Learn, connect and lead" },

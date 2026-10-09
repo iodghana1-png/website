@@ -14,8 +14,9 @@ const homeLink: HeaderLink = { label: "Home", href: "/" };
 
 function withHomeLink(items: HeaderLink[]) { return [homeLink, ...items.filter((item) => item.href !== "/" && item.label.toLowerCase() !== "home")]; }
 function hasMenuBeyondHome(items: HeaderLink[]) { return items.some((item) => item.href !== "/" && item.label.trim().toLowerCase() !== "home"); }
+function isVisibleNavigationItem(item: CmsNavigationItem) { return item.href.replace(/\/$/, "") !== "/training/customized"; }
 function asHeaderLinks(items: CmsNavigationItem[]): HeaderLink[] {
-  const enabled = items.filter((item) => item.is_enabled);
+  const enabled = items.filter((item) => item.is_enabled && isVisibleNavigationItem(item));
   return enabled.filter((item) => !item.parent_id).map((item) => ({ label: item.label, href: examinationHref(item.href || "/"), newTab: item.open_in_new_tab, children: enabled.filter((child) => child.parent_id === item.id).map((child) => ({ label: child.label, href: examinationHref(child.href || "/"), newTab: child.open_in_new_tab })) }));
 }
 
