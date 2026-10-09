@@ -182,6 +182,9 @@ EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "true").lower() == "true"
 EMAIL_USE_SSL = os.getenv("EMAIL_USE_SSL", "false").lower() == "true"
+# Railway Trial, Free and Hobby plans block outbound SMTP. When configured,
+# this key makes institutional email use Resend's HTTPS API instead.
+RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
 MEMBERSHIP_APPLICATION_RECIPIENTS = env_list("MEMBERSHIP_APPLICATION_RECIPIENTS") or [DEFAULT_FROM_EMAIL]
 CONTACT_ENQUIRY_RECIPIENTS = env_list("CONTACT_ENQUIRY_RECIPIENTS") or [DEFAULT_FROM_EMAIL]
 SESSION_COOKIE_HTTPONLY = True

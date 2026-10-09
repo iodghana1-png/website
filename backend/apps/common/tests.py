@@ -1,11 +1,15 @@
+import base64
+import json
+from unittest.mock import MagicMock, patch
+
 from django.core import mail
 from django.db import DatabaseError
-from django.test import Client, TestCase
-from unittest.mock import patch
+from django.test import Client, TestCase, override_settings
 from rest_framework.exceptions import ValidationError
 from rest_framework.test import APIClient, APIRequestFactory
 
 from .api import exception_handler
+from .email import send_institutional_email
 from .models import AnalyticsDailyVisitor, AnalyticsPageView, ContactEnquiry
 
 
@@ -66,6 +70,34 @@ class ContactEnquiryTests(TestCase):
         self.assertEqual(mail.outbox[0].subject, "New IoD-Gh website enquiry — Training")
         self.assertEqual(mail.outbox[0].reply_to, ["ama@example.com"])
         self.assertEqual(mail.outbox[1].subject, "We received your IoD-Gh enquiry")
+
+
+class ResendEmailTests(TestCase):
+    @patch("apps.common.email.urlopen")
+    @override_settings(RESEND_API_KEY="re_test-key", DEFAULT_FROM_EMAIL="membership@example.com")
+    def test_resend_https_delivery_contains_the_cv_attachment_and_idempotency_key(self, urlopen):
+        response = MagicMock()
+        urlopen.return_value.__enter__.return_value = response
+
+        send_institutional_email(
+            subject="New application",
+            recipient=["committee@example.com"],
+            recipient_name="Membership Team",
+            heading="New application",
+            introduction="A CV is attached.",
+            closing="Review it securely.",
+            attachments=[("applicant-cv.pdf", b"%PDF-test")],
+            idempotency_key="membership-staff/APP-TEST",
+        )
+
+        request = urlopen.call_args.args[0]
+        payload = json.loads(request.data)
+        cv_attachment = next(attachment for attachment in payload["attachments"] if attachment["filename"] == "applicant-cv.pdf")
+        self.assertEqual(payload["to"], ["committee@example.com"])
+        self.assertEqual(cv_attachment["content"], base64.b64encode(b"%PDF-test").decode("ascii"))
+        headers = {name.lower(): value for name, value in request.header_items()}
+        self.assertEqual(headers["authorization"], "Bearer re_test-key")
+        self.assertEqual(headers["idempotency-key"], "membership-staff/APP-TEST")
 
 
 class AnalyticsTests(TestCase):

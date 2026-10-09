@@ -19,6 +19,7 @@ def send_application_received_email(application: MembershipApplication) -> None:
         ),
         details=(("Application reference", application.reference),),
         closing="Please retain this reference while your application is under review. We will contact you when there is an update.",
+        idempotency_key=f"membership-received/{application.reference}",
     )
 
 
@@ -46,6 +47,7 @@ def send_application_submitted_to_staff_email(application: MembershipApplication
         ),
         closing="The CV is attached for authorised IoD-Gh membership staff. It is not retained on the website.",
         attachments=attachments,
+        idempotency_key=f"membership-staff/{application.reference}",
     )
 
 
