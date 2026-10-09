@@ -105,11 +105,11 @@ serves a stable CMS-media URL, so the bucket credentials and raw object URLs
 are never exposed in page content. CMS images therefore persist across API
 deployments.
 
-Keep the bucket private. The CMS media endpoint deliberately returns an asset
-only after the normal CMS publication and file-validation workflows have run.
-Do not use a public Railway volume as a substitute for confidential membership
-documents; their retention and storage policy remains a separate production
-decision.
+Keep the bucket private. The CMS client uses the media endpoint URL rather than
+a bucket URL, keeping bucket credentials and storage topology out of page
+content. Do not use a public Railway volume as a substitute for confidential
+membership documents; their retention and storage policy remains a separate
+production decision.
 
 ## Scheduled maintenance
 
