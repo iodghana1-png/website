@@ -5,6 +5,7 @@ from . import cms_views
 
 urlpatterns = [
     path('staff/access/', cms_views.StaffCMSAccessView.as_view()),
+    path("media/<uuid:media_id>/", cms_views.PublicCMSMediaAssetView.as_view(), name="cms-media-asset"),
     # Published public content.
     path("site/", cms_views.PublicCMSSiteView.as_view()),
     path("pages/resolve/", cms_views.PublicCMSPageResolveView.as_view()),

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from urllib.parse import urlparse
 
+from django.urls import reverse
 from rest_framework import serializers
 from apps.common.uploads import validate_upload
 from .cms_text import clean_text, clean_data, safe_link
@@ -35,6 +36,7 @@ def canonical_path(value: str) -> str:
 
 
 class CMSMediaAssetSerializer(serializers.ModelSerializer):
+    file = serializers.FileField(write_only=True, required=False)
     file_url = serializers.SerializerMethodField()
 
     def validate_file(self, upload):
@@ -52,7 +54,7 @@ class CMSMediaAssetSerializer(serializers.ModelSerializer):
         if not asset.file:
             return ""
         request = self.context.get("request")
-        url = asset.file.url
+        url = reverse("cms-media-asset", kwargs={"media_id": asset.id})
         return request.build_absolute_uri(url) if request else url
 
 

@@ -5,6 +5,7 @@ import mimetypes
 from django.core import signing
 from django.db import IntegrityError
 from django.db.models import Q
+from django.http import FileResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_protect
 from drf_spectacular.utils import extend_schema
@@ -169,6 +170,28 @@ class PublicCMSSiteView(APIView):
     def get(self, request):
         settings = CMSSiteSettings.objects.select_related("published_revision").filter(key="global").first()
         return Response({"settings": settings.published_revision.data if settings and settings.published_revision_id else {}})
+
+
+class PublicCMSMediaAssetView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, media_id):
+        asset = CMSMediaAsset.objects.filter(pk=media_id).first()
+        if not asset or not asset.file:
+            raise NotFound("CMS media asset was not found.")
+        try:
+            file_handle = asset.file.open("rb")
+        except (FileNotFoundError, OSError):
+            raise NotFound("CMS media asset is unavailable.")
+        response = FileResponse(
+            file_handle,
+            as_attachment=False,
+            filename=asset.original_filename,
+            content_type=asset.mime_type or None,
+        )
+        response["Cache-Control"] = "public, max-age=3600"
+        response["X-Content-Type-Options"] = "nosniff"
+        return response
 
 
 @method_decorator(csrf_protect, name="dispatch")

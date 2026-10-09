@@ -95,6 +95,35 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
+CMS_MEDIA_STORAGE = os.getenv("CMS_MEDIA_STORAGE", "filesystem").lower()
+if CMS_MEDIA_STORAGE not in {"filesystem", "s3"}:
+    raise ImproperlyConfigured("CMS_MEDIA_STORAGE must be either 'filesystem' or 's3'.")
+
+if CMS_MEDIA_STORAGE == "s3":
+    CMS_MEDIA_S3_ENDPOINT = os.getenv("CMS_MEDIA_S3_ENDPOINT", "")
+    CMS_MEDIA_S3_ACCESS_KEY_ID = os.getenv("CMS_MEDIA_S3_ACCESS_KEY_ID", "")
+    CMS_MEDIA_S3_SECRET_ACCESS_KEY = os.getenv("CMS_MEDIA_S3_SECRET_ACCESS_KEY", "")
+    CMS_MEDIA_S3_BUCKET_NAME = os.getenv("CMS_MEDIA_S3_BUCKET_NAME", "")
+    CMS_MEDIA_S3_REGION = os.getenv("CMS_MEDIA_S3_REGION", "auto")
+    if not all((CMS_MEDIA_S3_ENDPOINT, CMS_MEDIA_S3_ACCESS_KEY_ID, CMS_MEDIA_S3_SECRET_ACCESS_KEY, CMS_MEDIA_S3_BUCKET_NAME)):
+        raise ImproperlyConfigured("CMS S3 storage requires its endpoint, credentials, and bucket name.")
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3.S3Storage",
+            "OPTIONS": {
+                "access_key": CMS_MEDIA_S3_ACCESS_KEY_ID,
+                "secret_key": CMS_MEDIA_S3_SECRET_ACCESS_KEY,
+                "bucket_name": CMS_MEDIA_S3_BUCKET_NAME,
+                "endpoint_url": CMS_MEDIA_S3_ENDPOINT,
+                "region_name": CMS_MEDIA_S3_REGION,
+                "addressing_style": "virtual",
+                "file_overwrite": False,
+                "querystring_auth": True,
+            },
+        },
+        "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+    }
+
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework.authentication.SessionAuthentication"],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
