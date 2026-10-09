@@ -22,6 +22,7 @@ DEBUG = False
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS")
 CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS")
 CSRF_FAILURE_VIEW = "apps.common.security.csrf_failure"
+CMS_PUBLIC_API_BASE_URL = os.getenv("CMS_PUBLIC_API_BASE_URL", "").rstrip("/")
 
 INSTALLED_APPS = [
     "django.contrib.admin",

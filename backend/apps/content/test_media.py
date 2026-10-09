@@ -62,3 +62,17 @@ class CMSMediaDeliveryTests(TestCase):
         self.assertEqual(data["image_url"], expected)
         self.assertEqual(data["nested"]["image_url"], expected)
         self.assertEqual(data["external_url"], "https://example.test/image.png")
+
+    @override_settings(CMS_PUBLIC_API_BASE_URL="https://api.example.test")
+    def test_configured_public_api_url_is_used_for_cms_media(self):
+        asset = CMSMediaAsset.objects.create(
+            file="cms/2026/10/public-logo.png",
+            original_filename="public-logo.png",
+            mime_type="image/png",
+            byte_size=1,
+            kind=CMSMediaAsset.Kind.IMAGE,
+        )
+
+        data = CMSMediaAssetSerializer(asset, context={"request": RequestFactory().get("/")}).data
+
+        self.assertEqual(data["file_url"], f"https://api.example.test/api/v2/cms/media/{asset.id}/")

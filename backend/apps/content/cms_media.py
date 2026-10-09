@@ -6,6 +6,7 @@ import re
 from typing import Any
 from urllib.parse import unquote
 
+from django.conf import settings
 from django.urls import reverse
 
 from .models import CMSMediaAsset
@@ -23,6 +24,8 @@ _REQUEST_CACHE_ATTRIBUTE = "_cms_media_url_by_file"
 def media_asset_url(asset: CMSMediaAsset, request=None) -> str:
     """Return the stable public API route for an asset."""
     url = reverse("cms-media-asset", kwargs={"media_id": asset.id})
+    if settings.CMS_PUBLIC_API_BASE_URL:
+        return f"{settings.CMS_PUBLIC_API_BASE_URL}{url}"
     return request.build_absolute_uri(url) if request else url
 
 

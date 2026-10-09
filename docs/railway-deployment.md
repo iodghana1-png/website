@@ -48,6 +48,7 @@ domains with the generated Railway domains first, then the final custom domains.
 DJANGO_SETTINGS_MODULE=config.settings.production
 DJANGO_SECRET_KEY=<new random value of at least 50 characters>
 DATABASE_URL=${{Postgres.DATABASE_URL}}
+CMS_PUBLIC_API_BASE_URL=https://<your-api>.up.railway.app
 DJANGO_ALLOWED_HOSTS=api.iodghana.org,<api Railway domain>
 CSRF_TRUSTED_ORIGINS=https://iodghana.org,https://exam.iodghana.org
 CORS_ALLOWED_ORIGINS=https://iodghana.org,https://exam.iodghana.org
