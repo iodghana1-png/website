@@ -56,6 +56,12 @@ FRONTEND_BASE_URL=https://iodghana.org
 EXAM_PORTAL_URL=https://exam.iodghana.org
 DJANGO_TRUST_PROXY_SSL_HEADER=true
 DJANGO_ENABLE_ADMIN=false
+# The website and API use separate HTTPS origins, so functional auth/CSRF
+# cookies must be accepted on the API request. These are not analytics cookies.
+SESSION_COOKIE_SECURE=true
+SESSION_COOKIE_SAMESITE=None
+CSRF_COOKIE_SECURE=true
+CSRF_COOKIE_SAMESITE=None
 CLAMAV_HOST=upload-scanner.railway.internal
 CLAMAV_PORT=3310
 CMS_MEDIA_STORAGE=s3
