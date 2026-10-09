@@ -16,7 +16,7 @@ export const defaultFooter: FooterConfig = {
     { title: "For directors", enabled: true, links: [link("Membership", "/membership"), link("Professional development", "/training"), link("Events", "/events"), link("Resources", "/knowledge")] },
     { title: "Useful links", enabled: true, links: [link("Apply for membership", "/membership/apply"), link("Membership verification", "/membership/verify"), link("Board evaluation", "/services/board-evaluation"), link("Governance consultancy", "/services/consultancy"), link("Corporate meetings", "/services/corporate-meeting")] },
   ],
-  bottom_links: [link("Privacy", "#"), link("Terms", "#")],
+  bottom_links: [link("Privacy", "/privacy"), link("Terms", "/terms")],
   copyright: "© {year} Institute of Directors–Ghana. All rights reserved.",
   newsletter_enabled: true, newsletter_heading: "Stay informed",
   newsletter_description: "Governance insight and IoD-Gh news, delivered to your inbox.",

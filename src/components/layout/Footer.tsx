@@ -10,8 +10,16 @@ import { cmsMediaUrl } from "@/lib/cms/media";
 import { Logo } from "./Logo";
 import { Icon } from "@/components/ui/Icon";
 
+function resolvedFooterHref(item: FooterLink) {
+  if (item.href !== "#") return item.href;
+  const label = item.label.trim().toLowerCase();
+  if (label.includes("privacy")) return "/privacy";
+  if (label.includes("terms")) return "/terms";
+  return item.href;
+}
+
 function FooterLinks({ links }: { links: FooterLink[] }) {
-  return <>{links.filter((item) => item.enabled && item.label && linkUrl(item.href)).map((item, index) => <li key={index}><Link href={linkUrl(item.href)} target={item.new_tab ? "_blank" : undefined} rel={item.new_tab ? "noopener noreferrer" : undefined} className="hover:text-white focus-visible:underline">{item.label}</Link></li>)}</>;
+  return <>{links.filter((item) => item.enabled && item.label && linkUrl(resolvedFooterHref(item))).map((item, index) => <li key={index}><Link href={linkUrl(resolvedFooterHref(item))} target={item.new_tab ? "_blank" : undefined} rel={item.new_tab ? "noopener noreferrer" : undefined} className="hover:text-white focus-visible:underline">{item.label}</Link></li>)}</>;
 }
 
 export function FooterContent({ settings }: { settings: Record<string, unknown> }) {
