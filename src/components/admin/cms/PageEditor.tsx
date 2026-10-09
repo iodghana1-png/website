@@ -1,6 +1,7 @@
 "use client";
 
 import { useUnsavedChanges } from "./useUnsavedChanges";
+import { Icon } from "@/components/ui/Icon";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -73,8 +74,8 @@ export function PageEditor({ slug, access }: { slug: string; access: CmsAccess }
       setError(detail || (reason instanceof Error ? reason.message : "Could not save changes. Please try again."));
     } finally { setBusy(false); }
   }
-  if (!draft || !record) return <div>{error ? <p role="alert">{error}</p> : <p>Loading page…</p>}<Link href="/admin/content" className="mt-4 inline-block underline">← Back to Pages</Link></div>;
-  if (access.read_only) return <><Link href="/admin/content">← Back to Pages</Link><CmsRevisionRenderer templateKey={record.template_key} revision={(record.current_draft_revision || record.published_revision)!} /></>;
+  if (!draft || !record) return <div>{error ? <p role="alert">{error}</p> : <p>Loading page…</p>}<Link href="/admin/content" className="mt-4 inline-block underline"><Icon name="arrow-left" className="h-4 w-4" /> Back to Pages</Link></div>;
+  if (access.read_only) return <><Link href="/admin/content"><Icon name="arrow-left" className="h-4 w-4" /> Back to Pages</Link><CmsRevisionRenderer templateKey={record.template_key} revision={(record.current_draft_revision || record.published_revision)!} /></>;
   const editableSections = draft.sections.filter((section) => !["hero_image", "page_copy", layoutSlot].includes(section.slot) && !(Array.isArray(section.data.legacy_blocks) && !section.data.legacy_blocks.length));
   const profileSections = record.path === "/about/secretariat" ? editableSections.filter((section) => section.section_type === "profile_gallery") : [];
   const assessmentSections = slug === "training-exams" ? editableSections.filter((section) => section.section_type === "exam_assessment") : [];
@@ -98,7 +99,7 @@ export function PageEditor({ slug, access }: { slug: string; access: CmsAccess }
     change({ sections: next });
   };
   const replaceGroup = (group: CmsPageDraft["sections"], sections: CmsPageDraft["sections"]) => change({ sections: replaceSectionGroup(draft.sections, group, sections) });
-  return <div className="max-w-5xl"><Link href="/admin/content" className="text-sm font-semibold">← Back to Pages</Link>
+  return <div className="max-w-5xl"><Link href="/admin/content" className="text-sm font-semibold"><Icon name="arrow-left" className="h-4 w-4" /> Back to Pages</Link>
     {slug === "membership-members-in-good-standing" && <p className="mt-4 rounded-lg bg-[var(--color-paper)] p-4 text-sm">Edit this page’s heading, image and text below. To change member names or who appears in the register, <Link href="/admin/directory" className="font-semibold underline">manage the member directory</Link>.</p>}
     <div className="my-5 flex flex-wrap items-center justify-between gap-3"><h2 className="text-2xl">{record.label}</h2><span className="rounded-full bg-[var(--color-paper)] px-3 py-1 text-xs">{record.published_revision_number ? "Published" : "Draft"}{dirty ? " · Unsaved changes" : record.current_draft_revision_number && record.published_revision_number ? " · Draft changes" : ""}</span></div>
     <form ref={form} className="space-y-4" onSubmit={(e) => { e.preventDefault(); void save("save"); }}>

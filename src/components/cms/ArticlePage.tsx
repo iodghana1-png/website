@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { CmsPublicArticle } from "@/lib/api/cms";
 import { RichContent } from "./ContentRenderer";
+import { Icon } from "@/components/ui/Icon";
 
 export function ArticlePage({ article }: { article: CmsPublicArticle }) {
   const r = article.revision;
@@ -9,7 +10,7 @@ export function ArticlePage({ article }: { article: CmsPublicArticle }) {
   const news = article.content_type === "news";
   return <main className="bg-[var(--color-warm-white)]">
     <header className="border-b border-[var(--color-line)] bg-white py-12 sm:py-16"><div className="site-container">
-      <Link href={news ? "/news" : "/events"} className="text-sm font-semibold">← {news ? "News" : "Events"}</Link>
+      <Link href={news ? "/news" : "/events"} className="inline-flex items-center gap-2 text-sm font-semibold"><Icon name="arrow-left" className="h-4 w-4" />{news ? "News" : "Events"}</Link>
       <p className="eyebrow mt-8">{article.category?.name || (news ? "News" : "Events")}</p>
       <h1 className="mt-4 max-w-5xl font-serif text-[clamp(2.5rem,5vw,4.5rem)] leading-tight tracking-tight">{r.title}</h1>
       {r.standfirst && <p className="mt-6 max-w-3xl text-lg leading-8 text-[var(--color-slate)]">{r.standfirst}</p>}

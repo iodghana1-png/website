@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Icon } from "./Icon";
 
 export type HeroSlide = {
   id: string;
@@ -105,10 +106,10 @@ export function HeroCarousel({ slides = fallbackSlides }: { slides?: HeroSlide[]
                 <p className="mt-5 max-w-md text-base leading-7 text-[var(--color-mist)] sm:text-[1.0625rem]">{slide.description}</p>
                 <div className="mt-7 flex flex-wrap items-center gap-6">
                   <Link href={slide.primaryHref} tabIndex={index === currentIndex ? 0 : -1} style={{ color: "#271B54" }} className="inline-flex min-h-11 items-center justify-center bg-white px-5 text-sm font-bold transition-[background-color,color] duration-200 hover:bg-[var(--color-accent-light)]">
-                    {slide.primaryLabel} <span className="ml-2" aria-hidden="true">&rarr;</span>
+                    {slide.primaryLabel} <Icon name="arrow-right" className="ml-2 h-4 w-4" />
                   </Link>
                   <Link href={slide.secondaryHref} tabIndex={index === currentIndex ? 0 : -1} className="inline-flex border-b border-white/60 pb-1 text-sm font-bold text-white transition-colors duration-200 hover:border-[var(--color-accent-light)] hover:text-[var(--color-accent-light)]">
-                    {slide.secondaryLabel} <span className="ml-2" aria-hidden="true">&rarr;</span>
+                    {slide.secondaryLabel} <Icon name="arrow-right" className="ml-2 h-4 w-4" />
                   </Link>
                 </div>
               </div>
@@ -121,7 +122,7 @@ export function HeroCarousel({ slides = fallbackSlides }: { slides?: HeroSlide[]
               <button key={slide.id} type="button" onClick={() => setCurrent(index)} aria-label={`Show slide ${index + 1}: ${slide.feature}`} aria-current={index === currentIndex} className={`h-2.5 w-7 border transition-colors ${index === currentIndex ? "border-[var(--color-accent-light)] bg-[var(--color-accent-light)]" : "border-white/70 bg-transparent hover:bg-white"}`} />
             ))}
           </div>
-          {slides.length > 1 && <div className="flex gap-2"><button type="button" onClick={previous} aria-label="Previous slide" className="grid h-9 w-9 place-items-center border border-white/60 text-sm transition-colors hover:bg-white hover:text-[var(--color-ink)]">&larr;</button><button type="button" onClick={next} aria-label="Next slide" className="grid h-9 w-9 place-items-center border border-white/60 text-sm transition-colors hover:bg-white hover:text-[var(--color-ink)]">&rarr;</button></div>}
+          {slides.length > 1 && <div className="flex gap-2"><button type="button" onClick={previous} aria-label="Previous slide" className="grid h-9 w-9 place-items-center border border-white/60 transition-colors hover:bg-white hover:text-[var(--color-ink)]"><Icon name="arrow-left" className="h-4 w-4" /></button><button type="button" onClick={next} aria-label="Next slide" className="grid h-9 w-9 place-items-center border border-white/60 transition-colors hover:bg-white hover:text-[var(--color-ink)]"><Icon name="arrow-right" className="h-4 w-4" /></button></div>}
         </div>
       </div>
     </section>

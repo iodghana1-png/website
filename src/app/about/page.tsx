@@ -10,6 +10,7 @@ import { EditableLink as Link } from "@/components/cms/EditableCopy";
 import { useHeroImage } from "@/components/cms/HeroImage";
 
 import { useCmsPage } from "@/components/content/useCmsContent";
+import { Icon } from "@/components/ui/Icon";
 
 const links = [
   ["Our history", "/about/history", "The story of a professional community committed to better leadership."],
@@ -95,7 +96,7 @@ export default function AboutPage() {
                   <h3 className="font-serif text-3xl tracking-[-0.035em] text-[var(--color-ink)]"><EditableCopy label="Heading" fallback={String(title ?? "")} /></h3>
                   <p className="mt-2 max-w-xl leading-7 text-[var(--color-slate)]"><EditableCopy label="Text" fallback={String(description ?? "")} /></p>
                 </div>
-                <span className="text-xl text-[var(--color-ink)] transition-transform group-hover:translate-x-1" aria-hidden="true">→</span>
+                <Icon name="arrow-right" className="h-5 w-5 text-[var(--color-ink)] transition-transform group-hover:translate-x-1" />
               </Link>
             ))}
           </div>

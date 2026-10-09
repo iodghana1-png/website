@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 
 import { ContentPage, getPublishedContentPage } from "@/lib/api/content";
 import { RichContent } from "@/components/cms/ContentRenderer";
+import { Icon } from "@/components/ui/Icon";
 
 const fallback = {
   eyebrow: "Who we are",
@@ -50,7 +51,7 @@ export function HomeIntroduction({ override }: { override?: Pick<ContentPage, "e
           <div className="mt-9 max-w-2xl border-t border-[var(--color-line)] pt-7">
             {paragraphs.slice(1).map((paragraph) => <div className="mt-5 text-lg leading-8 text-[var(--color-slate)] first:mt-0" key={paragraph}><RichContent value={paragraph} /></div>)}
           </div>
-          <Link href={cta.href} className="link-arrow mt-9">{cta.label} <span aria-hidden="true">&rarr;</span></Link>
+          <Link href={cta.href} className="link-arrow mt-9">{cta.label} <Icon name="arrow-right" className="h-4 w-4" /></Link>
         </div>
       </div>
     </section>

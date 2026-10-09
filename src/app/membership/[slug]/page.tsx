@@ -10,6 +10,7 @@ import { MembersDirectory } from "@/components/membership/MembersDirectory";
 import { MembershipHero } from "@/components/membership/MembershipHero";
 import { MemberVerification } from "@/components/membership/MemberVerification";
 import { Button } from "@/components/ui/Button";
+import { Icon } from "@/components/ui/Icon";
 import { membershipCategories } from "@/data/site";
 import {
   corporateMembershipFees,
@@ -277,7 +278,7 @@ export default async function MembershipDetail({
                   className="inline-flex w-full items-center justify-between bg-[var(--color-ink)] px-6 py-4 text-sm font-bold text-white transition-colors hover:bg-[var(--color-accent-dark)]"
                   download
                 >
-                  <EditableCopy label="Link text" fallback="Download 2025 register" /> <span aria-hidden="true">PDF ↓</span>
+                  <EditableCopy label="Link text" fallback="Download 2025 register" /> <span aria-hidden="true">PDF <Icon name="download" className="h-4 w-4" /></span>
                 </Link>
                 <p className="mt-3 text-xs leading-5 text-[var(--color-slate)]"><EditableCopy label="Text" fallback={"The approved PDF register will be uploaded here."} /></p>
               </div>

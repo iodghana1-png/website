@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Icon } from "@/components/ui/Icon";
 
 type CountdownData = { title?: unknown; description?: unknown; start_at?: unknown; button_label?: unknown; button_href?: unknown };
 
@@ -34,7 +35,7 @@ export function HomeTrainingCountdown({ data }: { data: CountdownData }) {
   const dateLabel = new Intl.DateTimeFormat("en-GB", { dateStyle: "full", timeStyle: "short", timeZone: "Africa/Accra" }).format(target);
   const remaining = timeRemaining(target, now);
 
-  return <section aria-label="Next training programme" className="border-y border-[var(--color-line)] bg-[var(--color-paper)] py-14 text-[var(--color-ink)] sm:py-16"><div className="site-container text-center"><p className="eyebrow text-[var(--color-accent-dark)]">Next training</p><h2 className="mx-auto mt-3 max-w-3xl font-serif text-3xl leading-tight sm:text-4xl">{title}</h2><p className="mt-4 font-semibold text-[var(--color-accent-dark)]">{dateLabel} GMT</p>{description && <p className="mx-auto mt-3 max-w-2xl leading-7 text-[var(--color-slate)]">{description}</p>}<div className="mx-auto mt-8 grid max-w-xl grid-cols-2 gap-3 text-center sm:grid-cols-4"><TimeUnit label="Days" value={remaining.days} /><TimeUnit label="Hours" value={remaining.hours} /><TimeUnit label="Minutes" value={remaining.minutes} /><TimeUnit label="Seconds" value={remaining.seconds} /></div><Link href={buttonHref} className="mt-8 inline-flex bg-[var(--color-accent-dark)] px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-[var(--color-ink)]">{buttonLabel} <span aria-hidden="true">&rarr;</span></Link></div></section>;
+  return <section aria-label="Next training programme" className="border-y border-[var(--color-line)] bg-[var(--color-paper)] py-14 text-[var(--color-ink)] sm:py-16"><div className="site-container text-center"><p className="eyebrow text-[var(--color-accent-dark)]">Next training</p><h2 className="mx-auto mt-3 max-w-3xl font-serif text-3xl leading-tight sm:text-4xl">{title}</h2><p className="mt-4 font-semibold text-[var(--color-accent-dark)]">{dateLabel} GMT</p>{description && <p className="mx-auto mt-3 max-w-2xl leading-7 text-[var(--color-slate)]">{description}</p>}<div className="mx-auto mt-8 grid max-w-xl grid-cols-2 gap-3 text-center sm:grid-cols-4"><TimeUnit label="Days" value={remaining.days} /><TimeUnit label="Hours" value={remaining.hours} /><TimeUnit label="Minutes" value={remaining.minutes} /><TimeUnit label="Seconds" value={remaining.seconds} /></div><Link href={buttonHref} className="mt-8 inline-flex bg-[var(--color-accent-dark)] px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-[var(--color-ink)]">{buttonLabel} <Icon name="arrow-right" className="h-4 w-4" /></Link></div></section>;
 }
 
 function TimeUnit({ label, value }: { label: string; value: number }) {

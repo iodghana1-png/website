@@ -10,6 +10,7 @@ import { PartnersShowcase } from "@/components/content/PartnerLogos";
 import { ProfilePhoto, ProfilePhotosProvider } from "@/components/about/ProfilePhotos";
 import { councilMembers } from "@/data/council";
 import { pageCopy } from "@/data/site";
+import { Icon } from "@/components/ui/Icon";
 
 export function generateStaticParams() {
   return Object.keys(pageCopy)
@@ -79,7 +80,7 @@ function CouncilMemberCard({ member, featured = false }: { member: typeof counci
               </h3>
             </div>
           </div>
-          <span className="mt-1 text-lg text-[var(--color-ink)] transition-transform group-open:rotate-45" aria-hidden="true">+</span>
+          <Icon name="plus" className="mt-1 h-5 w-5 text-[var(--color-ink)] transition-transform group-open:rotate-45" />
         </div>
         <p className="mt-6 max-w-xl leading-7 text-[var(--color-slate)]"><EditableCopy label="Text" fallback={String(member.summary ?? "")} /></p>
         <span className="mt-6 inline-flex border-b border-[var(--color-accent)] pb-1 text-sm font-bold text-[var(--color-ink)] group-open:hidden">Read profile</span>

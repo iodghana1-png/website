@@ -12,6 +12,7 @@ import { FormInput, SelectField } from "@/components/ui/FormFields";
 import { useCmsPage } from "@/components/content/useCmsContent";
 import { useSiteSettings, SiteContact } from "@/components/cms/SiteSettings";
 import { CmsHeroImage } from "@/components/cms/HeroImage";
+import { Icon } from "@/components/ui/Icon";
 
 const apiBaseUrl = (process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8010").replace(/\/$/, "");
 const enquiryOptions = ["Membership", "Training", "Governance services", "General enquiry", "Other"];
@@ -89,7 +90,7 @@ export default function ContactPage() {
               <p><strong className="mb-1 block text-[var(--color-ink)]">Opening hours</strong>Monday-Friday<br />8:00am-5:00pm</p>
             </div>}
             <div className="mt-10 overflow-hidden border border-[var(--color-line)] bg-[var(--color-paper)]"><iframe title="Map to Institute of Directors-Ghana" src="https://www.google.com/maps?q=Institute%20of%20Directors%20Ghana%2C%20SSNIT%20Emporium%2C%20Airport%20City%2C%20Accra&output=embed" className="h-64 w-full border-0" loading="lazy" referrerPolicy="no-referrer-when-downgrade" /></div>
-            <a href="https://www.google.com/maps/search/?api=1&query=Institute%20of%20Directors%20Ghana%2C%20SSNIT%20Emporium%2C%20Airport%20City%2C%20Accra" target="_blank" rel="noreferrer" className="link-arrow mt-5">Open in Google Maps <span aria-hidden="true">↗</span></a>
+            <a href="https://www.google.com/maps/search/?api=1&query=Institute%20of%20Directors%20Ghana%2C%20SSNIT%20Emporium%2C%20Airport%20City%2C%20Accra" target="_blank" rel="noreferrer" className="link-arrow mt-5">Open in Google Maps <Icon name="external" className="h-4 w-4" /></a>
           </aside>
 
           <form onSubmit={submitEnquiry} className="border-t-4 border-[var(--color-ink)] bg-[var(--color-warm-white)] p-7 sm:p-10 lg:col-span-7 lg:col-start-6">

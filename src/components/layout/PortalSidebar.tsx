@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { logout } from "@/lib/api/auth";
+import { Icon } from "@/components/ui/Icon";
 
 const memberLinks = ["dashboard", "my-profile", "membership", "events", "training", "cpd", "documents", "notifications", "settings"];
 const groups = [
@@ -26,6 +27,6 @@ export function PortalSidebar({ admin = false, active = "dashboard" }: { admin?:
     <nav aria-label="Portal navigation" className="space-y-4">
       {admin ? <>{link("Dashboard", "/admin")}{groups.map((group) => <div key={group.title}><p className="mb-1 px-3 text-[10px] font-bold uppercase tracking-widest text-[var(--color-accent-light)]">{group.title}</p>{group.links.map(([label, href]) => link(label, href))}</div>)}</> : memberLinks.map((key) => <Link key={key} href={"/member/" + key} className={"block rounded px-3 py-2 text-sm " + (active === key ? "bg-[var(--color-accent-light)] text-[var(--color-ink)]" : "")}>{key.replaceAll("-", " ").replace(/^./, (letter) => letter.toUpperCase())}</Link>)}
     </nav>
-    <div className="mt-5 border-t border-white/20 pt-4"><Link href="/" className="block px-3 py-2 text-sm">View website ↗</Link><button type="button" className="px-3 py-2 text-sm" onClick={async () => { try { await logout(); router.push("/login"); router.refresh(); } catch { setError("Could not log out. Try again."); } }}>Logout</button>{error && <p role="alert" className="text-xs">{error}</p>}</div>
+    <div className="mt-5 border-t border-white/20 pt-4"><Link href="/" className="flex items-center gap-1.5 px-3 py-2 text-sm">View website <Icon name="external" className="h-3.5 w-3.5" /></Link><button type="button" className="px-3 py-2 text-sm" onClick={async () => { try { await logout(); router.push("/login"); router.refresh(); } catch { setError("Could not log out. Try again."); } }}>Logout</button>{error && <p role="alert" className="text-xs">{error}</p>}</div>
   </aside>;
 }

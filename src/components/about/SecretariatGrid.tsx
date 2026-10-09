@@ -5,6 +5,7 @@ import { BuiltInSection } from "@/components/cms/BuiltInSection";
 
 import { EditableCopy } from "@/components/cms/EditableCopy";
 import { ProfilePhoto, ProfilePhotosProvider, useProfileGallery } from "@/components/about/ProfilePhotos";
+import { Icon } from "@/components/ui/Icon";
 
 const profileSlots = ["Executive leadership", "Member experience", "Professional development", "Operations and finance", "Communications", "Administration"];
 
@@ -18,7 +19,7 @@ function SecretariatProfiles() {
           <div className="relative h-[95px] w-[76px] shrink-0 overflow-hidden bg-[var(--color-ink)]"><span className="absolute -bottom-5 -right-2 font-serif text-6xl leading-none tracking-[-0.12em] text-white/[0.08]">IoD</span><p className="absolute inset-x-3 bottom-3 border-t border-white/25 pt-2 text-[10px] font-bold tracking-[0.08em] text-[var(--color-accent-light)]">PHOTO</p></div>
         </ProfilePhoto>
         <div><p className="text-xs font-bold tracking-[0.1em] text-[var(--color-accent-dark)]">{profile.role}</p><h3 className="mt-2 font-serif text-2xl leading-tight tracking-[-0.035em] text-[var(--color-ink)]">{profile.displayName}</h3></div>
-      </div><span className="mt-1 text-lg text-[var(--color-ink)] transition-transform group-open:rotate-45" aria-hidden="true">+</span></div>
+      </div><Icon name="plus" className="mt-1 h-5 w-5 text-[var(--color-ink)] transition-transform group-open:rotate-45" /></div>
       <p className="mt-6 max-w-xl leading-7 text-[var(--color-slate)]">{profile.summary}</p><span className="mt-6 inline-flex border-b border-[var(--color-accent)] pb-1 text-sm font-bold text-[var(--color-ink)] group-open:hidden">Read profile</span>
     </summary>
     <div className="border-t border-[var(--color-line)] px-6 pb-7 pt-6 sm:px-7"><p className="text-sm leading-7 text-[var(--color-slate)]">{profile.biography || "A full profile will appear here once it has been added in the CMS."}</p></div>

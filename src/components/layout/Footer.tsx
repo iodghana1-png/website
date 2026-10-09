@@ -8,6 +8,7 @@ import { linkUrl } from "@/components/cms/ContentRenderer";
 import { footerConfig, type FooterLink } from "@/data/footer";
 import { cmsMediaUrl } from "@/lib/cms/media";
 import { Logo } from "./Logo";
+import { Icon } from "@/components/ui/Icon";
 
 function FooterLinks({ links }: { links: FooterLink[] }) {
   return <>{links.filter((item) => item.enabled && item.label && linkUrl(item.href)).map((item, index) => <li key={index}><Link href={linkUrl(item.href)} target={item.new_tab ? "_blank" : undefined} rel={item.new_tab ? "noopener noreferrer" : undefined} className="hover:text-white focus-visible:underline">{item.label}</Link></li>)}</>;
@@ -28,7 +29,7 @@ export function FooterContent({ settings }: { settings: Record<string, unknown> 
         <SiteContact settings={settings} showContact={footer.show_contact} showSocial={footer.show_social} />
       </div>
       {columns.map((column, index) => <div key={index}><h2 className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--color-gold-light)]">{column.title}</h2><ul className="mt-5 space-y-3 text-sm text-[var(--color-mist)]"><FooterLinks links={column.links} /></ul></div>)}
-      {footer.newsletter_enabled && <div><h2 className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--color-gold-light)]">{footer.newsletter_heading}</h2><p className="mt-5 whitespace-pre-line text-sm leading-6 text-[var(--color-mist)]">{footer.newsletter_description}</p>{footer.newsletter_label && linkUrl(footer.newsletter_href) && <Link href={linkUrl(footer.newsletter_href)} className="mt-5 inline-flex border-b border-[var(--color-gold)] pb-3 text-xs font-bold uppercase tracking-[0.1em] text-[var(--color-gold-light)] hover:text-white">{footer.newsletter_label} <span aria-hidden="true" className="ml-4">→</span></Link>}</div>}
+      {footer.newsletter_enabled && <div><h2 className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--color-gold-light)]">{footer.newsletter_heading}</h2><p className="mt-5 whitespace-pre-line text-sm leading-6 text-[var(--color-mist)]">{footer.newsletter_description}</p>{footer.newsletter_label && linkUrl(footer.newsletter_href) && <Link href={linkUrl(footer.newsletter_href)} className="mt-5 inline-flex items-center border-b border-[var(--color-gold)] pb-3 text-xs font-bold uppercase tracking-[0.1em] text-[var(--color-gold-light)] hover:text-white">{footer.newsletter_label} <Icon name="arrow-right" className="ml-4 h-4 w-4" /></Link>}</div>}
     </div>
     <div className="flex flex-col justify-between gap-3 pt-7 text-xs text-[var(--color-mist)] sm:flex-row"><p>{footer.copyright.replaceAll("{year}", String(new Date().getFullYear()))}</p><ul className="flex flex-wrap gap-5"><FooterLinks links={bottomLinks} /></ul></div>
   </div></footer>;

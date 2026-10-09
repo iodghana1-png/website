@@ -7,6 +7,7 @@ import { EditableCopy } from "@/components/cms/EditableCopy";
 import { notFound } from "next/navigation";
 import { EditableImage as Image } from "@/components/cms/EditableCopy";
 import { Button } from "@/components/ui/Button";
+import { Icon } from "@/components/ui/Icon";
 import { CpdVideoLibrary } from "@/components/training/CpdVideoLibrary";
 import { CpdMonthlySeminars } from "@/components/training/CpdMonthlySeminars";
 import { TrainingHero } from "@/components/training/TrainingHero";
@@ -232,10 +233,7 @@ function CPDContent() {
                 rel="noreferrer"
                 className="mt-8"
               >
-                Download CPD Policy{" "}
-                <span className="ml-2" aria-hidden="true">
-                  ↗
-                </span>
+                Download CPD Policy <Icon name="external" className="ml-2 h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -286,8 +284,7 @@ function CPDContent() {
                     href={seminar.registrationHref}
                     className="link-arrow mt-8"
                   >
-                    {seminar.registrationLabel}{" "}
-                    <span aria-hidden="true">↗</span>
+                    {seminar.registrationLabel} <Icon name="external" className="h-4 w-4" />
                   </a>
                 </div>
               </article>
@@ -319,7 +316,7 @@ function CPDContent() {
                     className="flex h-14 w-14 items-center justify-center rounded-full border border-white/60 text-lg"
                     aria-hidden="true"
                   >
-                    ▶
+                    <Icon name="play" className="h-5 w-5" />
                   </span>
                   <span className="absolute bottom-4 right-4 text-xs text-[var(--color-mist)]">
                     {recording.duration}
@@ -332,7 +329,7 @@ function CPDContent() {
                     href={recording.videoUrl}
                     className="link-arrow mt-7 text-white"
                   >
-                    Watch recording <span aria-hidden="true">↗</span>
+                    Watch recording <Icon name="external" className="h-4 w-4" />
                   </a>
                 ) : (
                   <p className="mt-7 text-sm text-[var(--color-mist)]"><EditableCopy label="Text" fallback={"Video link to be added"} /></p>

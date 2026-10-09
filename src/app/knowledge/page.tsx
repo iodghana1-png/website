@@ -10,6 +10,7 @@ import { EditableCopy } from "@/components/cms/EditableCopy";
 import { useCmsPage } from "@/components/content/useCmsContent";
 import { KnowledgeHero } from "@/components/knowledge/KnowledgeHero";
 import { getPublishedCmsPage } from "@/lib/api/cms";
+import { Icon } from "@/components/ui/Icon";
 
 const fallbackPage = { eyebrow: "Knowledge centre", title: "Insight for better boardroom decisions.", summary: "Research, publications and practical resources for directors navigating an evolving governance landscape.", body: "", blocks: [] };
 const categories = [
@@ -30,7 +31,7 @@ function documentFromPage(key: CategoryKey, page: Awaited<ReturnType<typeof getP
 }
 
 function AllInsightCard({ item }: { item: InsightCard }) {
-  return <article className="group overflow-hidden border border-[var(--color-line)] bg-white transition-colors hover:border-[var(--color-gold)]"><div className="relative aspect-[4/3] bg-[var(--color-paper)]">{item.coverImageUrl ? <Image src={item.coverImageUrl} alt={`Cover for ${item.title}`} fill unoptimized className="object-cover" /> : <div className="grid h-full place-items-center text-xs font-bold tracking-[0.12em] text-[var(--color-slate)]">{item.category.toUpperCase()}</div>}</div><div className="flex min-h-60 flex-col p-6 sm:p-7"><p className="text-xs font-bold tracking-[0.12em] text-[var(--color-accent-dark)]">{item.category.toUpperCase()}</p><h3 className="mt-7 font-serif text-3xl leading-tight tracking-[-0.03em]">{item.title}</h3>{item.description && <p className="mt-4 leading-7 text-[var(--color-slate)]">{item.description}</p>}<a href={item.href} className="link-arrow mt-auto pt-8">Explore {item.category.toLowerCase()} <span aria-hidden="true">→</span></a></div></article>;
+  return <article className="group overflow-hidden border border-[var(--color-line)] bg-white transition-colors hover:border-[var(--color-gold)]"><div className="relative aspect-[4/3] bg-[var(--color-paper)]">{item.coverImageUrl ? <Image src={item.coverImageUrl} alt={`Cover for ${item.title}`} fill unoptimized className="object-cover" /> : <div className="grid h-full place-items-center text-xs font-bold tracking-[0.12em] text-[var(--color-slate)]">{item.category.toUpperCase()}</div>}</div><div className="flex min-h-60 flex-col p-6 sm:p-7"><p className="text-xs font-bold tracking-[0.12em] text-[var(--color-accent-dark)]">{item.category.toUpperCase()}</p><h3 className="mt-7 font-serif text-3xl leading-tight tracking-[-0.03em]">{item.title}</h3>{item.description && <p className="mt-4 leading-7 text-[var(--color-slate)]">{item.description}</p>}<a href={item.href} className="link-arrow mt-auto pt-8">Explore {item.category.toLowerCase()} <Icon name="arrow-right" className="h-4 w-4" /></a></div></article>;
 }
 
 export default function KnowledgePage() {
