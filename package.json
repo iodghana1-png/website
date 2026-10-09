@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "exam:dev": "next dev apps/exam-portal -p 3001",
-    "exam:build": "next build apps/exam-portal",
+    "exam:build": "npm --prefix apps/exam-portal run build",
     "exam:start": "next start apps/exam-portal -p 3001",
     "dev": "next dev",
     "build": "next build",
