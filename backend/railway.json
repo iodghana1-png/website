@@ -6,6 +6,7 @@
     "watchPatterns": [
       "apps/**",
       "config/**",
+      "requirements.txt",
       "requirements/**",
       "manage.py",
       "railway.json"
