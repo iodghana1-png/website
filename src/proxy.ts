@@ -18,8 +18,8 @@ export function proxy(request: NextRequest) {
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
-    // Preserve the admin's same-origin draft preview iframe.
-    "frame-src 'self'",
+    // Preserve the admin's same-origin draft preview iframe and permit the contact-page Google Maps embed.
+    "frame-src 'self' https://www.google.com https://maps.google.com",
     "frame-ancestors 'self'",
   ].join("; ");
   const headers = new Headers(request.headers);
