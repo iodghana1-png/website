@@ -13,8 +13,8 @@ export function copy(data: Record<string, unknown>, ...keys: string[]) { for (co
 const subscribeToHydration = () => () => {};
 export function RichContent({ value }: { value: string }) {
   const hydrated = useSyncExternalStore(subscribeToHydration, () => true, () => false);
-  if (!/<\/?[a-z][\s\S]*>/i.test(value)) return <div className="whitespace-pre-line">{value}</div>;
-  if (!hydrated) return <div className="whitespace-pre-line">{value.replace(/<[^>]*>/g, " ")}</div>;
+  if (!/<\/?[a-z][\s\S]*>/i.test(value)) return <div className="cms-rich-text whitespace-pre-line">{value}</div>;
+  if (!hydrated) return <div className="cms-rich-text whitespace-pre-line">{value.replace(/<[^>]*>/g, " ")}</div>;
   const html = DOMPurify.sanitize(value, { ALLOWED_TAGS: ["p", "br", "strong", "b", "em", "i", "u", "h2", "h3", "ul", "ol", "li", "a", "blockquote"], ALLOWED_ATTR: ["href", "rel"] });
   return <div className="cms-rich-text" dangerouslySetInnerHTML={{ __html: html }} />;
 }
