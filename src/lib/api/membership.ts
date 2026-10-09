@@ -1,4 +1,4 @@
-import { apiBaseUrl, apiRequest } from "./client";
+import { apiRequest } from "./client";
 
 export type MembershipType = { id: string; name: string; slug: string; description: string; eligibility: string; fee: string | null; currency: string; renewal_period_months: number | null; is_active: boolean };
 
@@ -15,7 +15,7 @@ export type MembershipRenewal = { id: string; period_start: string; period_end: 
 export type MembershipApplicationResult = { reference: string; tracking_token: string; status: string };
 export type MembershipApplication = {
   reference: string; application_kind: "new_membership" | "upgrade"; current_membership_number: string;
-  assigned_membership_type: MembershipType | null; cv_filename: string; applicant_name: string;
+  assigned_membership_type: MembershipType | null; applicant_name: string;
   first_name: string; last_name: string; email: string; phone_number: string; organisation: string;
   current_role: string; recommending_agent: string; status: "submitted" | "under_review" | "approved" | "rejected" | "withdrawn";
   internal_notes: string; decision_reason: string; reviewer_email: string | null; reviewed_at: string | null;
@@ -50,10 +50,3 @@ export const updateMemberStatus = (membershipNumber: string, data: { status: Mem
 export const getMemberStatusHistory = (membershipNumber: string) => apiRequest<MembershipStatusHistory[]>(`/membership/staff/members/${encodeURIComponent(membershipNumber)}/status-history/`);
 export const getMemberRenewals = (membershipNumber: string) => apiRequest<MembershipRenewal[]>(`/membership/staff/members/${encodeURIComponent(membershipNumber)}/renewals/`);
 export const createMemberRenewal = (membershipNumber: string, data: RenewalData) => apiRequest<MembershipRenewal>(`/membership/staff/members/${encodeURIComponent(membershipNumber)}/renewals/`, { method: "POST", body: JSON.stringify(data) });
-
-export async function downloadApplicationCv(reference: string) {
-  const response = await fetch(`${apiBaseUrl}/api/v1/membership/staff/applications/${encodeURIComponent(reference)}/cv/`, { credentials: "include" });
-  if (!response.ok) throw new Error("We couldn't download this CV. Please try again.");
-  const filename = response.headers.get("content-disposition")?.match(/filename=\"?([^\";]+)\"?/)?.[1] || "membership-application-cv";
-  return { blob: await response.blob(), filename };
-}

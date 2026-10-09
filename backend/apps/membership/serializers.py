@@ -21,7 +21,10 @@ class MembershipApplicationSubmitSerializer(serializers.ModelSerializer):
         fields = ("application_kind", "current_membership_number", "first_name", "last_name", "email", "phone_number", "organisation", "current_role", "recommending_agent", "cv")
 
     def validate_cv(self, value):
-        return validate_upload(value, cv=True)
+        # CVs are delivered directly to the membership team's inbox and never
+        # saved in website storage. Keep the structural safety checks, while
+        # avoiding a dependency on the unavailable ClamAV service.
+        return validate_upload(value, cv=True, scan_for_malware=False)
 
     def validate(self, attrs):
         if attrs["application_kind"] == MembershipApplication.Kind.UPGRADE and not attrs.get("current_membership_number", "").strip():

@@ -93,6 +93,13 @@ class UploadValidationTests(SimpleTestCase):
         self.assertEqual(upload.content_type, "application/pdf")
         self.assertEqual(upload.read(), contents)
 
+    @override_settings(UPLOAD_SCAN_REQUIRED=True, CLAMAV_HOST="")
+    def test_membership_cv_uses_strict_document_checks_without_network_scanner(self):
+        with patch("apps.common.uploads.scan_upload") as scan:
+            upload = MembershipApplicationSubmitSerializer().validate_cv(SimpleUploadedFile("cv.pdf", pdf_bytes()))
+        self.assertEqual(upload.content_type, "application/pdf")
+        scan.assert_not_called()
+
     def test_active_and_encrypted_pdfs_are_rejected(self):
         for contents in (pdf_bytes(script=True), pdf_bytes(encrypted=True)):
             with self.assertRaises(ValidationError):

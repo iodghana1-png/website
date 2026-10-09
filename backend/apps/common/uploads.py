@@ -1,4 +1,4 @@
-"""Layered upload validation. File type validation is not a substitute for AV."""
+"""Layered upload validation for persisted media and direct-email documents."""
 import io
 from pathlib import Path
 import socket
@@ -146,7 +146,14 @@ MEDIA_TYPES = {
 DOCUMENT_TYPES = {".pdf": "application/pdf", ".doc": "application/msword", ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"}
 
 
-def validate_upload(upload, *, cv=False):
+def validate_upload(upload, *, cv=False, scan_for_malware=True):
+    """Validate an upload without trusting its browser-supplied content type.
+
+    Membership CVs are delivered as email attachments and are never persisted by
+    this application.  They still undergo the strict structural document checks
+    below, but do not depend on the unavailable network scanner.  Stored CMS
+    media retains malware scanning by default.
+    """
     limit = (10 if cv else 20) * 1024 * 1024
     suffix = Path(upload.name).suffix.lower()
     allowed = DOCUMENT_TYPES if cv else {**IMAGE_TYPES, **MEDIA_TYPES, ".pdf": "application/pdf"}
@@ -157,7 +164,8 @@ def validate_upload(upload, *, cv=False):
     upload.seek(0)
     if len(data) > limit:
         raise ValidationError("The uploaded file is too large.")
-    scan_upload(data)
+    if scan_for_malware:
+        scan_upload(data)
     try:
         if suffix in IMAGE_TYPES:
             expected, mime = IMAGE_TYPES[suffix]

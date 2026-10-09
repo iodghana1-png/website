@@ -11,7 +11,7 @@ from pypdf import PdfWriter
 from django.contrib.auth.models import Group
 from django.core import mail
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import Client, TestCase
+from django.test import Client, TestCase, override_settings
 from django.utils import timezone
 
 from apps.accounts.models import User
@@ -94,6 +94,7 @@ class MembershipApiTests(TestCase):
         names = [entry["full_name"] for entry in self.client.get("/api/v1/membership/directory/").json()]
         self.assertEqual(names, ["Abena, Example", "Zulu, Example"])
 
+    @override_settings(UPLOAD_SCAN_REQUIRED=True, CLAMAV_HOST="")
     def test_application_returns_one_time_tracking_token_and_requires_it_for_guest_tracking(self):
         payload = self.submit_application()
         self.assertTrue(payload["reference"].startswith("APP-"))
