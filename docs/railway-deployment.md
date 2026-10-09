@@ -19,7 +19,7 @@ after its health check succeeds. Do not expose PostgreSQL or ClamAV publicly.
 ## Create the Railway project
 
 1. Create a new Railway project and connect
-   `aduseimedia-eng/iod-website-design` from GitHub.
+   `iodghana1-png/website` from GitHub.
 2. Add a Railway PostgreSQL service named `Postgres`. Keep it private; do not
    create a public TCP proxy for it.
 3. Add the three GitHub services in the table above. Set each service's root
@@ -30,6 +30,8 @@ after its health check succeeds. Do not expose PostgreSQL or ClamAV publicly.
 5. Add a private ClamAV service from the `clamav/clamav:1.4` image. Name it
    `upload-scanner`, do not give it a public domain, and allow enough memory for
    its virus database (the local reference configuration uses 4 GiB).
+6. Add a private Railway Bucket named `cmsmedia` for CMS images and documents.
+   The API, rather than the bucket, delivers published CMS assets to visitors.
 
 Railway's public proxy supplies HTTPS and sets `X-Forwarded-Proto: https`. The
 API uses that header only when `DJANGO_TRUST_PROXY_SSL_HEADER=true` is explicitly
@@ -55,6 +57,12 @@ DJANGO_TRUST_PROXY_SSL_HEADER=true
 DJANGO_ENABLE_ADMIN=false
 CLAMAV_HOST=upload-scanner.railway.internal
 CLAMAV_PORT=3310
+CMS_MEDIA_STORAGE=s3
+CMS_MEDIA_S3_ENDPOINT=${{cmsmedia.ENDPOINT}}
+CMS_MEDIA_S3_ACCESS_KEY_ID=${{cmsmedia.ACCESS_KEY_ID}}
+CMS_MEDIA_S3_SECRET_ACCESS_KEY=${{cmsmedia.SECRET_ACCESS_KEY}}
+CMS_MEDIA_S3_BUCKET_NAME=${{cmsmedia.BUCKET}}
+CMS_MEDIA_S3_REGION=${{cmsmedia.REGION}}
 DEFAULT_FROM_EMAIL=<verified IoD-Gh sender>
 EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
 EMAIL_HOST=<production SMTP host>
@@ -89,17 +97,19 @@ NEXT_PUBLIC_MAIN_SITE_URL=https://iodghana.org
 `NEXT_PUBLIC_*` values are compiled into the Next.js client bundle. Redeploy the
 relevant frontend after changing one.
 
-## Media storage is still required before public launch
+## CMS media storage
 
-The API accepts CMS files and membership CVs. Railway's normal service
-filesystem is not durable between deployments, and this code deliberately does
-not serve private uploads in production. Before accepting real uploads, add a
-durable object-storage integration with separate public CMS media and private
-membership-document storage. Do not use a public Railway volume as a shortcut
-for confidential CVs.
+CMS uploads use the private `cmsmedia` Railway Bucket when
+`CMS_MEDIA_STORAGE=s3` is set. The API stores files under generated paths and
+serves a stable CMS-media URL, so the bucket credentials and raw object URLs
+are never exposed in page content. CMS images therefore persist across API
+deployments.
 
-Until that storage integration exists, do not enable production CMS uploads or
-collect real membership application documents.
+Keep the bucket private. The CMS media endpoint deliberately returns an asset
+only after the normal CMS publication and file-validation workflows have run.
+Do not use a public Railway volume as a substitute for confidential membership
+documents; their retention and storage policy remains a separate production
+decision.
 
 ## Scheduled maintenance
 
