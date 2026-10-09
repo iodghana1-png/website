@@ -161,6 +161,16 @@ class MembershipApiTests(TestCase):
         self.assertTrue(AuditLog.objects.filter(action="membership.application_approved").exists())
         self.assertTrue(AuditLog.objects.filter(action="membership.renewal_created").exists())
 
+    def test_membership_officer_can_resend_an_application_receipt(self):
+        application = self.submit_application()
+        response = self.csrf_client(self.officer).post(
+            f"/api/v1/membership/staff/applications/{application['reference']}/receipt-email/",
+        )
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual(mail.outbox[-1].subject, "We received your IoD-Gh membership application")
+        self.assertIn(application["reference"], mail.outbox[-1].body)
+        self.assertTrue(AuditLog.objects.filter(action="membership.application_receipt_resent").exists())
+
     def test_public_verification_only_exposes_members_in_good_standing(self):
         entry = MemberDirectoryEntry.objects.create(
             full_name="Ama Mensah",

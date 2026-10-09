@@ -140,6 +140,7 @@ REST_FRAMEWORK = {
         "password_reset": "5/hour",
         "email_verification": "5/hour",
         "membership_application": "5/hour",
+        "membership_application_email_resend": "10/hour",
         "contact_enquiry": "5/hour",
         "analytics_visit": "120/min",
         "exam_read": "180/min",

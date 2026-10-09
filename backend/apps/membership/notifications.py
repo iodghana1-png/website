@@ -7,7 +7,7 @@ from apps.common.email import send_institutional_email
 from .models import MemberProfile, MembershipApplication, MembershipRenewal
 
 
-def send_application_received_email(application: MembershipApplication) -> None:
+def send_application_received_email(application: MembershipApplication, *, idempotency_key: str | None = None) -> None:
     send_institutional_email(
         subject="We received your IoD-Gh membership application",
         recipient=application.email,
@@ -19,7 +19,7 @@ def send_application_received_email(application: MembershipApplication) -> None:
         ),
         details=(("Application reference", application.reference),),
         closing="Please retain this reference while your application is under review. We will contact you when there is an update.",
-        idempotency_key=f"membership-received/{application.reference}",
+        idempotency_key=idempotency_key or f"membership-received/{application.reference}",
     )
 
 

@@ -13,6 +13,7 @@ urlpatterns = [
     path("directory/", views.PublicDirectoryView.as_view(), name="member-directory"),
     path("staff/applications/", views.StaffApplicationListView.as_view(), name="staff-applications"),
     path("staff/applications/<str:reference>/review/", views.StaffApplicationReviewView.as_view(), name="staff-application-review"),
+    path("staff/applications/<str:reference>/receipt-email/", views.StaffApplicationReceiptEmailView.as_view(), name="staff-application-receipt-email"),
     path("staff/applications/<str:reference>/approve/", views.StaffApplicationApproveView.as_view(), name="staff-application-approve"),
     path("staff/applications/<str:reference>/reject/", views.StaffApplicationRejectView.as_view(), name="staff-application-reject"),
     path("staff/members/", views.StaffMemberListView.as_view(), name="staff-members"),

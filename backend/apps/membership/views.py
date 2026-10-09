@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from uuid import uuid4
+
 from django.db.models import Q
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -262,6 +264,33 @@ class StaffApplicationReviewView(APIView):
         application.save(update_fields=["status", "internal_notes", "reviewed_by", "reviewed_at", "updated_at"])
         record_event(action="membership.application_under_review", target_type="membership_application", target_id=application.id, actor=request.user, request=request)
         return Response(MembershipApplicationStaffSerializer(application).data)
+
+
+@method_decorator(csrf_protect, name="dispatch")
+class StaffApplicationReceiptEmailView(APIView):
+    """Allow membership staff to retry a client's application receipt on request."""
+
+    permission_classes = [IsMembershipOfficer]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "membership_application_email_resend"
+
+    @extend_schema(request=None, responses={204: OpenApiTypes.NONE})
+    def post(self, request, reference):
+        application = MembershipApplication.objects.filter(reference=reference).first()
+        if not application:
+            raise NotFound()
+        send_application_received_email(
+            application,
+            idempotency_key=f"membership-receipt-resend/{application.reference}/{uuid4().hex}",
+        )
+        record_event(
+            action="membership.application_receipt_resent",
+            target_type="membership_application",
+            target_id=application.id,
+            actor=request.user,
+            request=request,
+        )
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @method_decorator(csrf_protect, name="dispatch")
