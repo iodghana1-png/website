@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { SiteContact, useSiteSettings } from "@/components/cms/SiteSettings";
 import { linkUrl } from "@/components/cms/ContentRenderer";
 import { footerConfig, type FooterLink } from "@/data/footer";
+import { cmsMediaUrl } from "@/lib/cms/media";
 import { Logo } from "./Logo";
 
 function FooterLinks({ links }: { links: FooterLink[] }) {
@@ -17,7 +18,7 @@ export function FooterContent({ settings }: { settings: Record<string, unknown> 
   if (!footer.enabled) return null;
   const columns = footer.columns.filter((column) => column.enabled);
   const bottomLinks = [{ label: "Member login", href: "/login", enabled: true, new_tab: false }, ...footer.bottom_links.filter((item) => item.href !== "/login")];
-  const logoUrl = /^(https?:\/\/|\/(?!\/))/i.test(footer.logo_url) ? footer.logo_url : "";
+  const logoUrl = cmsMediaUrl(footer, "logo");
   const count = 1 + columns.length + Number(footer.newsletter_enabled);
   const grid = count >= 4 ? "xl:grid-cols-4" : count === 3 ? "xl:grid-cols-3" : "";
   return <footer id="contact" className="bg-[var(--color-ink)] pb-8 pt-16 text-white sm:pt-20"><div className="site-container">

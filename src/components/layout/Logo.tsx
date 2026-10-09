@@ -3,11 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useSiteSettings } from "@/components/cms/SiteSettings";
-import { linkUrl } from "@/components/cms/ContentRenderer";
+import { cmsMediaUrl } from "@/lib/cms/media";
 
 export function Logo({ inverse = false }: { inverse?: boolean }) {
   const settings = useSiteSettings();
-  const logo = typeof settings.logo_url === "string" ? linkUrl(settings.logo_url) : "";
+  const logo = cmsMediaUrl(settings, "logo");
   const name = typeof settings.website_name === "string" ? settings.website_name.trim() : "";
   if (!logo && !name) return null;
   return (
