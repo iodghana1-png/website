@@ -54,7 +54,7 @@ export default function AboutPage() {
           </div>
 
           <div className="lg:col-span-7 lg:col-start-6">
-            <p className="max-w-3xl font-serif text-[clamp(1.8rem,2.7vw,2.75rem)] leading-[1.2] tracking-[-0.035em] text-[var(--color-ink)]"><EditableCopy label="Text" fallback={"Institute of Directors Ghana is a professional organization committed to the professional practice of Corporate Directorship."} /></p>
+            <p className="max-w-3xl font-serif text-[clamp(1.8rem,2.7vw,2.75rem)] leading-[1.2] tracking-[-0.035em] text-[var(--color-ink)]"><EditableCopy label="Statement" fallback={"Institute of Directors Ghana is a professional organization committed to the professional practice of Corporate Directorship."} /></p>
             <div className="mt-9 max-w-2xl border-t border-[var(--color-line)] pt-7">
               <p className="text-lg leading-8 text-[var(--color-slate)]"><EditableCopy label="Text" fallback={"Our purpose is to champion director professionalism and development through good corporate governance for the benefit of organizations, stakeholders and the prosperity of Ghana."} /></p>
               <p className="mt-5 text-lg leading-8 text-[var(--color-slate)]"><EditableCopy label="Text" fallback={"We recognise and unlock member potential through world-class learning opportunities, knowledge sharing, networking, mentorship and the promotion of world-class standards in Corporate Governance."} /></p>
