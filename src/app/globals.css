@@ -9,6 +9,20 @@
 .cms-rich-text a { text-decoration: underline; }
 .cms-rich-text blockquote { border-left: 3px solid var(--color-accent); padding-left: 1em; }
 
+/* Most editable page write-ups are rendered through EditableCopy rather than
+   RichContent. Apply the same readable text treatment to their paragraph
+   container, not the inline editable span. */
+p:not(.eyebrow):has(> [data-cms-copy][data-cms-label="Text"]) {
+  text-align: justify;
+  text-justify: inter-word;
+  hyphens: auto;
+}
+
+/* Keep sections that were intentionally designed with centred copy centred. */
+.text-center p:has(> [data-cms-copy][data-cms-label="Text"]) {
+  text-align: center;
+}
+
 :root {
   --color-ink: #271b54;
   --color-slate: #5f587c;
