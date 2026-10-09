@@ -10,8 +10,10 @@ export type IconName =
   | "chevron-right"
   | "download"
   | "external"
+  | "mail"
   | "menu"
   | "minus"
+  | "phone"
   | "play"
   | "plus"
   | "x"
@@ -55,7 +57,9 @@ export function Icon({ name, title, className = "h-5 w-5", ...props }: IconProps
   if (name === "chevron-left") return <svg {...svgProps} {...strokeProps}>{title && <title>{title}</title>}<path d="m15 18-6-6 6-6" /></svg>;
   if (name === "chevron-right") return <svg {...svgProps} {...strokeProps}>{title && <title>{title}</title>}<path d="m9 18 6-6-6-6" /></svg>;
   if (name === "external") return <svg {...svgProps} {...strokeProps}>{title && <title>{title}</title>}<path d="M14 5h5v5M19 5l-9 9" /><path d="M19 14v4a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h4" /></svg>;
+  if (name === "mail") return <svg {...svgProps} {...strokeProps}>{title && <title>{title}</title>}<rect x="3" y="5" width="18" height="14" rx="2" /><path d="m4 7 8 6 8-6" /></svg>;
   if (name === "download") return <svg {...svgProps} {...strokeProps}>{title && <title>{title}</title>}<path d="M12 4v11m-4-4 4 4 4-4" /><path d="M5 19h14" /></svg>;
+  if (name === "phone") return <svg {...svgProps} {...strokeProps}>{title && <title>{title}</title>}<path d="M8.2 4.2 5.8 5.4a2 2 0 0 0-1 2.3c1.6 6.7 4.8 9.9 11.5 11.5a2 2 0 0 0 2.3-1l1.2-2.4a1.8 1.8 0 0 0-.7-2.3l-2.2-1.3a1.8 1.8 0 0 0-2.2.3l-1.1 1.1a11.4 11.4 0 0 1-3.2-3.2l1.1-1.1a1.8 1.8 0 0 0 .3-2.2L10.5 4.9a1.8 1.8 0 0 0-2.3-.7Z" /></svg>;
   if (name === "menu") return <svg {...svgProps} {...strokeProps}>{title && <title>{title}</title>}<path d="M4 7h16M4 12h16M4 17h16" /></svg>;
   if (name === "x") return <svg {...svgProps} {...strokeProps}>{title && <title>{title}</title>}<path d="m6 6 12 12M18 6 6 18" /></svg>;
   if (name === "plus") return <svg {...svgProps} {...strokeProps}>{title && <title>{title}</title>}<path d="M12 5v14M5 12h14" /></svg>;
