@@ -1,1 +1,13 @@
--r requirements/base.txt
+Django==5.2.17
+djangorestframework==3.17.2
+drf-spectacular==0.28.0
+django-cors-headers==4.7.0
+dj-database-url==2.3.0
+psycopg[binary]==3.2.13
+python-dotenv==1.2.4
+Pillow==12.3.0
+pypdf==6.19.0
+olefile==0.47
+defusedxml==0.7.1
+filetype==1.2.0
+gunicorn==26.2.0
