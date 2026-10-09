@@ -49,6 +49,7 @@ from .cms_services import (
     save_settings_draft,
     unpublish_page,
 )
+from .cms_media import resolve_legacy_media_urls
 from .models import (
     CMSArticle,
     CMSCategory,
@@ -169,7 +170,8 @@ class PublicCMSSiteView(APIView):
 
     def get(self, request):
         settings = CMSSiteSettings.objects.select_related("published_revision").filter(key="global").first()
-        return Response({"settings": settings.published_revision.data if settings and settings.published_revision_id else {}})
+        data = settings.published_revision.data if settings and settings.published_revision_id else {}
+        return Response({"settings": resolve_legacy_media_urls(data, request)})
 
 
 class PublicCMSMediaAssetView(APIView):
@@ -540,7 +542,7 @@ class StaffCMSSiteSettingsView(APIView):
     permission_classes = [CMSPermission]
 
     def get(self, request):
-        return Response(CMSSiteSettingsSerializer(settings_record()).data)
+        return Response(CMSSiteSettingsSerializer(settings_record(), context={"request": request}).data)
 
 
 @method_decorator(csrf_protect, name="dispatch")
@@ -553,7 +555,13 @@ class StaffCMSSiteSettingsDraftView(APIView):
         settings = settings_record()
         revision = save_settings_draft(settings=settings, data=serializer.validated_data, actor=request.user)
         save_event(action="cms.settings_draft_saved", target_type="cms_settings", target=settings, request=request, metadata={"revision": revision.number})
-        return Response(CMSSiteSettingsSerializer(CMSSiteSettings.objects.select_related("current_draft_revision").get(pk=settings.pk)).data, status=status.HTTP_201_CREATED)
+        return Response(
+            CMSSiteSettingsSerializer(
+                CMSSiteSettings.objects.select_related("current_draft_revision").get(pk=settings.pk),
+                context={"request": request},
+            ).data,
+            status=status.HTTP_201_CREATED,
+        )
 
 
 @method_decorator(csrf_protect, name="dispatch")
@@ -565,7 +573,12 @@ class StaffCMSSiteSettingsPublishView(APIView):
         revision = publish_settings_revision(settings=settings, revision_number=revision_number)
         save_event(action="cms.settings_published", target_type="cms_settings", target=settings, request=request, metadata={"revision": revision.number})
         queue_revalidation(tags=["cms:site"], paths=["/"])
-        return Response(CMSSiteSettingsSerializer(CMSSiteSettings.objects.select_related("published_revision").get(pk=settings.pk)).data)
+        return Response(
+            CMSSiteSettingsSerializer(
+                CMSSiteSettings.objects.select_related("published_revision").get(pk=settings.pk),
+                context={"request": request},
+            ).data
+        )
 
 class StaffCMSAccessView(APIView):
     permission_classes = [CMSPermission]

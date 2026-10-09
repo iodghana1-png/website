@@ -23,21 +23,21 @@ class PublicContentPageView(APIView):
         page = ContentPage.objects.filter(slug=slug, status=ContentPage.Status.PUBLISHED).first()
         if not page:
             raise NotFound("Published content was not found.")
-        return Response(ContentPageSerializer(page).data)
+        return Response(ContentPageSerializer(page, context={"request": request}).data)
 
 
 class StaffContentPageListView(APIView):
     permission_classes = [IsContentEditor]
 
     def get(self, request):
-        return Response(ContentPageSerializer(ContentPage.objects.all(), many=True).data)
+        return Response(ContentPageSerializer(ContentPage.objects.all(), many=True, context={"request": request}).data)
 
     def post(self, request):
         serializer = ContentPageSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         page = serializer.save(updated_by=request.user, published_at=timezone.now() if serializer.validated_data.get("status") == ContentPage.Status.PUBLISHED else None)
         record_event(action="content.page_created", target_type="content_page", target_id=page.id, actor=request.user, request=request)
-        return Response(ContentPageSerializer(page).data, status=status.HTTP_201_CREATED)
+        return Response(ContentPageSerializer(page, context={"request": request}).data, status=status.HTTP_201_CREATED)
 
 
 class StaffContentPageDetailView(APIView):
@@ -53,7 +53,7 @@ class StaffContentPageDetailView(APIView):
         is_publishing = serializer.validated_data.get("status") == ContentPage.Status.PUBLISHED and page.status != ContentPage.Status.PUBLISHED
         page = serializer.save(updated_by=request.user, published_at=timezone.now() if is_publishing else page.published_at)
         record_event(action="content.page_updated", target_type="content_page", target_id=page.id, actor=request.user, request=request)
-        return Response(ContentPageSerializer(page).data)
+        return Response(ContentPageSerializer(page, context={"request": request}).data)
 
 
 class PublicContentItemListView(APIView):
@@ -81,7 +81,7 @@ class PublicContentItemListView(APIView):
             section=query.validated_data["section"],
             status=ContentItem.Status.PUBLISHED,
         ).order_by("sort_order", "title", "id")
-        return Response(ContentItemSerializer(items, many=True).data)
+        return Response(ContentItemSerializer(items, many=True, context={"request": request}).data)
 
 
 @method_decorator(csrf_protect, name="dispatch")
@@ -116,7 +116,7 @@ class StaffContentItemListView(APIView):
             items = items.filter(section=section)
         if item_status := query.validated_data.get("status"):
             items = items.filter(status=item_status)
-        return Response(ContentItemSerializer(items.order_by("section", "sort_order", "title", "id"), many=True).data)
+        return Response(ContentItemSerializer(items.order_by("section", "sort_order", "title", "id"), many=True, context={"request": request}).data)
 
     @extend_schema(
         operation_id="staff_content_item_create",
@@ -131,7 +131,7 @@ class StaffContentItemListView(APIView):
             published_at=timezone.now() if serializer.validated_data.get("status") == ContentItem.Status.PUBLISHED else None,
         )
         record_event(action="content.item_created", target_type="content_item", target_id=item.id, actor=request.user, request=request)
-        return Response(ContentItemSerializer(item).data, status=status.HTTP_201_CREATED)
+        return Response(ContentItemSerializer(item, context={"request": request}).data, status=status.HTTP_201_CREATED)
 
 
 @method_decorator(csrf_protect, name="dispatch")
@@ -146,7 +146,7 @@ class StaffContentItemDetailView(APIView):
 
     @extend_schema(operation_id="staff_content_item_retrieve", responses={200: ContentItemSerializer})
     def get(self, request, pk):
-        return Response(ContentItemSerializer(self.get_object(pk)).data)
+        return Response(ContentItemSerializer(self.get_object(pk), context={"request": request}).data)
 
     @extend_schema(
         operation_id="staff_content_item_update",
@@ -166,7 +166,7 @@ class StaffContentItemDetailView(APIView):
             published_at=timezone.now() if is_publishing else item.published_at,
         )
         record_event(action="content.item_updated", target_type="content_item", target_id=item.id, actor=request.user, request=request)
-        return Response(ContentItemSerializer(item).data)
+        return Response(ContentItemSerializer(item, context={"request": request}).data)
 
     @extend_schema(operation_id="staff_content_item_delete", responses={204: OpenApiTypes.NONE})
     def delete(self, request, pk):

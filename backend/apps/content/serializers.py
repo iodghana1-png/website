@@ -1,10 +1,16 @@
 from rest_framework import serializers
 
+from .cms_media import resolve_legacy_media_urls
 from .models import ContentItem, ContentPage
 
 
 class ContentPageSerializer(serializers.ModelSerializer):
     updated_by_email = serializers.EmailField(source="updated_by.email", read_only=True)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["blocks"] = resolve_legacy_media_urls(data["blocks"], self.context.get("request"))
+        return data
 
     class Meta:
         model = ContentPage
@@ -14,6 +20,12 @@ class ContentPageSerializer(serializers.ModelSerializer):
 
 class ContentItemSerializer(serializers.ModelSerializer):
     updated_by_email = serializers.EmailField(source="updated_by.email", read_only=True)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["metadata"] = resolve_legacy_media_urls(data["metadata"], self.context.get("request"))
+        data["image_url"] = resolve_legacy_media_urls(data["image_url"], self.context.get("request"))
+        return data
 
     class Meta:
         model = ContentItem

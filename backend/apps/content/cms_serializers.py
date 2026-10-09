@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from urllib.parse import urlparse
 
-from django.urls import reverse
 from rest_framework import serializers
 from apps.common.uploads import validate_upload
 from .cms_text import clean_text, clean_data, safe_link
+from .cms_media import media_asset_url, resolve_legacy_media_urls
 
 from .models import (
     CMSArticle,
@@ -53,14 +53,16 @@ class CMSMediaAssetSerializer(serializers.ModelSerializer):
     def get_file_url(self, asset):
         if not asset.file:
             return ""
-        request = self.context.get("request")
-        url = reverse("cms-media-asset", kwargs={"media_id": asset.id})
-        return request.build_absolute_uri(url) if request else url
+        return media_asset_url(asset, self.context.get("request"))
 
 
 class CMSPageSectionSerializer(serializers.ModelSerializer):
     primary_media = CMSMediaAssetSerializer(read_only=True)
     primary_media_id = serializers.PrimaryKeyRelatedField(source="primary_media", queryset=CMSMediaAsset.objects.filter(status=CMSMediaAsset.Status.READY), allow_null=True, required=False, write_only=True)
+    data = serializers.SerializerMethodField()
+
+    def get_data(self, section):
+        return resolve_legacy_media_urls(section.data, self.context.get("request"))
 
     class Meta:
         model = CMSPageSection
@@ -334,6 +336,11 @@ class CMSNavigationDraftSerializer(serializers.Serializer):
 
 
 class CMSSiteSettingsRevisionSerializer(serializers.ModelSerializer):
+    data = serializers.SerializerMethodField()
+
+    def get_data(self, revision):
+        return resolve_legacy_media_urls(revision.data, self.context.get("request"))
+
     class Meta:
         model = CMSSiteSettingsRevision
         fields = ("id", "number", "state", "data", "change_summary", "published_at", "created_at")
