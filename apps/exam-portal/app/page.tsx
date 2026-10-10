@@ -1,2 +1,4 @@
 import { redirect } from "next/navigation";
-export default function Page() { redirect("/exams"); }
+// A direct portal link should always show the candidate's code-entry screen.
+// The examination dashboard remains available after a successful code check.
+export default function Page() { redirect("/login"); }
