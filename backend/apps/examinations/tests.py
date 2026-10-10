@@ -113,6 +113,8 @@ class ExaminationSecurityTests(ExamFixtures, TestCase):
         response = self.post("exams/candidate/access/", {"full_name": "  test   candidate ", "access_code": code.lower()}, client)
         self.assertEqual(response.status_code, 200, response.content)
         self.assertIn(CANDIDATE_SESSION_COOKIE, response.cookies)
+        self.assertEqual(response.cookies[CANDIDATE_SESSION_COOKIE]["samesite"].lower(), "none")
+        self.assertTrue(response.cookies[CANDIDATE_SESSION_COOKIE]["secure"])
         attempt = self.post(f"exams/{self.exam.pk}/start/", client=client).json()["id"]
         returning = Client(enforce_csrf_checks=True)
         csrf = returning.get("/api/v1/auth/csrf/").json()["csrfToken"]

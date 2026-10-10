@@ -120,7 +120,10 @@ class CandidateAccess(APIView):
             max_age=max(1, int((session.expires_at - timezone.now()).total_seconds())),
             httponly=True,
             secure=not settings.DEBUG,
-            samesite="Lax",
+            # The public portal and API use different Railway hostnames. The
+            # opaque, HTTPS-only exam cookie must therefore be available on
+            # credentialed API requests made from the portal.
+            samesite="None" if not settings.DEBUG else "Lax",
             path="/api/v1/",
         )
         audit("CANDIDATE_ACCESS_GRANTED", user=eligibility.student, exam=eligibility.exam, request=request, metadata={"candidate_session": str(session.pk)})
@@ -132,7 +135,11 @@ class CandidateSignOut(CandidateView):
 
     def post(self, request):
         response = Response(status=204)
-        response.delete_cookie(CANDIDATE_SESSION_COOKIE, path="/api/v1/", samesite="Lax")
+        response.delete_cookie(
+            CANDIDATE_SESSION_COOKIE,
+            path="/api/v1/",
+            samesite="None" if not settings.DEBUG else "Lax",
+        )
         return response
 
 
