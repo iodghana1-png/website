@@ -18,6 +18,7 @@ export function SignIn() {
     try {
       await api("/exams/candidate/access/", {
         full_name: form.get("full_name"),
+        email: form.get("email"),
         access_code: form.get("access_code"),
       });
       router.replace("/exams");
@@ -36,13 +37,22 @@ export function SignIn() {
       <div className="eyebrow">Secure candidate access</div>
       <h1>Ready to begin?</h1>
       <p className="intro">
-        Enter the full name and unique examination code provided by the IoD-Gh
-        administrator.
+        Enter the name recorded by IoD-Gh, your email address and the cohort
+        examination code provided by the administrator.
       </p>
       <form className="panel" onSubmit={submit}>
         <label>
           Full name
-          <input name="full_name" required autoComplete="name" />
+          <input
+            name="full_name"
+            required
+            autoComplete="name"
+            placeholder="First name followed by last name"
+          />
+        </label>
+        <label>
+          Email address
+          <input name="email" type="email" required autoComplete="email" />
         </label>
         <label>
           Examination code
@@ -64,8 +74,9 @@ export function SignIn() {
         </button>
       </form>
       <p className="small">
-        Your code opens only the examination assigned to you. Saved answers
-        remain available when you return with the same details.
+        Your cohort code opens only the examination assigned to your recorded
+        name. Saved answers remain available when you return with the same
+        details, and your result is sent to this email after submission.
       </p>
     </div>
   );

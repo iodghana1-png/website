@@ -1,4 +1,5 @@
 from django.utils import timezone
+from django.db.models import Q
 from rest_framework import exceptions
 from rest_framework.authentication import BaseAuthentication, CSRFCheck
 
@@ -30,11 +31,12 @@ class CandidateExamAuthentication(BaseAuthentication):
         session = ExamCandidateSession.objects.select_related("eligibility__student", "eligibility__exam", "eligibility__exam__current_version").filter(
             token_hash=candidate_token_hash(token),
             expires_at__gt=timezone.now(),
-            eligibility__student__is_active=True,
-        ).first()
+        ).filter(Q(eligibility__student__isnull=True) | Q(eligibility__student__is_active=True)).first()
         if not session:
             return None
         if request.method not in ("GET", "HEAD", "OPTIONS", "TRACE"):
             self.enforce_csrf(request)
-        return session.eligibility.student, session
+        # Cohort candidates have no website account. The eligibility record is
+        # the scoped principal, while legacy records retain their account user.
+        return session.eligibility, session
 

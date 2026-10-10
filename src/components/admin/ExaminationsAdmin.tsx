@@ -62,6 +62,7 @@ type AttemptRow = {
 type Assignment = {
   identifier: string;
   name: string;
+  email: string;
   is_active: boolean;
   has_candidate_code: boolean;
   candidate_code_issued_at: string | null;
@@ -138,10 +139,9 @@ export function ExaminationsAdmin() {
   const [exam, setExam] = useState<Exam | null>(null);
   const [question, setQuestion] = useState<Question | null>(null);
   const [selectedExam, setSelectedExam] = useState("");
-  const [identifier, setIdentifier] = useState("");
+  const [candidateName, setCandidateName] = useState("");
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [candidateCode, setCandidateCode] = useState("");
-  const [issuedCandidate, setIssuedCandidate] = useState("");
   const [assignmentPage, setAssignmentPage] = useState(1);
   const [moreAssignments, setMoreAssignments] = useState(false);
   const [attempts, setAttempts] = useState<AttemptRow[]>([]);
@@ -257,32 +257,29 @@ export function ExaminationsAdmin() {
   ) {
     setBusy(true);
     setError("");
-    setCandidateCode("");
-    setIssuedCandidate("");
     try {
       const grant = await apiRequest<Assignment>(
         `/exams/staff/exams/${selectedExam}/eligibility/`,
         {
           method: "POST",
           body: JSON.stringify({
-            identifier: value,
+            full_name: value,
             is_active,
             issue_new_code: issueNewCode,
           }),
         },
       );
-      setIdentifier("");
+      setCandidateName("");
       await loadAssignments(selectedExam);
       if (grant.candidate_code) {
         setCandidateCode(grant.candidate_code);
-        setIssuedCandidate(grant.name || grant.identifier);
         setNotice(
-          `Access code created for ${grant.name || grant.identifier}. Give the candidate their saved full name and this code.`,
+          "Cohort access code created. It works for every active student listed for this examination.",
         );
       } else {
         setNotice(
           is_active
-            ? "Account assigned to examination. The existing candidate access code remains valid."
+            ? `Student added to the cohort. They will enter their own email address in the Examination Portal.`
             : "Eligibility revoked for future starts. Existing attempts are retained.",
         );
       }
@@ -294,9 +291,8 @@ export function ExaminationsAdmin() {
   }
   function selectCandidateExam(id: string, scrollToAccess = false) {
     setSelectedExam(id);
-    setIdentifier("");
+    setCandidateName("");
     setCandidateCode("");
-    setIssuedCandidate("");
     if (!id) {
       setAssignments([]);
       setAssignmentPage(1);
@@ -414,9 +410,9 @@ export function ExaminationsAdmin() {
           <Panel title="Candidate access codes" open>
             <div id="candidate-access" className="scroll-mt-6">
               <p className="text-sm text-[var(--color-slate)]">
-                Give each candidate access in three short steps. Their answers
-                are saved, so they can return later using the same name and
-                code.
+                Set up one shared code for the cohort, then add students by
+                name. Their answers are saved, so they can return later with
+                the same name, email address and cohort code.
               </p>
               <ol className="mt-4 space-y-5">
                 <li>
@@ -447,27 +443,47 @@ export function ExaminationsAdmin() {
                   <>
                     <li>
                       <h3 className="text-sm font-semibold">
-                        2. Add the candidate
+                        2. Create one cohort code
                       </h3>
                       <p className="mt-1 text-sm text-[var(--color-slate)]">
-                        Enter the email address or membership number already on
-                        the candidate&apos;s account.
+                        This one code works for every active student you add to
+                        this examination. Keep it safe and share it only with
+                        the cohort.
+                      </p>
+                      <button
+                        type="button"
+                        className={`${buttonClass} mt-3`}
+                        disabled={busy}
+                        onClick={() => void assign("", true, true)}
+                      >
+                        {candidateCode || assignments.some((entry) => entry.has_candidate_code)
+                          ? "Create replacement cohort code"
+                          : "Create cohort code"}
+                      </button>
+                    </li>
+                    <li>
+                      <h3 className="text-sm font-semibold">3. Add students</h3>
+                      <p className="mt-1 text-sm text-[var(--color-slate)]">
+                        Add only the student&apos;s full name, with first name before
+                        last name. They provide their email address themselves
+                        when entering the Examination Portal.
                       </p>
                       <form
                         className="mt-3 flex flex-wrap items-end gap-3"
                         onSubmit={(event) => {
                           event.preventDefault();
-                          void assign(identifier, true);
+                          void assign(candidateName, true);
                         }}
                       >
                         <Field
-                          label="Candidate email or membership number"
-                          value={identifier}
-                          onChange={setIdentifier}
+                          label="Student full name"
+                          value={candidateName}
+                          onChange={setCandidateName}
+                          placeholder="First name followed by last name"
                           required
                         />
                         <button className={primaryClass} disabled={busy}>
-                          Create access code
+                          Add student
                         </button>
                       </form>
                     </li>
@@ -476,41 +492,28 @@ export function ExaminationsAdmin() {
                         className="rounded border border-emerald-300 bg-emerald-50 p-4 text-sm text-emerald-950"
                         aria-live="polite"
                       >
-                        <h3 className="font-semibold">
-                          3. Give the candidate these two details
-                        </h3>
-                        <dl className="mt-3 grid gap-3 sm:grid-cols-[9rem_1fr]">
-                          <dt className="font-semibold">Full name</dt>
-                          <dd>{issuedCandidate}</dd>
-                          <dt className="font-semibold">Access code</dt>
-                          <dd>
-                            <code className="block select-all rounded bg-white px-3 py-2 font-mono text-base tracking-wide">
-                              {candidateCode}
-                            </code>
-                          </dd>
-                        </dl>
+                        <h3 className="font-semibold">Cohort access code</h3>
+                        <code className="mt-3 block select-all rounded bg-white px-3 py-2 font-mono text-base tracking-wide">
+                          {candidateCode}
+                        </code>
                         <button
                           type="button"
                           className={`${buttonClass} mt-3`}
                           onClick={async () => {
                             try {
-                              await navigator.clipboard.writeText(
-                                candidateCode,
-                              );
-                              setNotice("Access code copied.");
+                              await navigator.clipboard.writeText(candidateCode);
+                              setNotice("Cohort code copied.");
                             } catch {
-                              setNotice(
-                                "Select and copy the access code shown.",
-                              );
+                              setNotice("Select and copy the code shown.");
                             }
                           }}
                         >
-                          Copy access code
+                          Copy cohort code
                         </button>
                         <p className="mt-3">
-                          The candidate enters this exact full name and code in
-                          the Examination Portal. This continues any saved exam
-                          session; it does not sign them into the CMS.
+                          Every active student enters their recorded full name,
+                          their own email address and this same code. Replacing
+                          it stops the previous cohort code from working.
                         </p>
                       </li>
                     )}
@@ -521,8 +524,8 @@ export function ExaminationsAdmin() {
                 <section className="mt-6 border-t border-[var(--color-line)] pt-5">
                   <h3 className="font-semibold">Assigned candidates</h3>
                   <p className="mt-1 text-sm text-[var(--color-slate)]">
-                    Revoke a candidate to stop future starts, or create a new
-                    code if the old one has been lost.
+                    Revoke a student to stop future starts. A supplied result
+                    email appears here after the student enters the portal.
                   </p>
                   {assignments.length ? (
                     <div className="mt-3 divide-y rounded border border-[var(--color-line)] bg-white px-4">
@@ -536,7 +539,7 @@ export function ExaminationsAdmin() {
                               {entry.name || "Unnamed candidate"}
                             </p>
                             <p className="text-[var(--color-slate)]">
-                              {entry.identifier}
+                              {entry.email || "Result email not entered yet"}
                             </p>
                             <p className="mt-1 text-xs">
                               {entry.is_active
@@ -557,23 +560,6 @@ export function ExaminationsAdmin() {
                             >
                               {entry.is_active ? "Revoke" : "Restore"}
                             </button>
-                            {entry.is_active && (
-                              <button
-                                type="button"
-                                className={buttonClass}
-                                disabled={busy}
-                                onClick={() => {
-                                  if (
-                                    window.confirm(
-                                      `Create a new code for ${entry.name || entry.identifier}? The old code will stop working.`,
-                                    )
-                                  )
-                                    void assign(entry.identifier, true, true);
-                                }}
-                              >
-                                New code
-                              </button>
-                            )}
                           </div>
                         </article>
                       ))}
@@ -678,13 +664,13 @@ export function ExaminationsAdmin() {
                 className="flex flex-wrap items-end gap-3"
                 onSubmit={(event) => {
                   event.preventDefault();
-                  void assign(identifier, true);
+                  void assign(candidateName, true);
                 }}
               >
                 <Field
                   label="Email or membership number"
-                  value={identifier}
-                  onChange={setIdentifier}
+                  value={candidateName}
+                  onChange={setCandidateName}
                   required
                 />
                 <button className={primaryClass} disabled={busy}>

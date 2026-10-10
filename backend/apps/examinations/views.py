@@ -21,7 +21,7 @@ from apps.membership.models import MemberProfile
 from .authentication import CANDIDATE_SESSION_COOKIE, CandidateExamAuthentication
 from .models import Exam, Question, ExamAttempt, ExamAnswer, ExamEligibility, ExamCandidateSession, ExamResult, ExamAuditLog
 from .serializers import ExamInput, QuestionInput, AnswerInput, AssignmentInput, CandidateAccessInput, QuestionViewedInput, AttemptFilters, ExportFilters
-from .services import audit, available, candidate_access, issue_candidate_code, open_candidate_session, start_attempt, save_question, retire_question, save_exam, public_attempt, public_questions, synchronize, finalize, release_result, notify
+from .services import audit, available, candidate_access, issue_candidate_code, issue_cohort_code, normalize_candidate_name, open_candidate_session, start_attempt, save_question, retire_question, save_exam, public_attempt, public_questions, synchronize, finalize, release_result
 
 
 class VerifiedAccount(IsAuthenticated):
@@ -109,11 +109,11 @@ class CandidateAccess(APIView):
     @method_decorator(csrf_protect)
     def post(self, request):
         data = validated(CandidateAccessInput, request)
-        eligibility = candidate_access(data["full_name"], data["access_code"])
+        eligibility = candidate_access(data["full_name"], data["email"], data["access_code"])
         token, session = open_candidate_session(eligibility) if eligibility else (None, None)
         if not session:
             return Response({"detail": "We could not verify those access details. Check your full name and examination code, then try again."}, status=403)
-        response = Response({"candidate_name": eligibility.student.full_name, "exam_title": eligibility.exam.current_version.configuration["title"]})
+        response = Response({"candidate_name": eligibility.full_name, "exam_title": eligibility.exam.current_version.configuration["title"]})
         response.set_cookie(
             CANDIDATE_SESSION_COOKIE,
             token,
@@ -150,12 +150,12 @@ class AvailableExams(CandidateView):
         # A candidate cookie is constrained to this one eligible exam. Existing
         # attempts remain resumable if a later staff action revokes eligibility,
         # but no new attempt can start after revocation.
-        attempts = ExamAttempt.objects.filter(student=request.user, exam=exam).select_related("exam_version", "exam").order_by("-started_at")
+        attempts = ExamAttempt.objects.filter(eligibility=eligibility, exam=exam).select_related("exam_version", "exam").order_by("-started_at")
         data = []
-        if available(exam, request.user):
+        if available(exam, eligibility):
             config = exam.current_version.configuration
             data.append({"id": str(exam.id), "title": config["title"], "instructions": config["instructions"], "duration_minutes": config["duration_minutes"], "question_count": config["question_count"]})
-        return Response({"candidate_name": request.user.full_name, "exams": data, "attempts": [public_attempt(attempt) for attempt in attempts[:100]]})
+        return Response({"candidate_name": eligibility.full_name, "exams": data, "attempts": [public_attempt(attempt) for attempt in attempts[:100]]})
 
 
 class StartExam(CandidateView):
@@ -164,14 +164,14 @@ class StartExam(CandidateView):
     def post(self, request, exam_id):
         if str(request.auth.eligibility.exam_id) != str(exam_id):
             return Response({"detail": "This examination is not assigned to this access code."}, status=404)
-        attempt = start_attempt(exam_id, request.user, request)
+        attempt = start_attempt(exam_id, request.auth.eligibility, request)
         if not attempt:
             return Response({"detail": "This examination is currently unavailable to your account."}, status=403)
         return Response(public_attempt(attempt))
 
 
 def owned_attempt(request, pk):
-    return get_object_or_404(ExamAttempt.objects.select_for_update(of=("self",)).select_related("exam_version", "exam", "student"), pk=pk, student=request.user, exam_id=request.auth.eligibility.exam_id)
+    return get_object_or_404(ExamAttempt.objects.select_for_update(of=("self",)).select_related("exam_version", "exam", "student", "eligibility"), pk=pk, eligibility=request.auth.eligibility, exam_id=request.auth.eligibility.exam_id)
 
 
 class AttemptDetail(CandidateView):
@@ -217,7 +217,7 @@ class SaveAnswer(CandidateView):
             answer.save(update_fields=["selected_option", "revision", "updated_at"])
         else:
             answer = ExamAnswer.objects.create(attempt=attempt, question_id=pk, selected_option=option)
-        audit("ANSWER_CHANGED" if answer.revision > 1 else "ANSWER_SAVED", user=request.user, attempt=attempt, request=request, metadata={"question": pk})
+        audit("ANSWER_CHANGED" if answer.revision > 1 else "ANSWER_SAVED", user=request.auth.eligibility.student, attempt=attempt, request=request, metadata={"question": pk})
         return Response({"saved": True, "revision": answer.revision, "server_time": timezone.now()})
 
 
@@ -231,7 +231,7 @@ class QuestionViewed(CandidateView):
         data = validated(QuestionViewedInput, request)
         if attempt.status != "IN_PROGRESS" or str(data["question_id"]) not in attempt.question_order:
             return Response({"detail": "This question is unavailable."}, status=409)
-        audit("QUESTION_VIEWED", user=request.user, attempt=attempt, request=request, metadata={"question": str(data["question_id"]), "source": "browser_reported"})
+        audit("QUESTION_VIEWED", user=request.auth.eligibility.student, attempt=attempt, request=request, metadata={"question": str(data["question_id"]), "source": "browser_reported"})
         return Response(status=204)
 
 
@@ -324,36 +324,67 @@ class StaffExamDetail(StaffView):
         return Response(staff_exam(save_exam(validated(ExamInput, request), request.user, request, exam_id)))
 
 
+def staff_eligibility(grant):
+    exam = grant.exam
+    return {
+        "identifier": grant.full_name,
+        "name": grant.full_name,
+        "email": grant.email,
+        "is_active": grant.is_active,
+        "has_candidate_code": bool(exam.cohort_code_hash or grant.candidate_code_hash),
+        "candidate_code_issued_at": exam.cohort_code_issued_at or grant.candidate_code_issued_at,
+    }
+
+
 class StaffEligibility(StaffView):
     def get(self, request, exam_id):
         exam = get_object_or_404(Exam, pk=exam_id)
-        return page_response(request, ExamEligibility.objects.filter(exam=exam).select_related("student").order_by("student__email"), lambda grant: {"identifier": grant.student.email, "name": grant.student.full_name, "is_active": grant.is_active, "has_candidate_code": bool(grant.candidate_code_hash), "candidate_code_issued_at": grant.candidate_code_issued_at})
+        grants = ExamEligibility.objects.filter(exam=exam).select_related("student", "exam").order_by("candidate_name", "student__email")
+        return page_response(request, grants, staff_eligibility)
 
     @transaction.atomic
     def post(self, request, exam_id):
-        exam = get_object_or_404(Exam, pk=exam_id)
+        exam = get_object_or_404(Exam.objects.select_for_update(), pk=exam_id)
         data = validated(AssignmentInput, request)
-        user = User.objects.filter(email__iexact=data["identifier"], is_active=True).first()
-        if not user:
-            member = MemberProfile.objects.filter(membership_number__iexact=data["identifier"]).select_related("user").first()
-            user = member.user if member else None
-        if not user or not user.is_active:
-            raise ValidationError("No active IoD account matches that email or membership number.")
-        grant = ExamEligibility.objects.select_for_update().filter(exam=exam, student=user).first()
-        created = grant is None
-        was_active = bool(grant and grant.is_active)
-        if grant:
-            grant.assigned_by, grant.is_active = request.user, data["is_active"]
-            grant.save(update_fields=["assigned_by", "is_active", "assigned_at"])
-        else:
-            grant = ExamEligibility.objects.create(exam=exam, student=user, assigned_by=request.user, is_active=data["is_active"])
-        code = None
-        if grant.is_active and (created or not was_active or data["issue_new_code"] or not grant.candidate_code_hash):
-            code = issue_candidate_code(grant)
-        audit("ELIGIBILITY_ASSIGNED" if grant.is_active else "ELIGIBILITY_REVOKED", user=request.user, exam=exam, request=request, metadata={"student": str(user.pk)})
-        if grant.is_active:
-            notify(user, "EXAM_AVAILABLE", exam.title)
-        response = {"identifier": user.email, "name": user.full_name, "is_active": grant.is_active, "has_candidate_code": bool(grant.candidate_code_hash), "candidate_code_issued_at": grant.candidate_code_issued_at}
+        code = issue_cohort_code(exam) if data["issue_new_code"] else None
+        grant = None
+        created = False
+
+        if data.get("full_name"):
+            normalized_name = normalize_candidate_name(data["full_name"])
+            grant = ExamEligibility.objects.select_for_update().filter(exam=exam, candidate_name_normalized=normalized_name).first()
+            created = grant is None
+            if grant:
+                grant.candidate_name = data["full_name"]
+                grant.assigned_by = request.user
+                grant.is_active = data["is_active"]
+                grant.save(update_fields=["candidate_name", "assigned_by", "is_active", "assigned_at"])
+            else:
+                grant = ExamEligibility.objects.create(exam=exam, candidate_name=data["full_name"], candidate_name_normalized=normalized_name, assigned_by=request.user, is_active=data["is_active"])
+            if grant.is_active and not exam.cohort_code_hash:
+                code = issue_cohort_code(exam)
+            audit("ELIGIBILITY_ASSIGNED" if grant.is_active else "ELIGIBILITY_REVOKED", user=request.user, exam=exam, request=request, metadata={"candidate": grant.full_name})
+        elif data.get("identifier"):
+            # Existing integrations can still assign a website account while
+            # administrators move to the name-only cohort workflow.
+            user = User.objects.filter(email__iexact=data["identifier"], is_active=True).first()
+            if not user:
+                member = MemberProfile.objects.filter(membership_number__iexact=data["identifier"]).select_related("user").first()
+                user = member.user if member else None
+            if not user or not user.is_active:
+                raise ValidationError("No active IoD account matches that email or membership number.")
+            grant = ExamEligibility.objects.select_for_update().filter(exam=exam, student=user).first()
+            created = grant is None
+            if grant:
+                grant.assigned_by, grant.is_active = request.user, data["is_active"]
+                grant.save(update_fields=["assigned_by", "is_active", "assigned_at"])
+            else:
+                grant = ExamEligibility.objects.create(exam=exam, student=user, assigned_by=request.user, is_active=data["is_active"])
+            if grant.is_active and (created or data["issue_new_code"] or not grant.candidate_code_hash):
+                code = issue_candidate_code(grant)
+            audit("ELIGIBILITY_ASSIGNED" if grant.is_active else "ELIGIBILITY_REVOKED", user=request.user, exam=exam, request=request, metadata={"student": str(user.pk)})
+
+        response = staff_eligibility(grant) if grant else {"identifier": "", "name": "", "email": "", "is_active": True, "has_candidate_code": bool(exam.cohort_code_hash), "candidate_code_issued_at": exam.cohort_code_issued_at}
         if code:
             response["candidate_code"] = code
         return Response(response, status=201 if created else 200)
@@ -363,19 +394,19 @@ class StaffAttempts(StaffView):
     def get(self, request):
         filters = AttemptFilters(data=request.query_params)
         filters.is_valid(raise_exception=True)
-        attempts = ExamAttempt.objects.select_related("exam_version", "exam", "student", "result").order_by("-started_at")
+        attempts = ExamAttempt.objects.select_related("exam_version", "exam", "student", "eligibility", "result").order_by("-started_at")
         if "exam" in filters.validated_data:
             attempts = attempts.filter(exam_id=filters.validated_data["exam"])
         if "status" in filters.validated_data:
             attempts = attempts.filter(status=filters.validated_data["status"])
         audit("RESULTS_VIEWED", user=request.user, request=request)
-        return page_response(request, attempts, lambda attempt: {**result_data(attempt, staff=True), "student_email": attempt.student.email, "attempt_number": attempt.attempt_number, "submitted_at": attempt.submitted_at})
+        return page_response(request, attempts, lambda attempt: {**result_data(attempt, staff=True), "student_email": attempt.email, "student_name": attempt.full_name, "attempt_number": attempt.attempt_number, "submitted_at": attempt.submitted_at})
 
 
 class StaffAttemptReview(StaffView):
     @transaction.atomic
     def get(self, request, attempt_id):
-        attempt = get_object_or_404(ExamAttempt.objects.select_for_update(of=("self",)).select_related("exam_version", "exam", "student"), pk=attempt_id)
+        attempt = get_object_or_404(ExamAttempt.objects.select_for_update(of=("self",)).select_related("exam_version", "exam", "student", "eligibility"), pk=attempt_id)
         synchronize(attempt, request)
         audit("ATTEMPT_REVIEWED", user=request.user, attempt=attempt, request=request)
         questions = public_questions(attempt)
@@ -384,13 +415,13 @@ class StaffAttemptReview(StaffView):
             for question in questions:
                 question["correct_option"] = keys[question["id"]]
         events = list(attempt.examauditlog_set.order_by("timestamp").values("event", "timestamp", "metadata")[:1000])
-        return Response({**result_data(attempt, staff=True), "student_email": attempt.student.email, "questions": questions, "events": events})
+        return Response({**result_data(attempt, staff=True), "student_email": attempt.email, "student_name": attempt.full_name, "questions": questions, "events": events})
 
 
 class StaffRelease(StaffView):
     @transaction.atomic
     def post(self, request, attempt_id):
-        attempt = get_object_or_404(ExamAttempt.objects.select_for_update(of=("self",)).select_related("exam_version", "exam", "student"), pk=attempt_id)
+        attempt = get_object_or_404(ExamAttempt.objects.select_for_update(of=("self",)).select_related("exam_version", "exam", "student", "eligibility"), pk=attempt_id)
         synchronize(attempt, request)
         result = get_object_or_404(ExamResult, attempt=attempt)
         release_result(result, user=request.user, request=request)
@@ -405,8 +436,8 @@ class StaffExport(StaffView):
         rows = io.StringIO()
         writer = csv.writer(rows)
         writer.writerow(["Examination", "Student email", "Attempt", "Status", "Score", "Total", "Percentage", "Grade", "Passed", "Released at"])
-        for result in ExamResult.objects.filter(attempt__exam=exam).select_related("attempt__student", "attempt__exam_version").iterator():
-            values = [result.attempt.exam_version.configuration["title"], result.attempt.student.email, result.attempt.attempt_number, result.attempt.status, result.score, result.total_marks, result.percentage, result.grade, result.passed, result.released_at or ""]
+        for result in ExamResult.objects.filter(attempt__exam=exam).select_related("attempt__student", "attempt__eligibility", "attempt__exam_version").iterator():
+            values = [result.attempt.exam_version.configuration["title"], result.attempt.email, result.attempt.attempt_number, result.attempt.status, result.score, result.total_marks, result.percentage, result.grade, result.passed, result.released_at or ""]
             writer.writerow(["'" + str(value) if str(value).lstrip().startswith(("=", "+", "-", "@")) else value for value in values])
         audit("RESULTS_EXPORTED", user=request.user, exam=exam, request=request)
         response = HttpResponse(rows.getvalue(), content_type="text/csv")

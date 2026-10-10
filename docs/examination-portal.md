@@ -1,6 +1,6 @@
 # Dedicated IoD-Gh Examination Portal
 
-The portal is a separate Next.js application in `apps/exam-portal`. It uses the existing Django session authentication, PostgreSQL database, account identities, role groups, institutional email sender and audit service. It has no course, lesson, progress, payment or certificate module.
+The portal is a separate Next.js application in `apps/exam-portal`. It uses the existing Django session authentication for staff, PostgreSQL database, institutional email sender and audit service. Candidates do not need a website account. It has no course, lesson, progress, payment or certificate module.
 
 ## Local operation
 
@@ -27,8 +27,8 @@ Use `/admin/examinations` on the main website. Access requires a verified, activ
 
 1. Create questions in the question bank. Select exactly one correct option. Marks may be fractional.
 2. Create an exam, select its question pool, configure duration, availability, pass mark, maximum attempts, randomization and release mode. New exams default to inactive and manual result release.
-3. Assign eligible accounts by email or membership number. No course or payment state is exposed to candidates.
-4. Activate the exam when ready. Students sign in using their existing verified accounts.
+3. Create one cohort code, then add each eligible student by full name only (first name followed by last name). The same cohort code works for every active name on that exam.
+4. Activate the exam when ready. Students enter their recorded full name, their own email address and the cohort code. The email is captured with their attempt and receives their submitted percentage.
 5. Review attempts and their audit trail, release results, or export a selected exam's results as CSV.
 
 Edits create new question/exam versions, never overwrite active or historical snapshots. Removing a question retires it from the future question bank; it does not erase the immutable versions already used in an exam or attempt. Result scores cannot be manually edited. Manual amendments would require a separate append-only adjustment model and approval workflow, which are deliberately not implemented.
@@ -46,7 +46,7 @@ This repository does not provision `exam.iodghana.org`, DNS, a hosting account o
 - Set the exam app's build-time `NEXT_PUBLIC_API_BASE_URL=https://api.iodghana.org` and `NEXT_PUBLIC_MAIN_SITE_URL=https://iodghana.org`.
 - Set the main site's build-time `NEXT_PUBLIC_EXAM_PORTAL_URL=https://exam.iodghana.org` and rebuild it. The existing navigation item is reused; old `/training/exams` links redirect. CMS-managed links to the old path are mapped at rendering time, without rewriting navigation history.
 - Add `https://exam.iodghana.org` to Django `CORS_ALLOWED_ORIGINS` and `CSRF_TRUSTED_ORIGINS`, alongside the main website. Do not use wildcard origins.
-- Set `EXAM_PORTAL_URL=https://exam.iodghana.org`. Enable `EXAM_EMAIL_NOTIFICATIONS=true` only after verifying the existing production mail transport. Notifications contain no scores, answers or credentials. Email failures are logged and do not roll back submitted examinations; delivery currently uses the platform's existing sender, not a new message queue.
+- Set `EXAM_PORTAL_URL=https://exam.iodghana.org`. Enable `EXAM_EMAIL_NOTIFICATIONS=true` only after verifying the existing production mail transport. On submitted examinations, the candidate-provided email receives the recorded percentage; emails never include answers or credentials. Email failures are logged and do not roll back submitted examinations; delivery currently uses the platform's existing sender, not a new message queue.
 - Keep Django cookies host-only, HttpOnly for sessions, Secure and SameSite=Lax. All three applications must use HTTPS under the same site. The frontends obtain the masked CSRF token from Django's JSON endpoint, so cross-subdomain JavaScript never needs access to the API's cookie.
 - Run `process_examinations --watch` as a supervised backend process, or run it via a reliable one-minute scheduler. Monitor worker errors and API/DB health, synchronize server clocks, and configure backups, retention and recovery drills.
 - Configure DNS and TLS for the exam hostname on the chosen host. Confirm the API is reachable, cookies work, permitted origins pass CSRF checks, and the HTTPS exam link is operational before announcing launch.

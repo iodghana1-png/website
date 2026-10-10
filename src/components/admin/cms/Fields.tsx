@@ -7,8 +7,8 @@ import StarterKit from "@tiptap/starter-kit";
 export const inputClass = "mt-2 w-full rounded-lg border border-[var(--color-line)] bg-white px-3 py-2.5 text-sm font-normal";
 export const buttonClass = "rounded-lg border border-[var(--color-line)] bg-white px-4 py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50";
 export const primaryClass = buttonClass + " !border-[var(--color-ink)] !bg-[var(--color-ink)] text-white";
-export function Field({ label, value, onChange, required = false, type = "text" }: { label: string; value: string; onChange: (v: string) => void; required?: boolean; type?: string }) {
-  return <label className="block text-sm font-semibold">{label}<input className={inputClass} type={type} value={value} required={required} onChange={(e) => onChange(e.target.value)} /></label>;
+export function Field({ label, value, onChange, required = false, type = "text", placeholder }: { label: string; value: string; onChange: (v: string) => void; required?: boolean; type?: string; placeholder?: string }) {
+  return <label className="block text-sm font-semibold">{label}<input className={inputClass} type={type} value={value} required={required} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} /></label>;
 }
 export function Area({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return <label className="block text-sm font-semibold">{label}<textarea className={inputClass + " min-h-24"} value={value} onChange={(e) => onChange(e.target.value)} /></label>;

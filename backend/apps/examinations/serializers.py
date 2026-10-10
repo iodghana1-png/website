@@ -64,14 +64,35 @@ class AnswerInput(serializers.Serializer):
 
 
 class AssignmentInput(serializers.Serializer):
-    identifier = serializers.CharField(max_length=255)
+    # `identifier` retains the old account-assignment API during transition;
+    # the CMS uses full_name for all new cohort candidates.
+    full_name = serializers.CharField(max_length=300, required=False, allow_blank=True)
+    identifier = serializers.CharField(max_length=255, required=False, allow_blank=True)
     is_active = serializers.BooleanField(default=True)
     issue_new_code = serializers.BooleanField(default=False)
+
+    def validate_full_name(self, value):
+        normalized = " ".join(value.split())
+        if normalized and len(normalized.split()) < 2:
+            raise serializers.ValidationError("Enter the student's first name followed by their last name.")
+        return normalized
+
+    def validate(self, data):
+        if not data.get("full_name") and not data.get("identifier") and not data.get("issue_new_code"):
+            raise serializers.ValidationError("Enter the student's full name or create a cohort code.")
+        return data
 
 
 class CandidateAccessInput(serializers.Serializer):
     full_name = serializers.CharField(max_length=300)
+    email = serializers.EmailField(max_length=254)
     access_code = serializers.CharField(max_length=100)
+
+    def validate_full_name(self, value):
+        normalized = " ".join(value.split())
+        if len(normalized.split()) < 2:
+            raise serializers.ValidationError("Enter your first name followed by your last name.")
+        return normalized
 
 
 class QuestionViewedInput(serializers.Serializer):

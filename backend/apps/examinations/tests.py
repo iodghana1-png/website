@@ -108,9 +108,9 @@ class ExaminationSecurityTests(ExamFixtures, TestCase):
         client = Client(enforce_csrf_checks=True)
         csrf = client.get("/api/v1/auth/csrf/").json()["csrfToken"]
         client.defaults["HTTP_X_CSRFTOKEN"] = csrf
-        wrong = self.post("exams/candidate/access/", {"full_name": "Test Candidate", "access_code": "WRONG-CODE"}, client)
+        wrong = self.post("exams/candidate/access/", {"full_name": "Test Candidate", "email": "candidate@example.com", "access_code": "WRONG-CODE"}, client)
         self.assertEqual(wrong.status_code, 403)
-        response = self.post("exams/candidate/access/", {"full_name": "  test   candidate ", "access_code": code.lower()}, client)
+        response = self.post("exams/candidate/access/", {"full_name": "  test   candidate ", "email": "candidate@example.com", "access_code": code.lower()}, client)
         self.assertEqual(response.status_code, 200, response.content)
         self.assertIn(CANDIDATE_SESSION_COOKIE, response.cookies)
         self.assertEqual(response.cookies[CANDIDATE_SESSION_COOKIE]["samesite"].lower(), "none")
@@ -119,7 +119,7 @@ class ExaminationSecurityTests(ExamFixtures, TestCase):
         returning = Client(enforce_csrf_checks=True)
         csrf = returning.get("/api/v1/auth/csrf/").json()["csrfToken"]
         returning.defaults["HTTP_X_CSRFTOKEN"] = csrf
-        self.assertEqual(self.post("exams/candidate/access/", {"full_name": "Test Candidate", "access_code": code}, returning).status_code, 200)
+        self.assertEqual(self.post("exams/candidate/access/", {"full_name": "Test Candidate", "email": "candidate@example.com", "access_code": code}, returning).status_code, 200)
         available = returning.get("/api/v1/exams/available/").json()
         self.assertEqual([item["id"] for item in available["attempts"]], [attempt])
 
@@ -311,6 +311,37 @@ class ExaminationSecurityTests(ExamFixtures, TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertTrue(response.json()["candidate_code"])
         self.assertTrue(ExamEligibility.objects.filter(student=self.other, is_active=True).exists())
+
+    def test_cohort_code_is_shared_by_named_students_and_result_uses_portal_email(self):
+        staff = self.client_for(self.staff)
+        first = self.post(f"exams/staff/exams/{self.exam.pk}/eligibility/", {"full_name": "Ama Mensah"}, staff)
+        self.assertEqual(first.status_code, 201, first.content)
+        code = first.json()["candidate_code"]
+        second = self.post(f"exams/staff/exams/{self.exam.pk}/eligibility/", {"full_name": "Kofi Owusu"}, staff)
+        self.assertEqual(second.status_code, 201, second.content)
+        self.assertNotIn("candidate_code", second.json())
+
+        candidate = Client(enforce_csrf_checks=True)
+        csrf = candidate.get("/api/v1/auth/csrf/").json()["csrfToken"]
+        candidate.defaults["HTTP_X_CSRFTOKEN"] = csrf
+        access = self.post("exams/candidate/access/", {"full_name": "Ama Mensah", "email": "ama@example.com", "access_code": code}, candidate)
+        self.assertEqual(access.status_code, 200, access.content)
+        attempt = self.post(f"exams/{self.exam.pk}/start/", client=candidate).json()["id"]
+        record = ExamAttempt.objects.get(pk=attempt)
+        self.assertEqual((record.full_name, record.email), ("Ama Mensah", "ama@example.com"))
+        self.assertIsNone(record.student)
+
+        questions = candidate.get(f"/api/v1/exam-attempts/{attempt}/questions/").json()["questions"]
+        option = self.question.options.get(is_correct=True)
+        self.assertEqual(self.post(f"exam-attempts/{attempt}/answers/", {"question_id": questions[0]["id"], "option_id": str(option.id), "base_revision": 0}, candidate).status_code, 200)
+        with override_settings(EXAM_EMAIL_NOTIFICATIONS=True), patch("apps.examinations.services.send_institutional_email") as send, self.captureOnCommitCallbacks(execute=True):
+            self.assertEqual(self.post(f"exam-attempts/{attempt}/submit/", client=candidate).status_code, 200)
+        self.assertEqual(send.call_args.kwargs["recipient"], "ama@example.com")
+        self.assertEqual(send.call_args.kwargs["details"], [("Percentage", "100.00%")])
+
+    def test_cohort_candidates_require_first_and_last_name(self):
+        staff = self.client_for(self.staff)
+        self.assertEqual(self.post(f"exams/staff/exams/{self.exam.pk}/eligibility/", {"full_name": "Ama"}, staff).status_code, 400)
 
     def test_answers_can_only_be_reviewed_by_an_authorized_exam_manager(self):
         attempt = self.start()

@@ -23,18 +23,20 @@ def audit(event, *, user=None, exam=None, attempt=None, request=None, metadata=N
     return entry
 
 
-def notify(user, event, title):
-    """Reuse the platform's institutional delivery, never put scores in email."""
-    if not settings.EXAM_EMAIL_NOTIFICATIONS:
+def notify(email, recipient_name, event, title):
+    """Reuse the platform's institutional delivery for a candidate email address."""
+    if not settings.EXAM_EMAIL_NOTIFICATIONS or not email:
         return
+
     def deliver():
-        send_institutional_email(subject="IoD-Gh examination update", recipient=user.email, recipient_name=user.full_name or "Candidate", heading="Examination update", introduction=f"{title}: {event.replace('_', ' ').lower()}.", closing="Sign in securely to the Examination Portal for details.", action_label="Open Examination Portal", action_url=settings.EXAM_PORTAL_URL)
+        send_institutional_email(subject="IoD-Gh examination update", recipient=email, recipient_name=recipient_name or "Candidate", heading="Examination update", introduction=f"{title}: {event.replace('_', ' ').lower()}.", closing="Sign in securely to the Examination Portal for details.", action_label="Open Examination Portal", action_url=settings.EXAM_PORTAL_URL)
+
     transaction.on_commit(deliver, robust=True)
 
 
-def notify_submission_result(user, result):
+def notify_submission_result(attempt, result):
     """Deliver the percentage after submission without relying on browser state."""
-    if not settings.EXAM_EMAIL_NOTIFICATIONS or not user.email:
+    if not settings.EXAM_EMAIL_NOTIFICATIONS or not attempt.email:
         return
 
     title = result.attempt.exam_version.configuration["title"]
@@ -42,8 +44,8 @@ def notify_submission_result(user, result):
     def deliver():
         send_institutional_email(
             subject="IoD-Gh examination submitted",
-            recipient=user.email,
-            recipient_name=user.full_name or "Candidate",
+            recipient=attempt.email,
+            recipient_name=attempt.full_name or "Candidate",
             heading="Examination submitted successfully",
             introduction=f"Your submission for {title} has been recorded.",
             details=[("Percentage", f"{result.percentage}%")],
@@ -90,18 +92,47 @@ def issue_candidate_code(eligibility):
     raise RuntimeError("Could not issue a unique examination access code.")
 
 
-def candidate_access(full_name, access_code):
-    """Resolve a candidate code without revealing whether a name or code failed."""
+def issue_cohort_code(exam):
+    """Issue one shared code for every eligible candidate on an examination."""
+    for _ in range(20):
+        code = generate_candidate_code()
+        digest = candidate_code_hash(code)
+        if not Exam.objects.filter(cohort_code_hash=digest).exclude(pk=exam.pk).exists():
+            exam.cohort_code_hash = digest
+            exam.cohort_code_issued_at = timezone.now()
+            exam.save(update_fields=["cohort_code_hash", "cohort_code_issued_at"])
+            return code
+    raise RuntimeError("Could not issue a unique cohort code.")
+
+
+def candidate_access(full_name, email, access_code):
+    """Resolve the shared cohort code and a listed name without revealing the failed detail."""
     normalized_name = normalize_candidate_name(full_name)
     normalized_code = normalize_candidate_code(access_code)
     if not normalized_name or not normalized_code:
         return None
+    digest = candidate_code_hash(normalized_code)
     eligibility = ExamEligibility.objects.select_related("student", "exam", "exam__current_version").filter(
-        candidate_code_hash=candidate_code_hash(normalized_code),
+        exam__cohort_code_hash=digest,
+        candidate_name_normalized=normalized_name,
+        is_active=True,
+    ).first()
+    if eligibility and eligibility.exam.current_version_id:
+        # Before an attempt starts, the candidate can correct a typo in their
+        # own result-email address. The attempt snapshots that address at start.
+        if not eligibility.attempts.exists() and eligibility.candidate_email != email.lower():
+            eligibility.candidate_email = email.lower()
+            eligibility.save(update_fields=["candidate_email"])
+        return eligibility
+
+    # Existing individual codes continue to work for candidates who were set
+    # up before the cohort workflow was introduced.
+    eligibility = ExamEligibility.objects.select_related("student", "exam", "exam__current_version").filter(
+        candidate_code_hash=digest,
         is_active=True,
         student__is_active=True,
     ).first()
-    if not eligibility or not eligibility.exam.current_version_id or not constant_time_compare(normalize_candidate_name(eligibility.student.full_name), normalized_name):
+    if not eligibility or not eligibility.exam.current_version_id or not constant_time_compare(normalize_candidate_name(eligibility.full_name), normalized_name):
         return None
     return eligibility
 
@@ -185,29 +216,34 @@ def save_exam(data, user, request, exam_id=None):
     return exam
 
 
-def available(exam, user, now=None):
+def available(exam, eligibility, now=None):
     now = now or timezone.now()
     if not exam.is_active or not exam.current_version_id:
         return False
     config = exam.current_version.configuration
     return (parse_datetime(config["starts_at"]) <= now < parse_datetime(config["ends_at"])
-            and ExamEligibility.objects.filter(exam=exam, student=user, is_active=True).exists()
-            and ExamAttempt.objects.filter(exam=exam, student=user).count() < config["maximum_attempts"])
+            and eligibility.is_active and eligibility.exam_id == exam.pk
+            and ExamAttempt.objects.filter(exam=exam, eligibility=eligibility).count() < config["maximum_attempts"])
 
 
 @transaction.atomic
-def start_attempt(exam_id, user, request):
-    User.objects.select_for_update().get(pk=user.pk)
+def start_attempt(exam_id, eligibility, request):
+    if isinstance(eligibility, User):
+        eligibility = ExamEligibility.objects.select_for_update().select_related("student").filter(exam_id=exam_id, student=eligibility).first()
+    else:
+        eligibility = ExamEligibility.objects.select_for_update().select_related("student").filter(pk=eligibility.pk).first()
+    if not eligibility:
+        return None
     exam = Exam.objects.select_for_update(of=("self",)).select_related("current_version").filter(pk=exam_id).first()
     if not exam:
         return None
-    active = ExamAttempt.objects.select_for_update().filter(exam=exam, student=user, status="IN_PROGRESS").first()
+    active = ExamAttempt.objects.select_for_update().filter(exam=exam, eligibility=eligibility, status="IN_PROGRESS").first()
     now = timezone.now()
     if active:
         if active.expires_at > now:
             return active
         finalize(active, "EXPIRED", request=request)
-    if not available(exam, user, now):
+    if not available(exam, eligibility, now):
         return None
     config = exam.current_version.configuration
     questions = list(exam.current_version.questions.all())
@@ -221,9 +257,9 @@ def start_attempt(exam_id, user, request):
         if config["randomize_options"]:
             rng.shuffle(options)
         option_order[str(question.id)] = options
-    attempt = ExamAttempt.objects.create(student=user, exam=exam, exam_version=exam.current_version, attempt_number=ExamAttempt.objects.filter(exam=exam, student=user).count() + 1, started_at=now, expires_at=min(now + timedelta(minutes=config["duration_minutes"]), parse_datetime(config["ends_at"])), question_order=[str(q.id) for q in questions], option_order=option_order)
-    audit("EXAM_STARTED", user=user, attempt=attempt, request=request)
-    notify(user, "EXAM_STARTED", config["title"])
+    attempt = ExamAttempt.objects.create(student=eligibility.student, eligibility=eligibility, candidate_name=eligibility.full_name, candidate_email=eligibility.email, exam=exam, exam_version=exam.current_version, attempt_number=ExamAttempt.objects.filter(exam=exam, eligibility=eligibility).count() + 1, started_at=now, expires_at=min(now + timedelta(minutes=config["duration_minutes"]), parse_datetime(config["ends_at"])), question_order=[str(q.id) for q in questions], option_order=option_order)
+    audit("EXAM_STARTED", user=eligibility.student, attempt=attempt, request=request)
+    notify(attempt.email, attempt.full_name, "EXAM_STARTED", config["title"])
     return attempt
 
 
@@ -235,7 +271,7 @@ def release_result(result, *, user=None, request=None, notify_candidate=True):
     audit("RESULT_RELEASED", user=user, attempt=result.attempt, request=request)
     audit("EXAM_PASSED" if result.passed else "EXAM_FAILED", attempt=result.attempt)
     if notify_candidate:
-        notify(result.attempt.student, "EXAM_RESULT_RELEASED", result.attempt.exam_version.configuration["title"])
+        notify(result.attempt.email, result.attempt.full_name, "EXAM_RESULT_RELEASED", result.attempt.exam_version.configuration["title"])
 
 
 def finalize(attempt, status, *, request=None):
@@ -257,7 +293,7 @@ def finalize(attempt, status, *, request=None):
     attempt.save(update_fields=["status", "submitted_at"])
     audit("EXAM_AUTO_EXPIRED" if status == "EXPIRED" else "EXAM_SUBMITTED", user=attempt.student, attempt=attempt, request=request)
     if status == "SUBMITTED":
-        notify_submission_result(attempt.student, result)
+        notify_submission_result(attempt, result)
     if config["result_release"] == "IMMEDIATE" or (config["result_release"] == "SCHEDULED" and parse_datetime(config["release_at"]) <= timezone.now()):
         release_result(result, request=request, notify_candidate=status != "SUBMITTED")
 

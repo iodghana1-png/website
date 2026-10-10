@@ -41,6 +41,10 @@ class Exam(models.Model):
     title = models.CharField(max_length=255)
     is_active = models.BooleanField(default=False)
     current_version = models.ForeignKey("ExamVersion", null=True, blank=True, on_delete=models.PROTECT, related_name="current_for")
+    # One code is shared by the eligible students in this examination cohort.
+    # Only its HMAC is stored, so a database export cannot be used to enter an exam.
+    cohort_code_hash = models.CharField(max_length=64, blank=True, default="", db_index=True)
+    cohort_code_issued_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
 
@@ -72,7 +76,12 @@ class ExamQuestion(models.Model):
 
 class ExamEligibility(models.Model):
     exam = models.ForeignKey(Exam, on_delete=models.PROTECT, related_name="eligibilities")
-    student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    # Legacy account link retained for historical candidate records. New cohort
+    # candidates do not need an IoD-Gh website account.
+    student = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.PROTECT)
+    candidate_name = models.CharField(max_length=300, blank=True, default="")
+    candidate_name_normalized = models.CharField(max_length=300, blank=True, default="", db_index=True)
+    candidate_email = models.EmailField(blank=True, default="")
     is_active = models.BooleanField(default=True)
     # The value shared with a candidate is never stored.  A unique HMAC makes
     # a leaked database export insufficient to use a candidate's code.
@@ -82,7 +91,23 @@ class ExamEligibility(models.Model):
     assigned_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        constraints = [models.UniqueConstraint(fields=["exam", "student"], name="exam_student_eligibility")]
+        constraints = [
+            models.UniqueConstraint(fields=["exam", "student"], name="exam_student_eligibility"),
+            models.UniqueConstraint(fields=["exam", "candidate_name_normalized"], condition=~Q(candidate_name_normalized=""), name="exam_cohort_candidate_name"),
+        ]
+
+    @property
+    def full_name(self):
+        return self.candidate_name or (self.student.full_name if self.student_id else "")
+
+    @property
+    def email(self):
+        return self.candidate_email or (self.student.email if self.student_id else "")
+
+    @property
+    def is_authenticated(self):
+        """Lets the scoped candidate session act as the DRF request user."""
+        return True
 
 
 class ExamCandidateSession(models.Model):
@@ -107,7 +132,12 @@ class ExamAttempt(models.Model):
         CANCELLED = "CANCELLED"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    # Historical attempts remain linked to a website account. Cohort attempts
+    # use their eligibility record and immutable candidate name/email snapshot.
+    student = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.PROTECT)
+    eligibility = models.ForeignKey(ExamEligibility, null=True, blank=True, on_delete=models.PROTECT, related_name="attempts")
+    candidate_name = models.CharField(max_length=300, blank=True, default="")
+    candidate_email = models.EmailField(blank=True, default="")
     exam = models.ForeignKey(Exam, on_delete=models.PROTECT, related_name="attempts")
     exam_version = models.ForeignKey(ExamVersion, on_delete=models.PROTECT)
     attempt_number = models.PositiveIntegerField()
@@ -122,9 +152,19 @@ class ExamAttempt(models.Model):
         constraints = [
             models.UniqueConstraint(fields=["student", "exam"], condition=Q(status="IN_PROGRESS"), name="exam_one_active_attempt"),
             models.UniqueConstraint(fields=["student", "exam", "attempt_number"], name="exam_attempt_number"),
+            models.UniqueConstraint(fields=["eligibility", "exam"], condition=Q(status="IN_PROGRESS") & Q(eligibility__isnull=False), name="exam_cohort_one_active_attempt"),
+            models.UniqueConstraint(fields=["eligibility", "exam", "attempt_number"], condition=Q(eligibility__isnull=False), name="exam_cohort_attempt_number"),
             models.CheckConstraint(condition=Q(attempt_number__gte=1), name="exam_attempt_positive"),
             models.CheckConstraint(condition=Q(expires_at__gt=models.F("started_at")), name="exam_attempt_time_window"),
         ]
+
+    @property
+    def full_name(self):
+        return self.candidate_name or (self.student.full_name if self.student_id else "")
+
+    @property
+    def email(self):
+        return self.candidate_email or (self.student.email if self.student_id else "")
 
 
 class ExamAnswer(models.Model):
