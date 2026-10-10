@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_protect
-from rest_framework.exceptions import APIException, ValidationError
+from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, BasePermission, IsAuthenticated
 from rest_framework.response import Response
@@ -57,15 +57,6 @@ class PrivateView(APIView):
 class StaffView(PrivateView):
     permission_classes = [ExamManager]
     throttle_scope = "exam_admin"
-
-
-class EligibilityDeletionBlocked(APIException):
-    status_code = 409
-    default_code = "eligibility_has_attempt"
-    default_detail = (
-        "This student has an examination attempt, so their record cannot be "
-        "deleted. Revoke access instead to retain the examination history."
-    )
 
 
 class CandidateAccessPermission(BasePermission):
@@ -401,7 +392,7 @@ class StaffEligibility(StaffView):
 
 
 class StaffEligibilityDetail(StaffView):
-    """Remove an unused candidate entry without deleting any exam history."""
+    """Remove a candidate's cohort access without deleting exam history."""
 
     @transaction.atomic
     def delete(self, request, exam_id, eligibility_id):
@@ -413,14 +404,18 @@ class StaffEligibilityDetail(StaffView):
         )
         candidate_name = grant.full_name
 
-        # Scores and answer records are official examination history. Once a
-        # candidate has started, the CMS may revoke access but never removes
-        # their eligibility record out from underneath those records.
-        if ExamAttempt.objects.select_for_update().filter(eligibility=grant).exists():
-            raise EligibilityDeletionBlocked()
+        # Scores, answers, and audit records belong to the attempt—not the
+        # cohort entry. Detaching the optional eligibility FK lets a manager
+        # remove a student at any time while retaining that official history.
+        attempts = list(
+            ExamAttempt.objects.select_for_update().filter(eligibility=grant)
+        )
+        for attempt in attempts:
+            attempt.eligibility = None
+            attempt.save(update_fields=["eligibility"])
 
-        # A candidate can have signed in but not started. Those short-lived
-        # portal sessions are safe to invalidate before removing the entry.
+        # Invalidate an open browser session so a deleted student cannot
+        # continue or resume an active attempt after removal.
         ExamCandidateSession.objects.filter(eligibility=grant).delete()
         grant.delete()
         audit(
@@ -428,7 +423,7 @@ class StaffEligibilityDetail(StaffView):
             user=request.user,
             exam=exam,
             request=request,
-            metadata={"candidate": candidate_name},
+            metadata={"candidate": candidate_name, "preserved_attempts": len(attempts)},
         )
         return Response(status=204)
 

@@ -546,9 +546,9 @@ export function ExaminationsAdmin() {
                 <section className="mt-6 border-t border-[var(--color-line)] pt-5">
                   <h3 className="font-semibold">Assigned candidates</h3>
                   <p className="mt-1 text-sm text-[var(--color-slate)]">
-                    Revoke a student to stop future starts, or delete a student
-                    who has not started an attempt. A supplied result email
-                    appears here after the student enters the portal.
+                    Revoke a student to stop future starts, or delete them from
+                    this cohort at any time. Their completed or in-progress
+                    examination records remain available to administrators.
                   </p>
                   {assignments.length ? (
                     <div className="mt-3 divide-y rounded border border-[var(--color-line)] bg-white px-4">
@@ -1430,8 +1430,9 @@ export function ExaminationsAdmin() {
               them out of the portal. It does not delete their website account.
             </p>
             <p className="mt-2 text-sm text-[var(--color-slate)]">
-              Students with an examination attempt cannot be deleted so that
-              their results and audit history remain safe.
+              If they have started an exam, their answers, result and audit
+              history stay safely recorded, but they will not be able to
+              continue or sign in again.
             </p>
             <div className="mt-6 flex flex-wrap justify-end gap-3">
               <button

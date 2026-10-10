@@ -343,7 +343,7 @@ class ExaminationSecurityTests(ExamFixtures, TestCase):
         staff = self.client_for(self.staff)
         self.assertEqual(self.post(f"exams/staff/exams/{self.exam.pk}/eligibility/", {"full_name": "Ama"}, staff).status_code, 400)
 
-    def test_staff_can_delete_unstarted_cohort_candidate_but_not_attempt_history(self):
+    def test_staff_can_delete_cohort_candidate_and_preserve_attempt_history(self):
         staff = self.client_for(self.staff)
         created = self.post(
             f"exams/staff/exams/{self.exam.pk}/eligibility/",
@@ -395,12 +395,16 @@ class ExaminationSecurityTests(ExamFixtures, TestCase):
             exam=self.exam,
             candidate_name_normalized="kofi owusu",
         )
-        blocked = self.delete(
+        deleted = self.delete(
             f"exams/staff/exams/{self.exam.pk}/eligibility/{grant.pk}/",
             staff,
         )
-        self.assertEqual(blocked.status_code, 409)
-        self.assertTrue(ExamEligibility.objects.filter(pk=grant.pk).exists())
+        self.assertEqual(deleted.status_code, 204)
+        self.assertFalse(ExamEligibility.objects.filter(pk=grant.pk).exists())
+        attempt = ExamAttempt.objects.get(exam=self.exam, candidate_name="Kofi Owusu")
+        self.assertIsNone(attempt.eligibility_id)
+        self.assertEqual(attempt.email, "kofi@example.com")
+        self.assertEqual(candidate.get("/api/v1/exams/available/").status_code, 403)
 
     def test_answers_can_only_be_reviewed_by_an_authorized_exam_manager(self):
         attempt = self.start()
