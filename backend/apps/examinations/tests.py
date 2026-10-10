@@ -343,6 +343,65 @@ class ExaminationSecurityTests(ExamFixtures, TestCase):
         staff = self.client_for(self.staff)
         self.assertEqual(self.post(f"exams/staff/exams/{self.exam.pk}/eligibility/", {"full_name": "Ama"}, staff).status_code, 400)
 
+    def test_staff_can_delete_unstarted_cohort_candidate_but_not_attempt_history(self):
+        staff = self.client_for(self.staff)
+        created = self.post(
+            f"exams/staff/exams/{self.exam.pk}/eligibility/",
+            {"full_name": "Ama Mensah"},
+            staff,
+        )
+        self.assertEqual(created.status_code, 201, created.content)
+        grant = ExamEligibility.objects.get(
+            exam=self.exam,
+            candidate_name_normalized="ama mensah",
+        )
+        self.assertEqual(
+            self.delete(
+                f"exams/staff/exams/{self.exam.pk}/eligibility/{grant.pk}/",
+                staff,
+            ).status_code,
+            204,
+        )
+        self.assertFalse(ExamEligibility.objects.filter(pk=grant.pk).exists())
+
+        created = self.post(
+            f"exams/staff/exams/{self.exam.pk}/eligibility/",
+            {"full_name": "Kofi Owusu"},
+            staff,
+        )
+        self.assertEqual(created.status_code, 201, created.content)
+        replacement_code = self.post(
+            f"exams/staff/exams/{self.exam.pk}/eligibility/",
+            {"issue_new_code": True},
+            staff,
+        ).json()["candidate_code"]
+        candidate = Client(enforce_csrf_checks=True)
+        csrf = candidate.get("/api/v1/auth/csrf/").json()["csrfToken"]
+        candidate.defaults["HTTP_X_CSRFTOKEN"] = csrf
+        self.assertEqual(
+            self.post(
+                "exams/candidate/access/",
+                {
+                    "full_name": "Kofi Owusu",
+                    "email": "kofi@example.com",
+                    "access_code": replacement_code,
+                },
+                candidate,
+            ).status_code,
+            200,
+        )
+        self.assertEqual(self.post(f"exams/{self.exam.pk}/start/", client=candidate).status_code, 200)
+        grant = ExamEligibility.objects.get(
+            exam=self.exam,
+            candidate_name_normalized="kofi owusu",
+        )
+        blocked = self.delete(
+            f"exams/staff/exams/{self.exam.pk}/eligibility/{grant.pk}/",
+            staff,
+        )
+        self.assertEqual(blocked.status_code, 409)
+        self.assertTrue(ExamEligibility.objects.filter(pk=grant.pk).exists())
+
     def test_answers_can_only_be_reviewed_by_an_authorized_exam_manager(self):
         attempt = self.start()
         self.save(attempt)

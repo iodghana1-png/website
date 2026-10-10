@@ -60,6 +60,7 @@ type AttemptRow = {
   passed?: boolean;
 };
 type Assignment = {
+  id: string;
   identifier: string;
   name: string;
   email: string;
@@ -142,6 +143,8 @@ export function ExaminationsAdmin() {
   const [candidateName, setCandidateName] = useState("");
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [candidateCode, setCandidateCode] = useState("");
+  const [candidatePendingDeletion, setCandidatePendingDeletion] =
+    useState<Assignment | null>(null);
   const [assignmentPage, setAssignmentPage] = useState(1);
   const [moreAssignments, setMoreAssignments] = useState(false);
   const [attempts, setAttempts] = useState<AttemptRow[]>([]);
@@ -336,6 +339,25 @@ export function ExaminationsAdmin() {
       setBusy(false);
     }
   }
+  async function deleteCandidate(entry: Assignment) {
+    if (!selectedExam) return;
+    setBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      await apiRequest(
+        `/exams/staff/exams/${selectedExam}/eligibility/${entry.id}/`,
+        { method: "DELETE" },
+      );
+      setCandidatePendingDeletion(null);
+      await loadAssignments(selectedExam);
+      setNotice(`${entry.name} was removed from this examination cohort.`);
+    } catch (reason) {
+      fail(reason);
+    } finally {
+      setBusy(false);
+    }
+  }
   async function exportResults() {
     setBusy(true);
     try {
@@ -524,8 +546,9 @@ export function ExaminationsAdmin() {
                 <section className="mt-6 border-t border-[var(--color-line)] pt-5">
                   <h3 className="font-semibold">Assigned candidates</h3>
                   <p className="mt-1 text-sm text-[var(--color-slate)]">
-                    Revoke a student to stop future starts. A supplied result
-                    email appears here after the student enters the portal.
+                    Revoke a student to stop future starts, or delete a student
+                    who has not started an attempt. A supplied result email
+                    appears here after the student enters the portal.
                   </p>
                   {assignments.length ? (
                     <div className="mt-3 divide-y rounded border border-[var(--color-line)] bg-white px-4">
@@ -559,6 +582,17 @@ export function ExaminationsAdmin() {
                               }
                             >
                               {entry.is_active ? "Revoke" : "Restore"}
+                            </button>
+                            <button
+                              type="button"
+                              className={
+                                buttonClass +
+                                " border-red-300 text-red-700 hover:bg-red-50"
+                              }
+                              disabled={busy}
+                              onClick={() => setCandidatePendingDeletion(entry)}
+                            >
+                              Delete
                             </button>
                           </div>
                         </article>
@@ -1379,6 +1413,48 @@ export function ExaminationsAdmin() {
             ))}
           </ol>
         </Panel>
+      )}
+      {candidatePendingDeletion && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-candidate-title"
+        >
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+            <h2 id="delete-candidate-title" className="text-xl font-semibold">
+              Delete {candidatePendingDeletion.name}?
+            </h2>
+            <p className="mt-3 text-sm text-[var(--color-slate)]">
+              This removes this student from the examination cohort and signs
+              them out of the portal. It does not delete their website account.
+            </p>
+            <p className="mt-2 text-sm text-[var(--color-slate)]">
+              Students with an examination attempt cannot be deleted so that
+              their results and audit history remain safe.
+            </p>
+            <div className="mt-6 flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                className={buttonClass}
+                disabled={busy}
+                onClick={() => setCandidatePendingDeletion(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className={
+                  primaryClass + " !bg-red-700 hover:!bg-red-800 focus:!ring-red-500"
+                }
+                disabled={busy}
+                onClick={() => void deleteCandidate(candidatePendingDeletion)}
+              >
+                {busy ? "Deleting…" : "Delete student"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

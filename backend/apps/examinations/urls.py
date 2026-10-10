@@ -15,6 +15,7 @@ urlpatterns = [
     path("exams/staff/exams/", views.StaffExams.as_view()),
     path("exams/staff/exams/<uuid:exam_id>/", views.StaffExamDetail.as_view()),
     path("exams/staff/exams/<uuid:exam_id>/eligibility/", views.StaffEligibility.as_view()),
+    path("exams/staff/exams/<uuid:exam_id>/eligibility/<int:eligibility_id>/", views.StaffEligibilityDetail.as_view()),
     path("exams/staff/questions/", views.StaffQuestions.as_view()),
     path("exams/staff/questions/<uuid:question_id>/", views.StaffQuestionDetail.as_view()),
     path("exams/staff/attempts/", views.StaffAttempts.as_view()),
