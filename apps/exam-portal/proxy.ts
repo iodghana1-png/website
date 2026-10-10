@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export function proxy(request: NextRequest) {
+  // The examination portal has no CMS routes. Send accidental admin visits to
+  // the main IoD-Gh application, while retaining the exact CMS destination.
+  if (request.nextUrl.pathname === "/admin" || request.nextUrl.pathname.startsWith("/admin/")) {
+    const mainSite = new URL(process.env.NEXT_PUBLIC_MAIN_SITE_URL || "https://iodghana.org");
+    return NextResponse.redirect(new URL(`${request.nextUrl.pathname}${request.nextUrl.search}`, mainSite), 307);
+  }
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
   const dev = process.env.NODE_ENV === "development";
   const apiOrigin = new URL(process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8010").origin;
