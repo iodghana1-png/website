@@ -229,9 +229,12 @@ def available(exam, eligibility, now=None):
 @transaction.atomic
 def start_attempt(exam_id, eligibility, request):
     if isinstance(eligibility, User):
-        eligibility = ExamEligibility.objects.select_for_update().select_related("student").filter(exam_id=exam_id, student=eligibility).first()
+        eligibility = ExamEligibility.objects.select_for_update(of=("self",)).select_related("student").filter(exam_id=exam_id, student=eligibility).first()
     else:
-        eligibility = ExamEligibility.objects.select_for_update().select_related("student").filter(pk=eligibility.pk).first()
+        # Cohort candidates have no linked website User. Lock only the
+        # eligibility row so PostgreSQL does not try to lock the nullable side
+        # of the optional student join.
+        eligibility = ExamEligibility.objects.select_for_update(of=("self",)).select_related("student").filter(pk=eligibility.pk).first()
     if not eligibility:
         return None
     exam = Exam.objects.select_for_update(of=("self",)).select_related("current_version").filter(pk=exam_id).first()
