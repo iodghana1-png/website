@@ -1,23 +1,27 @@
 import csv
 import io
 
+from django.conf import settings
 from django.db import transaction
 from django.db.models import OuterRef, Subquery
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_protect
 from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import BasePermission, IsAuthenticated
+from rest_framework.permissions import AllowAny, BasePermission, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.models import User
 from apps.common.throttling import ScopedRateThrottle
 from apps.membership.models import MemberProfile
-from .models import Exam, Question, ExamAttempt, ExamAnswer, ExamEligibility, ExamResult, ExamAuditLog
-from .serializers import ExamInput, QuestionInput, AnswerInput, AssignmentInput, QuestionViewedInput, AttemptFilters, ExportFilters
-from .services import audit, available, start_attempt, save_question, retire_question, save_exam, public_attempt, public_questions, synchronize, finalize, release_result, notify
+from .authentication import CANDIDATE_SESSION_COOKIE, CandidateExamAuthentication
+from .models import Exam, Question, ExamAttempt, ExamAnswer, ExamEligibility, ExamCandidateSession, ExamResult, ExamAuditLog
+from .serializers import ExamInput, QuestionInput, AnswerInput, AssignmentInput, CandidateAccessInput, QuestionViewedInput, AttemptFilters, ExportFilters
+from .services import audit, available, candidate_access, issue_candidate_code, open_candidate_session, start_attempt, save_question, retire_question, save_exam, public_attempt, public_questions, synchronize, finalize, release_result, notify
 
 
 class VerifiedAccount(IsAuthenticated):
@@ -32,6 +36,8 @@ class ExamManager(BasePermission):
 
 class ExamThrottle(ScopedRateThrottle):
     def get_identity(self, request):
+        if isinstance(getattr(request, "auth", None), ExamCandidateSession):
+            return f"exam-session:{request.auth.pk}"
         return f"exam-user:{request.user.pk}"
 
 
@@ -53,6 +59,27 @@ class StaffView(PrivateView):
     throttle_scope = "exam_admin"
 
 
+class CandidateAccessPermission(BasePermission):
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated and isinstance(request.auth, ExamCandidateSession))
+
+
+class CandidateView(APIView):
+    """Candidate APIs accept only the scoped examination cookie."""
+
+    authentication_classes = [CandidateExamAuthentication]
+    permission_classes = [CandidateAccessPermission]
+    throttle_classes = [ExamThrottle]
+    throttle_scope = "exam_read"
+
+    def finalize_response(self, request, response, *args, **kwargs):
+        response = super().finalize_response(request, response, *args, **kwargs)
+        response["Cache-Control"] = "no-store, private"
+        response["Vary"] = "Cookie, Origin"
+        response["X-Content-Type-Options"] = "nosniff"
+        return response
+
+
 def validated(serializer_class, request):
     serializer = serializer_class(data=request.data)
     serializer.is_valid(raise_exception=True)
@@ -66,24 +93,70 @@ def page_response(request, queryset, renderer):
     return paginator.get_paginated_response([renderer(item) for item in page])
 
 
-class AvailableExams(PrivateView):
+class CandidateAccess(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "exam_access"
+
+    def finalize_response(self, request, response, *args, **kwargs):
+        response = super().finalize_response(request, response, *args, **kwargs)
+        response["Cache-Control"] = "no-store, private"
+        response["Vary"] = "Cookie, Origin"
+        response["X-Content-Type-Options"] = "nosniff"
+        return response
+
+    @method_decorator(csrf_protect)
+    def post(self, request):
+        data = validated(CandidateAccessInput, request)
+        eligibility = candidate_access(data["full_name"], data["access_code"])
+        token, session = open_candidate_session(eligibility) if eligibility else (None, None)
+        if not session:
+            return Response({"detail": "We could not verify those access details. Check your full name and examination code, then try again."}, status=403)
+        response = Response({"candidate_name": eligibility.student.full_name, "exam_title": eligibility.exam.current_version.configuration["title"]})
+        response.set_cookie(
+            CANDIDATE_SESSION_COOKIE,
+            token,
+            max_age=max(1, int((session.expires_at - timezone.now()).total_seconds())),
+            httponly=True,
+            secure=not settings.DEBUG,
+            samesite="Lax",
+            path="/api/v1/",
+        )
+        audit("CANDIDATE_ACCESS_GRANTED", user=eligibility.student, exam=eligibility.exam, request=request, metadata={"candidate_session": str(session.pk)})
+        return response
+
+
+class CandidateSignOut(CandidateView):
+    throttle_scope = "exam_write"
+
+    def post(self, request):
+        response = Response(status=204)
+        response.delete_cookie(CANDIDATE_SESSION_COOKIE, path="/api/v1/", samesite="Lax")
+        return response
+
+
+class AvailableExams(CandidateView):
     def get(self, request):
-        exams = Exam.objects.filter(eligibilities__student=request.user, eligibilities__is_active=True).select_related("current_version").order_by("title")
-        # Include resumable attempts and past results even if a later version is
-        # inactive or eligibility has since been revoked. Ownership still applies.
-        attempts = ExamAttempt.objects.filter(student=request.user).select_related("exam_version", "exam").order_by("-started_at")
+        eligibility = request.auth.eligibility
+        exam = eligibility.exam
+        # A candidate cookie is constrained to this one eligible exam. Existing
+        # attempts remain resumable if a later staff action revokes eligibility,
+        # but no new attempt can start after revocation.
+        attempts = ExamAttempt.objects.filter(student=request.user, exam=exam).select_related("exam_version", "exam").order_by("-started_at")
         data = []
-        for exam in exams:
-            if available(exam, request.user):
-                config = exam.current_version.configuration
-                data.append({"id": str(exam.id), "title": config["title"], "instructions": config["instructions"], "duration_minutes": config["duration_minutes"], "question_count": config["question_count"]})
-        return Response({"exams": data, "attempts": [public_attempt(attempt) for attempt in attempts[:100]]})
+        if available(exam, request.user):
+            config = exam.current_version.configuration
+            data.append({"id": str(exam.id), "title": config["title"], "instructions": config["instructions"], "duration_minutes": config["duration_minutes"], "question_count": config["question_count"]})
+        return Response({"candidate_name": request.user.full_name, "exams": data, "attempts": [public_attempt(attempt) for attempt in attempts[:100]]})
 
 
-class StartExam(PrivateView):
+class StartExam(CandidateView):
     throttle_scope = "exam_start"
 
     def post(self, request, exam_id):
+        if str(request.auth.eligibility.exam_id) != str(exam_id):
+            return Response({"detail": "This examination is not assigned to this access code."}, status=404)
         attempt = start_attempt(exam_id, request.user, request)
         if not attempt:
             return Response({"detail": "This examination is currently unavailable to your account."}, status=403)
@@ -91,10 +164,10 @@ class StartExam(PrivateView):
 
 
 def owned_attempt(request, pk):
-    return get_object_or_404(ExamAttempt.objects.select_for_update(of=("self",)).select_related("exam_version", "exam", "student"), pk=pk, student=request.user)
+    return get_object_or_404(ExamAttempt.objects.select_for_update(of=("self",)).select_related("exam_version", "exam", "student"), pk=pk, student=request.user, exam_id=request.auth.eligibility.exam_id)
 
 
-class AttemptDetail(PrivateView):
+class AttemptDetail(CandidateView):
     @transaction.atomic
     def get(self, request, attempt_id):
         attempt = owned_attempt(request, attempt_id)
@@ -102,7 +175,7 @@ class AttemptDetail(PrivateView):
         return Response(public_attempt(attempt))
 
 
-class AttemptQuestions(PrivateView):
+class AttemptQuestions(CandidateView):
     @transaction.atomic
     def get(self, request, attempt_id):
         attempt = owned_attempt(request, attempt_id)
@@ -112,7 +185,7 @@ class AttemptQuestions(PrivateView):
         return Response({"attempt": public_attempt(attempt), "questions": public_questions(attempt)})
 
 
-class SaveAnswer(PrivateView):
+class SaveAnswer(CandidateView):
     throttle_scope = "exam_write"
 
     @transaction.atomic
@@ -141,7 +214,7 @@ class SaveAnswer(PrivateView):
         return Response({"saved": True, "revision": answer.revision, "server_time": timezone.now()})
 
 
-class QuestionViewed(PrivateView):
+class QuestionViewed(CandidateView):
     throttle_scope = "exam_write"
 
     @transaction.atomic
@@ -155,7 +228,7 @@ class QuestionViewed(PrivateView):
         return Response(status=204)
 
 
-class SubmitAttempt(PrivateView):
+class SubmitAttempt(CandidateView):
     throttle_scope = "exam_write"
 
     @transaction.atomic
@@ -183,7 +256,7 @@ def result_data(attempt, staff=False):
     return data
 
 
-class AttemptResult(PrivateView):
+class AttemptResult(CandidateView):
     @transaction.atomic
     def get(self, request, attempt_id):
         attempt = owned_attempt(request, attempt_id)
@@ -247,7 +320,7 @@ class StaffExamDetail(StaffView):
 class StaffEligibility(StaffView):
     def get(self, request, exam_id):
         exam = get_object_or_404(Exam, pk=exam_id)
-        return page_response(request, ExamEligibility.objects.filter(exam=exam).select_related("student").order_by("student__email"), lambda grant: {"identifier": grant.student.email, "name": grant.student.full_name, "is_active": grant.is_active})
+        return page_response(request, ExamEligibility.objects.filter(exam=exam).select_related("student").order_by("student__email"), lambda grant: {"identifier": grant.student.email, "name": grant.student.full_name, "is_active": grant.is_active, "has_candidate_code": bool(grant.candidate_code_hash), "candidate_code_issued_at": grant.candidate_code_issued_at})
 
     @transaction.atomic
     def post(self, request, exam_id):
@@ -259,11 +332,24 @@ class StaffEligibility(StaffView):
             user = member.user if member else None
         if not user or not user.is_active:
             raise ValidationError("No active IoD account matches that email or membership number.")
-        grant, created = ExamEligibility.objects.update_or_create(exam=exam, student=user, defaults={"assigned_by": request.user, "is_active": data["is_active"]})
+        grant = ExamEligibility.objects.select_for_update().filter(exam=exam, student=user).first()
+        created = grant is None
+        was_active = bool(grant and grant.is_active)
+        if grant:
+            grant.assigned_by, grant.is_active = request.user, data["is_active"]
+            grant.save(update_fields=["assigned_by", "is_active", "assigned_at"])
+        else:
+            grant = ExamEligibility.objects.create(exam=exam, student=user, assigned_by=request.user, is_active=data["is_active"])
+        code = None
+        if grant.is_active and (created or not was_active or data["issue_new_code"] or not grant.candidate_code_hash):
+            code = issue_candidate_code(grant)
         audit("ELIGIBILITY_ASSIGNED" if grant.is_active else "ELIGIBILITY_REVOKED", user=request.user, exam=exam, request=request, metadata={"student": str(user.pk)})
         if grant.is_active:
             notify(user, "EXAM_AVAILABLE", exam.title)
-        return Response({"identifier": user.email, "is_active": grant.is_active}, status=201 if created else 200)
+        response = {"identifier": user.email, "name": user.full_name, "is_active": grant.is_active, "has_candidate_code": bool(grant.candidate_code_hash), "candidate_code_issued_at": grant.candidate_code_issued_at}
+        if code:
+            response["candidate_code"] = code
+        return Response(response, status=201 if created else 200)
 
 
 class StaffAttempts(StaffView):

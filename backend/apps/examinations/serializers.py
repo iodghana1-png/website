@@ -66,6 +66,12 @@ class AnswerInput(serializers.Serializer):
 class AssignmentInput(serializers.Serializer):
     identifier = serializers.CharField(max_length=255)
     is_active = serializers.BooleanField(default=True)
+    issue_new_code = serializers.BooleanField(default=False)
+
+
+class CandidateAccessInput(serializers.Serializer):
+    full_name = serializers.CharField(max_length=300)
+    access_code = serializers.CharField(max_length=100)
 
 
 class QuestionViewedInput(serializers.Serializer):

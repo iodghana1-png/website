@@ -9,19 +9,20 @@ from unittest.mock import patch
 from django.contrib.auth.models import Group
 from django.core.management import call_command
 from django.db import close_old_connections, connection, transaction
-from django.test import Client, TestCase, TransactionTestCase
+from django.test import Client, TestCase, TransactionTestCase, override_settings
 from django.utils import timezone
 
 from apps.accounts.models import User
 from apps.common.models import RateLimitBucket
+from .authentication import CANDIDATE_SESSION_COOKIE
 from .models import ExamAttempt, ExamAnswer, ExamEligibility, ExamResult, ExamAuditLog, Question
-from .services import save_question, save_exam, start_attempt
+from .services import issue_candidate_code, open_candidate_session, save_question, save_exam, start_attempt
 
 
 class ExamFixtures:
     def setUp(self):
-        self.student = User.objects.create_user("candidate@example.com", "Secure-test-password-47!", email_verified_at=timezone.now())
-        self.other = User.objects.create_user("other@example.com", "Secure-test-password-47!", email_verified_at=timezone.now())
+        self.student = User.objects.create_user("candidate@example.com", "Secure-test-password-47!", first_name="Test", last_name="Candidate", email_verified_at=timezone.now())
+        self.other = User.objects.create_user("other@example.com", "Secure-test-password-47!", first_name="Other", last_name="Candidate", email_verified_at=timezone.now())
         self.staff = User.objects.create_superuser("exam-admin@example.com", "Secure-test-password-47!")
         self.question_data = {"text": "Which body provides governance oversight?", "marks": Decimal("2"), "options": [{"text": "Board", "is_correct": True}, {"text": "Visitors", "is_correct": False}]}
         self.question = save_question({**self.question_data}, self.staff, None)
@@ -32,8 +33,18 @@ class ExamFixtures:
 
     def client_for(self, user):
         client = Client(enforce_csrf_checks=True)
-        if user:
+        if user and (user.is_staff or user.is_superuser):
             client.force_login(user)
+        elif user:
+            # Candidate endpoints intentionally reject member/CMS sessions.
+            # This helper installs an exam-only cookie, including an inactive
+            # assignment where a test needs an authenticated-but-ineligible
+            # candidate.
+            eligibility = ExamEligibility.objects.filter(exam=self.exam, student=user).first()
+            if not eligibility:
+                eligibility = ExamEligibility.objects.create(exam=self.exam, student=user, assigned_by=self.staff, is_active=False)
+            token, _ = open_candidate_session(eligibility)
+            client.cookies[CANDIDATE_SESSION_COOKIE] = token
         token = client.get("/api/v1/auth/csrf/").json()["csrfToken"]
         client.defaults["HTTP_X_CSRFTOKEN"] = token
         return client
@@ -86,10 +97,33 @@ class ExaminationSecurityTests(ExamFixtures, TestCase):
             response = self.post("auth/login/", {"identifier": self.student.email, "password": "wrong"}, client)
             self.assertEqual(response.status_code, 403 if index < 20 else 429)
 
-    def test_unverified_account_is_not_eligible(self):
+    def test_admin_assigned_candidate_does_not_need_a_member_password_or_verified_login(self):
         self.student.email_verified_at = None
         self.student.save()
-        self.assertEqual(self.post(f"exams/{self.exam.pk}/start/").status_code, 403)
+        self.assertEqual(self.post(f"exams/{self.exam.pk}/start/").status_code, 200)
+
+    def test_candidate_access_requires_matching_name_and_code_then_restores_attempts(self):
+        grant = ExamEligibility.objects.get(exam=self.exam, student=self.student)
+        code = issue_candidate_code(grant)
+        client = Client(enforce_csrf_checks=True)
+        csrf = client.get("/api/v1/auth/csrf/").json()["csrfToken"]
+        client.defaults["HTTP_X_CSRFTOKEN"] = csrf
+        wrong = self.post("exams/candidate/access/", {"full_name": "Test Candidate", "access_code": "WRONG-CODE"}, client)
+        self.assertEqual(wrong.status_code, 403)
+        response = self.post("exams/candidate/access/", {"full_name": "  test   candidate ", "access_code": code.lower()}, client)
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertIn(CANDIDATE_SESSION_COOKIE, response.cookies)
+        attempt = self.post(f"exams/{self.exam.pk}/start/", client=client).json()["id"]
+        returning = Client(enforce_csrf_checks=True)
+        csrf = returning.get("/api/v1/auth/csrf/").json()["csrfToken"]
+        returning.defaults["HTTP_X_CSRFTOKEN"] = csrf
+        self.assertEqual(self.post("exams/candidate/access/", {"full_name": "Test Candidate", "access_code": code}, returning).status_code, 200)
+        available = returning.get("/api/v1/exams/available/").json()
+        self.assertEqual([item["id"] for item in available["attempts"]], [attempt])
+
+    def test_candidate_code_cannot_access_a_different_exam(self):
+        second = save_exam({**self.config, "title": "Second examination"}, self.staff, None)
+        self.assertEqual(self.post(f"exams/{second.pk}/start/").status_code, 404)
 
     def test_eligible_student_can_start_and_resume_only_one_attempt(self):
         first = self.start()
@@ -182,6 +216,15 @@ class ExaminationSecurityTests(ExamFixtures, TestCase):
         result = self.client.get(f"/api/v1/exam-attempts/{attempt}/result/").json()
         self.assertEqual((result["percentage"], result["grade"], result["passed"]), ("100.00", "A", True))
 
+    @override_settings(EXAM_EMAIL_NOTIFICATIONS=True)
+    def test_submitted_exam_sends_the_candidate_percentage_by_email(self):
+        attempt = self.start()
+        self.save(attempt)
+        with patch("apps.examinations.services.send_institutional_email") as send, self.captureOnCommitCallbacks(execute=True):
+            self.assertEqual(self.post(f"exam-attempts/{attempt}/submit/").status_code, 200)
+        self.assertEqual(send.call_count, 1)
+        self.assertEqual(send.call_args.kwargs["details"], [("Percentage", "100.00%")])
+
     def test_incorrect_answers_fail_and_frontend_scores_are_ignored(self):
         attempt = self.start()
         self.save(attempt, False)
@@ -262,7 +305,9 @@ class ExaminationSecurityTests(ExamFixtures, TestCase):
         staff = self.client_for(self.staff)
         invalid = {**self.question_data, "options": [{"text": "A", "is_correct": True}, {"text": "B", "is_correct": True}]}
         self.assertEqual(self.post("exams/staff/questions/", invalid, staff).status_code, 400)
-        self.assertEqual(self.post(f"exams/staff/exams/{self.exam.pk}/eligibility/", {"identifier": self.other.email}, staff).status_code, 201)
+        response = self.post(f"exams/staff/exams/{self.exam.pk}/eligibility/", {"identifier": self.other.email}, staff)
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(response.json()["candidate_code"])
         self.assertTrue(ExamEligibility.objects.filter(student=self.other, is_active=True).exists())
 
     def test_answers_can_only_be_reviewed_by_an_authorized_exam_manager(self):

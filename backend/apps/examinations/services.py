@@ -1,18 +1,20 @@
 import logging
 import secrets
+from hashlib import sha256
 from datetime import timedelta
 from decimal import Decimal, ROUND_HALF_UP
 
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
+from django.utils.crypto import constant_time_compare, salted_hmac
 from django.utils.dateparse import parse_datetime
 from rest_framework.exceptions import ValidationError
 
 from apps.accounts.models import User
 from apps.audit.services import record_event
 from apps.common.email import send_institutional_email
-from .models import Exam, ExamVersion, Question, QuestionOption, ExamQuestion, ExamAttempt, ExamAnswer, ExamEligibility, ExamResult, ExamAuditLog
+from .models import Exam, ExamVersion, Question, QuestionOption, ExamQuestion, ExamAttempt, ExamAnswer, ExamEligibility, ExamCandidateSession, ExamResult, ExamAuditLog
 
 
 def audit(event, *, user=None, exam=None, attempt=None, request=None, metadata=None):
@@ -28,6 +30,99 @@ def notify(user, event, title):
     def deliver():
         send_institutional_email(subject="IoD-Gh examination update", recipient=user.email, recipient_name=user.full_name or "Candidate", heading="Examination update", introduction=f"{title}: {event.replace('_', ' ').lower()}.", closing="Sign in securely to the Examination Portal for details.", action_label="Open Examination Portal", action_url=settings.EXAM_PORTAL_URL)
     transaction.on_commit(deliver, robust=True)
+
+
+def notify_submission_result(user, result):
+    """Deliver the percentage after submission without relying on browser state."""
+    if not settings.EXAM_EMAIL_NOTIFICATIONS or not user.email:
+        return
+
+    title = result.attempt.exam_version.configuration["title"]
+
+    def deliver():
+        send_institutional_email(
+            subject="IoD-Gh examination submitted",
+            recipient=user.email,
+            recipient_name=user.full_name or "Candidate",
+            heading="Examination submitted successfully",
+            introduction=f"Your submission for {title} has been recorded.",
+            details=[("Percentage", f"{result.percentage}%")],
+            closing="Your percentage was calculated from the answers submitted before the examination closed.",
+            action_label="Open Examination Portal",
+            action_url=settings.EXAM_PORTAL_URL,
+            idempotency_key=f"exam-submission-result-{result.pk}",
+        )
+
+    transaction.on_commit(deliver, robust=True)
+
+
+def normalize_candidate_name(value):
+    return " ".join(value.split()).casefold()
+
+
+def normalize_candidate_code(value):
+    return "".join(character for character in value.upper() if character.isalnum())
+
+
+def candidate_code_hash(value):
+    return salted_hmac("exam-candidate-code", normalize_candidate_code(value), algorithm="sha256").hexdigest()
+
+
+def candidate_token_hash(value):
+    return sha256(value.encode("utf-8")).hexdigest()
+
+
+def generate_candidate_code():
+    alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+    return "IOD-" + "-".join("".join(secrets.choice(alphabet) for _ in range(4)) for _ in range(3))
+
+
+def issue_candidate_code(eligibility):
+    """Return a new shareable code once; only its HMAC is persisted."""
+    for _ in range(20):
+        code = generate_candidate_code()
+        digest = candidate_code_hash(code)
+        if not ExamEligibility.objects.filter(candidate_code_hash=digest).exclude(pk=eligibility.pk).exists():
+            eligibility.candidate_code_hash = digest
+            eligibility.candidate_code_issued_at = timezone.now()
+            eligibility.save(update_fields=["candidate_code_hash", "candidate_code_issued_at"])
+            return code
+    raise RuntimeError("Could not issue a unique examination access code.")
+
+
+def candidate_access(full_name, access_code):
+    """Resolve a candidate code without revealing whether a name or code failed."""
+    normalized_name = normalize_candidate_name(full_name)
+    normalized_code = normalize_candidate_code(access_code)
+    if not normalized_name or not normalized_code:
+        return None
+    eligibility = ExamEligibility.objects.select_related("student", "exam", "exam__current_version").filter(
+        candidate_code_hash=candidate_code_hash(normalized_code),
+        is_active=True,
+        student__is_active=True,
+    ).first()
+    if not eligibility or not eligibility.exam.current_version_id or not constant_time_compare(normalize_candidate_name(eligibility.student.full_name), normalized_name):
+        return None
+    return eligibility
+
+
+def candidate_session_expiry(eligibility):
+    end = parse_datetime(eligibility.exam.current_version.configuration["ends_at"])
+    return end + timedelta(days=settings.EXAM_CANDIDATE_SESSION_GRACE_DAYS)
+
+
+def open_candidate_session(eligibility):
+    """Create a persistent, exam-scoped session and return its raw browser token."""
+    expires_at = candidate_session_expiry(eligibility)
+    if expires_at <= timezone.now():
+        return None, None
+    token = secrets.token_urlsafe(32)
+    session = ExamCandidateSession.objects.create(
+        eligibility=eligibility,
+        token_hash=candidate_token_hash(token),
+        expires_at=expires_at,
+    )
+    return token, session
 
 
 @transaction.atomic
@@ -132,14 +227,15 @@ def start_attempt(exam_id, user, request):
     return attempt
 
 
-def release_result(result, *, user=None, request=None):
+def release_result(result, *, user=None, request=None, notify_candidate=True):
     if result.released_at:
         return
     result.released_at, result.released_by = timezone.now(), user
     result.save(update_fields=["released_at", "released_by"])
     audit("RESULT_RELEASED", user=user, attempt=result.attempt, request=request)
     audit("EXAM_PASSED" if result.passed else "EXAM_FAILED", attempt=result.attempt)
-    notify(result.attempt.student, "EXAM_RESULT_RELEASED", result.attempt.exam_version.configuration["title"])
+    if notify_candidate:
+        notify(result.attempt.student, "EXAM_RESULT_RELEASED", result.attempt.exam_version.configuration["title"])
 
 
 def finalize(attempt, status, *, request=None):
@@ -160,9 +256,10 @@ def finalize(attempt, status, *, request=None):
     attempt.status, attempt.submitted_at = status, timezone.now()
     attempt.save(update_fields=["status", "submitted_at"])
     audit("EXAM_AUTO_EXPIRED" if status == "EXPIRED" else "EXAM_SUBMITTED", user=attempt.student, attempt=attempt, request=request)
-    notify(attempt.student, "EXAM_SUBMITTED", config["title"])
+    if status == "SUBMITTED":
+        notify_submission_result(attempt.student, result)
     if config["result_release"] == "IMMEDIATE" or (config["result_release"] == "SCHEDULED" and parse_datetime(config["release_at"]) <= timezone.now()):
-        release_result(result, request=request)
+        release_result(result, request=request, notify_candidate=status != "SUBMITTED")
 
 
 def synchronize(attempt, request=None):

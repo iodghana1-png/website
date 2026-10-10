@@ -146,6 +146,7 @@ REST_FRAMEWORK = {
         "exam_read": "180/min",
         "exam_write": "120/min",
         "exam_start": "10/min",
+        "exam_access": "10/min",
         "exam_admin": "120/min",
     },
 }
@@ -173,6 +174,7 @@ UPLOAD_SCAN_REQUIRED = False  # Production overrides this unconditionally.
 FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "http://localhost:3000")
 EXAM_PORTAL_URL = os.getenv("EXAM_PORTAL_URL", "https://exam.iodghana.org")
 EXAM_EMAIL_NOTIFICATIONS = os.getenv("EXAM_EMAIL_NOTIFICATIONS", "false").lower() == "true"
+EXAM_CANDIDATE_SESSION_GRACE_DAYS = int(os.getenv("EXAM_CANDIDATE_SESSION_GRACE_DAYS", "7"))
 ADMIN_ENABLED = os.getenv("DJANGO_ENABLE_ADMIN", "false").lower() == "true"
 
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "noreply@example.invalid")

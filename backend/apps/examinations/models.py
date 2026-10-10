@@ -74,11 +74,29 @@ class ExamEligibility(models.Model):
     exam = models.ForeignKey(Exam, on_delete=models.PROTECT, related_name="eligibilities")
     student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
     is_active = models.BooleanField(default=True)
+    # The value shared with a candidate is never stored.  A unique HMAC makes
+    # a leaked database export insufficient to use a candidate's code.
+    candidate_code_hash = models.CharField(max_length=64, blank=True, default="", db_index=True)
+    candidate_code_issued_at = models.DateTimeField(null=True, blank=True)
     assigned_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="exam_assignments")
     assigned_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=["exam", "student"], name="exam_student_eligibility")]
+
+
+class ExamCandidateSession(models.Model):
+    """An exam-only browser session, intentionally separate from member login."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    eligibility = models.ForeignKey(ExamEligibility, on_delete=models.PROTECT, related_name="candidate_sessions")
+    token_hash = models.CharField(max_length=64, unique=True)
+    expires_at = models.DateTimeField(db_index=True)
+    last_seen_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [models.Index(fields=["token_hash", "expires_at"], name="exam_candidate_token_expiry")]
 
 
 class ExamAttempt(models.Model):
