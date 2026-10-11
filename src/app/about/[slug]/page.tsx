@@ -2,7 +2,7 @@ import { BuiltInSection } from "@/components/cms/BuiltInSection";
 
 
 import { EditableCopy } from "@/components/cms/EditableCopy";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { EditableImage as Image } from "@/components/cms/EditableCopy";
 import { AboutHero } from "@/components/about/AboutHero";
 import { SecretariatGrid } from "@/components/about/SecretariatGrid";
@@ -100,11 +100,11 @@ export default async function AboutDetail({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  if (slug === "vision-mission") permanentRedirect("/about/history");
   const copy = pageCopy[slug];
   if (!copy) notFound();
 
   const isHistory = slug === "history";
-  const isVisionMission = slug === "vision-mission";
   const isCouncil = slug === "council";
   const isSecretariat = slug === "secretariat";
   const isPartners = slug === "partners";
@@ -113,9 +113,22 @@ export default async function AboutDetail({
     <>
       <AboutHero slug={slug} {...copy} />
 
-      {isVisionMission ? (
+      {isHistory ? (
         <>
-          <BuiltInSection sectionId="vision-mission" className="bg-white py-20 sm:py-28">
+          <BuiltInSection sectionId="about-story" className="bg-white py-20 sm:py-28">
+            <div className="site-container grid gap-12 lg:grid-cols-12">
+              <div className="lg:col-span-4">
+                <p className="eyebrow">Our Story</p>
+              </div>
+              <div className="space-y-7 lg:col-span-7 lg:col-start-6">
+                {sections.history.map((text) => (
+                  <p className="text-lg leading-8 text-[var(--color-slate)]" key={text}><EditableCopy label="Text" fallback={String(text ?? "")} /></p>
+                ))}
+              </div>
+            </div>
+          </BuiltInSection>
+
+          <BuiltInSection sectionId="vision-mission" className="border-y border-[var(--color-line)] bg-[var(--color-paper)] py-20 sm:py-28">
             <div className="site-container grid gap-12 lg:grid-cols-12 lg:gap-16">
               <div className="lg:col-span-4">
                 <p className="eyebrow"><EditableCopy label="Text" fallback={"Our direction"} /></p>
@@ -135,7 +148,7 @@ export default async function AboutDetail({
             </div>
           </BuiltInSection>
 
-          <BuiltInSection sectionId="values" className="border-y border-[var(--color-line)] bg-[var(--color-paper)] py-20 sm:py-28">
+          <BuiltInSection sectionId="values" className="border-b border-[var(--color-line)] bg-white py-20 sm:py-28">
             <div className="site-container grid gap-12 lg:grid-cols-12 lg:gap-16">
               <div className="lg:col-span-4">
                 <p className="eyebrow"><EditableCopy label="Text" fallback={"Our core values"} /></p>

@@ -9,7 +9,7 @@ export type NavigationItem = {
 export const navigation: NavigationItem[] = [
   { label: "About", href: "/about", children: [
     { label: "Who we are", href: "/about", description: "Our role, purpose and direction" },
-    { label: "Our history", href: "/about/history" }, { label: "Vision & mission", href: "/about/vision-mission" }, { label: "Council", href: "/about/council" }, { label: "Secretariat", href: "/about/secretariat" },
+    { label: "Our history, vision & mission", href: "/about/history", description: "The story, direction and purpose behind IoD-Gh" }, { label: "Council", href: "/about/council" }, { label: "Secretariat", href: "/about/secretariat" },
     { label: "Our services", href: "/services", description: "Practical governance support" },
     { label: "Contact us", href: "/contact" },
   ] },

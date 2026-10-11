@@ -13,8 +13,7 @@ import { useCmsPage } from "@/components/content/useCmsContent";
 import { Icon } from "@/components/ui/Icon";
 
 const links = [
-  ["Our history", "/about/history", "The story of a professional community committed to better leadership."],
-  ["Vision & mission", "/about/vision-mission", "The principles and aspirations that guide our work."],
+  ["Our history, vision & mission", "/about/history", "The story, direction and purpose that guide the Institute."],
   ["Council", "/about/council", "The Institute's elected leadership and strategic stewards."],
   ["Secretariat", "/about/secretariat", "The team that delivers IoD-Gh's work every day."],
   ["Strategic partners", "/about/partners", "Collaborating for wider influence and stronger governance."],

@@ -12,7 +12,7 @@ import { EditableLink as Link } from "@/components/cms/EditableCopy";
 import { useCmsPage } from "@/components/content/useCmsContent";
 
 const details: Record<string, { display: string; detail: string }> = {
-  history: { display: "HERITAGE", detail: "1998 — Present" },
+  history: { display: "HERITAGE", detail: "History · Vision · Mission" },
   "vision-mission": { display: "PURPOSE", detail: "Competence · Integrity · Professionalism" },
   council: { display: "STEWARDSHIP", detail: "11th Governing Council · 2025–2027" },
   secretariat: { display: "PEOPLE", detail: "Purpose in practice" },

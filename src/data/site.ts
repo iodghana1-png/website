@@ -48,7 +48,7 @@ export const serviceItems: ContentCard[] = [
 
 export const pageCopy: Record<string, { eyebrow: string; title: string; description: string }> = {
   about: { eyebrow: "About IoD-Gh", title: "A stronger voice for better governance.", description: "We are Ghana’s professional institute for directors, bringing together the people who guide organisations and shape national progress." },
-  history: { eyebrow: "Our Story", title: "Built on a belief in responsible leadership.", description: "IoD-Gh has championed the professional practice of directorship, evolving alongside Ghana's economy and institutions." },
+  history: { eyebrow: "Our story, vision & mission", title: "Built on a belief in responsible leadership.", description: "The history, direction and purpose that continue to guide IoD-Gh and the practice of corporate governance in Ghana." },
   "vision-mission": { eyebrow: "Vision & Mission", title: "Our vision and mission.", description: "The direction and purpose that guide the Institute's work." },
   council: { eyebrow: "Council", title: "Stewardship for the Institute and the profession.", description: "Our Council provides strategic direction and upholds the standards that guide IoD-Gh." },
   secretariat: { eyebrow: "Secretariat", title: "The team behind the Institute.", description: "Our Secretariat translates purpose into practical programmes, member experience and national influence." },

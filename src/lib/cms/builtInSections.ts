@@ -15,6 +15,7 @@ export function builtInSections(path: string, legacy = true): BuiltInSectionDefi
   if (!legacy) return definitions([["hero", "Page hero / introduction"], ["body", "Additional page content"]]);
   let entries: [string, string][] = [];
   if (path === "/about") entries = [["about-introduction", "Introduction"], ["about-principles", "Our principles"], ["about-explore", "Explore the Institute"]];
+  else if (path === "/about/history") entries = [["about-story", "Our history"], ["vision-mission", "Vision and mission"], ["values", "Our values"]];
   else if (path === "/about/vision-mission") entries = [["vision-mission", "Vision and mission"], ["values", "Our values"]];
   else if (path === "/about/council") entries = [["council", "Governing council"]];
   else if (path === "/about/secretariat") entries = [["secretariat-introduction", "How we work"], ["secretariat-profiles", "Secretariat profiles"]];
