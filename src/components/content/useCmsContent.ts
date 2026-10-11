@@ -5,6 +5,7 @@ import { CmsPageContext } from "@/components/cms/PageContext";
 
 import { ContentItem, ContentPage, ContentSection, getPublishedContentItems, getPublishedContentPage } from "@/lib/api/content";
 import { CmsPublicArticle, getPublishedCmsArticles, getPublishedCmsPage } from "@/lib/api/cms";
+import { eventCardsFromRevision, getPublishedEventCards } from "@/lib/cms/events";
 
 export type CmsPageCopy = Pick<ContentPage, "eyebrow" | "title" | "summary" | "body" | "blocks">;
 export type CmsItem = Pick<ContentItem, "id" | "title" | "summary" | "href" | "metadata" | "image_url" | "sort_order">;
@@ -24,13 +25,14 @@ function articleAsItem(article: CmsPublicArticle, index: number): CmsItem {
 }
 
 export function useCmsItems(section: ContentSection, fallback: CmsItem[]) {
+  const context = useContext(CmsPageContext);
   const [items, setItems] = useState<CmsItem[]>(fallback);
 
   useEffect(() => {
     let cancelled = false;
     const timer = window.setTimeout(() => {
       const articleType = articleTypeForSection[section];
-      const source = articleType ? getPublishedCmsArticles(articleType).then((content) => content.length ? content.map(articleAsItem) : getPublishedContentItems(section)) : getPublishedContentItems(section);
+      const source = section === "events" ? getPublishedEventCards() : articleType ? getPublishedCmsArticles(articleType).then((content) => content.map(articleAsItem)) : getPublishedContentItems(section);
       source.then((content) => {
         if (!cancelled) setItems(content);
       }).catch(() => undefined);
@@ -38,7 +40,7 @@ export function useCmsItems(section: ContentSection, fallback: CmsItem[]) {
     return () => { cancelled = true; window.clearTimeout(timer); };
   }, [section]);
 
-  return items;
+  return section === "events" && context?.slug === "events-page" ? eventCardsFromRevision(context.revision) : items;
 }
 
 export function useCmsPage(slug: string | undefined, fallback: CmsPageCopy) {

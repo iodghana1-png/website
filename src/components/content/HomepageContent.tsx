@@ -16,6 +16,7 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 import { events, membershipCategories, newsItems } from "@/data/site";
 import { ContentItem, ContentPage, ContentSection, getPublishedContentItems, getPublishedContentPage } from "@/lib/api/content";
 import { KnowledgeDocument, knowledgeDocumentsFromPage, knowledgeSources } from "@/lib/knowledge-documents";
+import { getPublishedEventCards } from "@/lib/cms/events";
 
 type HomepageItem = Pick<ContentItem, "id" | "title" | "summary" | "href" | "metadata" | "image_url" | "sort_order">;
 type HomepageItems = Record<HomepageSection, HomepageItem[]>;
@@ -83,21 +84,6 @@ function asHomepageNewsItems(articles: CmsPublicArticle[]): HomepageItem[] {
   }));
 }
 
-function asHomepageEventItems(articles: CmsPublicArticle[]): HomepageItem[] {
-  return articles.map((article, index) => ({
-    id: article.id,
-    title: article.revision.title,
-    summary: article.revision.standfirst,
-    href: `/events/${article.slug}`,
-    image_url: article.revision.cover_media?.file_url || "",
-    sort_order: index,
-    metadata: {
-      display_meta: [article.category?.name, article.published_at ? new Date(article.published_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : ""].filter(Boolean).join(" Â· "),
-      alt_text: article.revision.cover_media?.alt_text || article.revision.title,
-    },
-  }));
-}
-
 function HomeKnowledgeDocumentCard({ item }: { item: HomepageItem }) {
   const collectionHref = safeHref(readMeta(item.metadata, "collection_href", "/knowledge"));
   const collectionLabel = readMeta(item.metadata, "collection_label", "Knowledge centre");
@@ -148,7 +134,7 @@ export function HomepageContent({ revision, initialKnowledgeItems = [], initialK
     let cancelled = false;
     const timer = window.setTimeout(() => {
       if (!revision) {
-        const contentSections = sections.filter((section) => section !== "knowledge");
+        const contentSections = sections.filter((section) => !["knowledge", "news", "training"].includes(section));
         void Promise.allSettled(contentSections.map((section) => getPublishedContentItems(section))).then((results) => {
           if (cancelled) return;
           setItems((current) => {
@@ -171,14 +157,10 @@ export function HomepageContent({ revision, initialKnowledgeItems = [], initialK
         });
       }
       void getPublishedCmsArticles("news").then((articles) => {
-        if (!cancelled && articles.length) setItems((current) => ({ ...current, news: asHomepageNewsItems(articles).slice(0, 3) }));
+        if (!cancelled) setItems((current) => ({ ...current, news: asHomepageNewsItems(articles).slice(0, 3) }));
       }).catch(() => undefined);
-      void getPublishedCmsArticles("event").then((articles) => {
-        if (cancelled) return;
-        if (articles.length) { setItems((current) => ({ ...current, training: asHomepageEventItems(articles).slice(0, 3) })); return; }
-        void getPublishedContentItems("events").then((events) => {
-          if (!cancelled) setItems((current) => ({ ...current, training: events.slice(0, 3) }));
-        }).catch(() => undefined);
+      void getPublishedEventCards().then((events) => {
+        if (!cancelled) setItems((current) => ({ ...current, training: events.slice(0, 3) }));
       }).catch(() => undefined);
       void Promise.allSettled(knowledgeSources.map(async (source) => knowledgeDocumentsFromPage(source, await getPublishedCmsPage(source.slug)))).then((results) => {
         if (cancelled) return;

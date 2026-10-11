@@ -8,11 +8,12 @@ import { Icon } from "@/components/ui/Icon";
 
 export const sectionNames: Record<string, string> = { hero: "Hero", rich_text: "Text", image_with_copy: "Image + Text", feature_list: "Features", stat_grid: "Statistics", cta_banner: "Call to action", article_feed: "News", event_feed: "Events", quote: "Testimonial", gallery: "Gallery", faq: "FAQ", image: "Image", card_grid: "Cards", document_list: "Documents", seminar_list: "Monthly seminars", video_list: "Seminar recordings", training_countdown: "Next training countdown", callout: "Highlight", member_directory: "Member directory", contact_details: "Contact details", partner_logos: "Partner logos", profile_gallery: "Profile photos" };
 export type Section = CmsPageDraft["sections"][number];
-export function PageCopyFields({ data, onChange, canUpload }: { data: Record<string, unknown>; onChange: (data: Record<string, unknown>) => void; canUpload: boolean }) {
+export function PageCopyFields({ data, onChange, canUpload, visibleKeys }: { data: Record<string, unknown>; onChange: (data: Record<string, unknown>) => void; canUpload: boolean; visibleKeys?: string[] }) {
   const fields = Array.isArray(data.fields) ? data.fields as Array<{ key: string; label: string; value: string; kind?: string; media_id?: string | null }> : [];
   const update = (index: number, value: string, media_id?: string | null, kind?: string) => onChange({ ...data, fields: fields.map((field, i) => i === index ? { ...field, value, ...(media_id !== undefined ? { media_id } : {}), ...(kind ? { kind } : {}) } : field) });
   const groups: Array<{ title: string; entries: Array<{ field: typeof fields[number]; index: number }> }> = [];
   fields.forEach((field, index) => {
+    if (visibleKeys && !visibleKeys.includes(field.key)) return;
     if (!groups.length || field.label === "Heading" || groups[groups.length - 1].entries.length >= 8) groups.push({ title: field.label === "Heading" ? field.value : "Page text " + (groups.length + 1), entries: [] });
     groups[groups.length - 1].entries.push({ field, index });
   });
@@ -54,6 +55,8 @@ function SectionFields({ section, onChange, onImage, canUpload }: { section: Sec
   if (section.section_type === "training_countdown") return <TrainingCountdownFields data={data} onChange={onChange} />;
   if (data.home_section === "training") return <HomeEventsFields data={data} onChange={onChange} />;
   if (data.home_section === "partners") return <HomePartnersFields data={data} onChange={onChange} />;
+  if (["news", "knowledge"].includes(String(data.home_section))) return <HomeFeedFields data={data} onChange={onChange} />;
+  if (section.slot === "event_cards") return <EventFields items={items} onChange={(items) => set("items", items)} canUpload={canUpload} />;
   const headingKey = ["heading", "title", "label"].find((key) => key in data) || "heading";
   const copyKey = ["copy", "text", "description", "summary"].find((key) => key in data) || "copy";
   const listTypes = ["feature_list", "stat_grid", "card_grid", "faq", "document_list", ...(data.home_section === "hero" ? ["hero"] : [])];
@@ -78,6 +81,21 @@ function SectionFields({ section, onChange, onImage, canUpload }: { section: Sec
 function HomeEventsFields({ data, onChange }: { data: Record<string, unknown>; onChange: (data: Record<string, unknown>) => void }) {
   const set = (key: string, value: string) => onChange({ ...data, [key]: value });
   return <div className="space-y-4"><p className="rounded-lg border border-[var(--color-line)] bg-[var(--color-paper)] p-4 text-sm text-[var(--color-slate)]">Event cards are managed on the main Events page. The homepage automatically displays the first three published events from that page.</p><Field label="Heading" value={text(data, "heading")} onChange={(heading) => set("heading", heading)} /><Field label="Short introduction" value={text(data, "eyebrow")} onChange={(eyebrow) => set("eyebrow", eyebrow)} /><Area label="Description" value={text(data, "description")} onChange={(description) => set("description", description)} /><div className="grid gap-4 sm:grid-cols-2"><Field label="Button text" value={text(data, "button_label")} onChange={(button_label) => set("button_label", button_label)} /><Field label="Button link" value={text(data, "button_href")} onChange={(button_href) => set("button_href", button_href)} /></div></div>;
+}
+
+function HomeFeedFields({ data, onChange }: { data: Record<string, unknown>; onChange: (data: Record<string, unknown>) => void }) {
+  const news = data.home_section === "news";
+  const set = (key: string, value: string) => onChange({ ...data, [key]: value });
+  return <div className="space-y-4"><p className="rounded-lg bg-[var(--color-paper)] p-4 text-sm">{news ? "Cards show the latest published News articles. Edit articles in News." : "Cards show published documents from Reports, Research and Resources. Edit documents on those pages."} Edit the homepage heading and link below.</p><a className="text-sm font-semibold underline" href={news ? "/admin/news" : "/admin/content"}>Manage {news ? "news" : "document pages"}</a><Field label="Heading" value={text(data, "heading")} onChange={(v) => set("heading", v)} /><Field label="Short introduction" value={text(data, "eyebrow")} onChange={(v) => set("eyebrow", v)} /><Area label="Description" value={text(data, "description")} onChange={(v) => set("description", v)} /><Field label="Button text" value={text(data, "button_label")} onChange={(v) => set("button_label", v)} /><Field label="Button link" value={text(data, "button_href")} onChange={(v) => set("button_href", v)} /></div>;
+}
+
+function EventFields({ items, onChange, canUpload }: { items: Record<string, unknown>[]; onChange: (items: Record<string, unknown>[]) => void; canUpload: boolean }) {
+  const update = (index: number, patch: Record<string, unknown>) => onChange(items.map((item, current) => current === index ? { ...item, ...patch } : item));
+  return <div className="space-y-4"><p className="text-sm">These cards appear on the Events page and the first three appear on the homepage. The link opens the event details or your registration page.</p>{items.map((item, index) => {
+    const metadata = (item.metadata || {}) as Record<string, unknown>;
+    const move = (step: number) => { const next = [...items]; [next[index], next[index + step]] = [next[index + step], next[index]]; onChange(next); };
+    return <details key={String(item.id || index)} open className="rounded-lg border p-4"><summary className="font-semibold">{text(item, "title") || "New event"}</summary><div className="mt-4 space-y-4"><Field label="Event title" value={text(item, "title")} onChange={(title) => update(index, { title })} /><Area label="Description" value={text(item, "description")} onChange={(description) => update(index, { description })} /><Field label="Date / display label" value={text(metadata, "display_meta")} onChange={(display_meta) => update(index, { metadata: { ...metadata, display_meta } })} /><Field label="Venue / details" value={text(metadata, "detail")} onChange={(detail) => update(index, { metadata: { ...metadata, detail } })} /><Field label="Event or registration link" value={text(item, "href")} onChange={(href) => update(index, { href })} /><MediaPicker label="Event image" value={text(item, "media_id")} fallback={text(item, "image_url")} canUpload={canUpload} onChange={(media_id, image_url) => update(index, { media_id, image_url })} /><div className="flex gap-3"><button type="button" className={buttonClass} disabled={!index} onClick={() => move(-1)}>Move up</button><button type="button" className={buttonClass} disabled={index === items.length - 1} onClick={() => move(1)}>Move down</button><button type="button" className={buttonClass} onClick={() => onChange(items.filter((_, current) => current !== index))}>Remove event</button></div></div></details>;
+  })}<button type="button" className={buttonClass} onClick={() => onChange([...items, { id: crypto.randomUUID(), title: "", description: "", href: "", metadata: {} }])}>+ Add event</button></div>;
 }
 
 function HomePartnersFields({ data, onChange }: { data: Record<string, unknown>; onChange: (data: Record<string, unknown>) => void }) {

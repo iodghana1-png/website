@@ -24,7 +24,7 @@ function Feed({ type }: { type: "news" | "event" }) {
   return <div className="mt-6 grid gap-5 md:grid-cols-3">{articles.map((item) => <a key={item.id} href={(type === "news" ? "/news/" : "/events/") + item.slug} className="rounded border border-[var(--color-line)] p-5"><h3 className="text-xl">{item.revision.title}</h3><p className="mt-3">{item.revision.standfirst}</p></a>)}</div>;
 }
 export function SectionRenderer({ section }: { section: CmsSection }) {
-  if (!section.is_enabled || section.slot === layoutSlot) return null;
+  if (!section.is_enabled || section.slot === layoutSlot || section.slot === "event_cards") return null;
   if (["partner_logos", "profile_gallery", "seminar_list", "video_list"].includes(section.section_type)) return null;
   const data = section.data;
   const title = copy(data, "heading", "title", "label");

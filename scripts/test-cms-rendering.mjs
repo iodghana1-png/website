@@ -217,13 +217,31 @@ test("Homepage upcoming events label and heading link to the Events page", () =>
   }
 });
 
-test("Events page uses the published event feed instead of stale page-copy values", () => {
-  const html = renderToStaticMarkup(React.createElement(CmsPageContext.Provider, { value: { slug: "events-page", revision: {
-    sections: [{ slot: "page_copy", data: { fields: [
-      { key: "coldlq", label: "Heading", value: "Stale event title" },
-      { key: "5eq4ga", label: "Text", value: "Stale event summary" },
-    ] } }],
-  } } }, React.createElement(EventsPage)));
-  assert.match(html, /National Corporate Governance Conference/);
-  assert.doesNotMatch(html, /Stale event title|Stale event summary/);
+test("Events page and homepage source use the same editable event cards", () => {
+  const { eventCardsFromRevision } = load(path.join(root, "src/lib/cms/events"));
+  const sections = [
+    { slot: "page_copy", data: { fields: [{ key: "coldlq", value: "Stale event title" }] } },
+    { slot: "event_cards", section_type: "card_grid", is_enabled: true, position: 0, data: { items: [
+      { id: "event-one", title: "Updated summit", description: "Edited event summary", href: "/events/summit", metadata: { display_meta: "5 December", detail: "Accra" } },
+    ] } },
+  ];
+  const html = cmsRender(React.createElement(EventsPage), sections, "events-page");
+  for (const text of ["Updated summit", "Edited event summary", "5 December", "Accra"]) assert.ok(html.includes(text));
+  assert.doesNotMatch(html, /Stale event title|National Corporate Governance Conference/);
+  assert.equal(eventCardsFromRevision({ sections })[0].title, "Updated summit");
+  assert.deepEqual(eventCardsFromRevision({ sections: [] }), []);
+  assert.deepEqual(eventCardsFromRevision({ sections: setSectionState(sections, "events-list", "hidden") }), []);
+  assert.equal(renderToStaticMarkup(React.createElement(PageContent, { revision: { ...revision, sections }, sectionsOnly: true })), "");
+});
+
+test("Homepage feed editors direct staff to the source instead of editing unused cards", () => {
+  const { Sections } = load(path.join(root, "src/components/admin/cms/Sections"));
+  for (const name of ["news", "knowledge"]) {
+    const html = renderToStaticMarkup(React.createElement(Sections, { canUpload: false, onChange() {}, sections: [
+      { slot: "main", section_type: "card_grid", is_enabled: true, data: { home_section: name, items: [{ title: "Unused card" }] } },
+    ] }));
+    assert.doesNotMatch(html, /Unused card|Remove item/);
+    assert.match(html, /Manage (news|document pages)/);
+    assert.match(html, /Button text/);
+  }
 });
