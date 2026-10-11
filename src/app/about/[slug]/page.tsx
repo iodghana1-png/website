@@ -115,57 +115,57 @@ export default async function AboutDetail({
 
       {isHistory ? (
         <>
-          <BuiltInSection sectionId="about-story" className="bg-white py-20 sm:py-28">
-            <div className="site-container grid gap-12 lg:grid-cols-12">
+          <BuiltInSection sectionId="about-story" className="bg-white py-14 sm:py-18">
+            <div className="site-container grid gap-8 lg:grid-cols-12 lg:gap-12">
               <div className="lg:col-span-4">
-                <p className="eyebrow">Our Story</p>
+                <p className="eyebrow">Our history</p>
               </div>
-              <div className="space-y-7 lg:col-span-7 lg:col-start-6">
+              <div className="space-y-5 lg:col-span-7 lg:col-start-6">
                 {sections.history.map((text) => (
-                  <p className="text-lg leading-8 text-[var(--color-slate)]" key={text}><EditableCopy label="Text" fallback={String(text ?? "")} /></p>
+                  <p className="leading-7 text-[var(--color-slate)]" key={text}><EditableCopy label="Text" fallback={String(text ?? "")} /></p>
                 ))}
               </div>
             </div>
           </BuiltInSection>
 
-          <BuiltInSection sectionId="vision-mission" className="border-y border-[var(--color-line)] bg-[var(--color-paper)] py-20 sm:py-28">
-            <div className="site-container grid gap-12 lg:grid-cols-12 lg:gap-16">
+          <BuiltInSection sectionId="vision-mission" className="border-y border-[var(--color-line)] bg-[var(--color-paper)] py-14 sm:py-18">
+            <div className="site-container grid gap-8 lg:grid-cols-12 lg:gap-12">
               <div className="lg:col-span-4">
                 <p className="eyebrow"><EditableCopy label="Text" fallback={"Our direction"} /></p>
-                <h2 className="mt-5 max-w-sm font-serif text-[clamp(2.4rem,3.6vw,4rem)] leading-[1.03] tracking-[-0.05em]"><EditableCopy label="Heading" fallback={"The purpose behind our work."} /></h2>
+                <p className="mt-4 max-w-sm leading-7 text-[var(--color-slate)]"><EditableCopy label="Text" fallback={"The purpose behind our work."} /></p>
               </div>
               <div className="border-t border-[var(--color-ink)] lg:col-span-7 lg:col-start-6">
                 {visionMission.map(([label, statement]) => (
                   <article
-                    className="border-b border-[var(--color-line)] py-8 sm:py-10"
+                    className="border-b border-[var(--color-line)] py-6 sm:py-7"
                     key={label}
                   >
                     <p className="eyebrow"><EditableCopy label="Text" fallback={String(label ?? "")} /></p>
-                    <p className="mt-5 max-w-3xl font-serif text-[clamp(1.9rem,3vw,3.2rem)] leading-[1.12] tracking-[-0.04em] text-[var(--color-ink)]"><EditableCopy label="Text" fallback={String(statement ?? "")} /></p>
+                    <p className="mt-3 max-w-3xl text-xl leading-8 text-[var(--color-ink)] sm:text-2xl sm:leading-9"><EditableCopy label="Text" fallback={String(statement ?? "")} /></p>
                   </article>
                 ))}
               </div>
             </div>
           </BuiltInSection>
 
-          <BuiltInSection sectionId="values" className="border-b border-[var(--color-line)] bg-white py-20 sm:py-28">
-            <div className="site-container grid gap-12 lg:grid-cols-12 lg:gap-16">
+          <BuiltInSection sectionId="values" className="border-b border-[var(--color-line)] bg-white py-14 sm:py-18">
+            <div className="site-container grid gap-8 lg:grid-cols-12 lg:gap-12">
               <div className="lg:col-span-4">
                 <p className="eyebrow"><EditableCopy label="Text" fallback={"Our core values"} /></p>
-                <h2 className="mt-5 max-w-sm font-serif text-[clamp(2.4rem,3.6vw,4rem)] leading-[1.03] tracking-[-0.05em]"><EditableCopy label="Heading" fallback={"How we lead."} /></h2>
+                <p className="mt-4 max-w-sm leading-7 text-[var(--color-slate)]"><EditableCopy label="Text" fallback={"How we lead."} /></p>
               </div>
               <div className="border-t border-[var(--color-ink)] lg:col-span-8">
                 {coreValues.map(([number, title, description]) => (
                   <article
-                    className="grid gap-4 border-b border-[var(--color-line)] py-7 sm:grid-cols-[72px_1fr]"
+                    className="grid gap-3 border-b border-[var(--color-line)] py-5 sm:grid-cols-[56px_1fr] sm:py-6"
                     key={title}
                   >
-                    <p className="font-serif text-2xl text-[var(--color-accent-dark)]">
+                    <p className="text-lg font-semibold text-[var(--color-accent-dark)]">
                       {number}
                     </p>
                     <div>
-                      <h3 className="font-serif text-3xl tracking-[-0.035em] text-[var(--color-ink)]"><EditableCopy label="Heading" fallback={String(title ?? "")} /></h3>
-                      <p className="mt-3 max-w-xl leading-7 text-[var(--color-slate)]"><EditableCopy label="Text" fallback={String(description ?? "")} /></p>
+                      <p className="text-xl font-semibold tracking-[-0.02em] text-[var(--color-ink)]"><EditableCopy label="Text" fallback={String(title ?? "")} /></p>
+                      <p className="mt-2 max-w-xl leading-7 text-[var(--color-slate)]"><EditableCopy label="Text" fallback={String(description ?? "")} /></p>
                     </div>
                   </article>
                 ))}
