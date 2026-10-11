@@ -39,19 +39,19 @@ export function HomeIntroduction({ override }: { override?: Pick<ContentPage, "e
   const cta = getCta(content.blocks);
 
   return (
-    <section className="bg-white py-20 sm:py-28">
-      <div className="site-container grid gap-12 lg:grid-cols-12 lg:gap-16">
+    <section className="bg-white py-14 sm:py-18">
+      <div className="site-container grid gap-8 lg:grid-cols-12 lg:gap-12">
         <div className="border-l-2 border-[var(--color-accent)] pl-5 lg:col-span-4 lg:self-start lg:py-2">
           <p className="eyebrow">{content.eyebrow}</p>
-          <h2 className="mt-5 max-w-sm font-serif text-[clamp(2.5rem,3.7vw,4.25rem)] font-semibold leading-[1.03] tracking-[-0.05em]">{content.title}</h2>
-          <p className="mt-6 max-w-xs text-sm leading-6 text-[var(--color-slate)]">{content.summary}</p>
+          <h2 className="mt-4 max-w-sm font-serif text-[clamp(2.1rem,3vw,3.25rem)] font-semibold leading-[1.06] tracking-[-0.04em]">{content.title}</h2>
+          <p className="mt-4 max-w-xs text-sm leading-6 text-[var(--color-slate)]">{content.summary}</p>
         </div>
         <div className="lg:col-span-7 lg:col-start-6">
-          <div className="max-w-3xl font-serif text-[clamp(1.8rem,2.7vw,2.75rem)] font-medium leading-[1.2] tracking-[-0.035em] text-[var(--color-ink)]"><RichContent value={paragraphs[0] || ""} /></div>
-          <div className="mt-9 max-w-2xl border-t border-[var(--color-line)] pt-7">
-            {paragraphs.slice(1).map((paragraph) => <div className="mt-5 text-lg leading-8 text-[var(--color-slate)] first:mt-0" key={paragraph}><RichContent value={paragraph} /></div>)}
+          <div className="max-w-3xl text-lg leading-8 text-[var(--color-ink)] sm:text-xl"><RichContent value={paragraphs[0] || ""} /></div>
+          <div className="mt-7 max-w-2xl border-t border-[var(--color-line)] pt-6">
+            {paragraphs.slice(1).map((paragraph) => <div className="mt-4 leading-7 text-[var(--color-slate)] first:mt-0" key={paragraph}><RichContent value={paragraph} /></div>)}
           </div>
-          <Link href={cta.href} className="link-arrow mt-9">{cta.label} <Icon name="arrow-right" className="h-4 w-4" /></Link>
+          <Link href={cta.href} className="link-arrow mt-7">{cta.label} <Icon name="arrow-right" className="h-4 w-4" /></Link>
         </div>
       </div>
     </section>
