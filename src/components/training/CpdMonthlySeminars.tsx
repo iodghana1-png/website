@@ -5,7 +5,7 @@ import { BuiltInSection } from "@/components/cms/BuiltInSection";
 
 import Image from "next/image";
 
-import { useCmsPage } from "@/components/content/useCmsContent";
+import { cmsItemsInBlocks, useCmsPage } from "@/components/content/useCmsContent";
 import { Icon } from "@/components/ui/Icon";
 
 type Seminar = { id: string; topic: string; speaker: string; date: string; description: string; registrationHref: string; imageUrl: string };
@@ -13,8 +13,7 @@ const safeUrl = (value: unknown) => typeof value === "string" && /^(https?:\/\/|
 
 export function CpdMonthlySeminars() {
   const page = useCmsPage("training-cpd", { eyebrow: "", title: "", summary: "", body: "", blocks: [] });
-  const block = page.blocks.find((item) => typeof item === "object" && item !== null && "type" in item && (item as { type?: unknown }).type === "seminar_list") as { items?: unknown } | undefined;
-  const seminars = (Array.isArray(block?.items) ? block.items : []).flatMap((item, index): Seminar[] => {
+  const seminars = cmsItemsInBlocks(page.blocks, "seminar_list").flatMap((item, index): Seminar[] => {
     if (!item || typeof item !== "object" || Array.isArray(item)) return [];
     const entry = item as Record<string, unknown>;
     const topic = typeof entry.title === "string" ? entry.title.trim() : "";

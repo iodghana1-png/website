@@ -56,7 +56,7 @@ export function useCmsPage(slug: string | undefined, fallback: CmsPageCopy) {
         title: content.revision.title,
         summary: content.revision.summary,
         body: content.revision.body,
-        blocks: content.revision.sections.filter((section) => section.is_enabled).flatMap((section) => Array.isArray(section.data.legacy_blocks) ? section.data.legacy_blocks : [{ type: section.section_type, ...section.data }]),
+        blocks: content.revision.sections.filter((section) => section.is_enabled).sort((a, b) => a.position - b.position).flatMap((section) => Array.isArray(section.data.legacy_blocks) ? section.data.legacy_blocks : [{ type: section.section_type, ...section.data }]),
       })).catch(() => getPublishedContentPage(slug)).then((content) => {
         if (!cancelled) setPage(content);
       }).catch(() => undefined);
@@ -67,9 +67,16 @@ export function useCmsPage(slug: string | undefined, fallback: CmsPageCopy) {
   if (context && context.slug === slug) return {
     eyebrow: context.revision.eyebrow, title: context.revision.title, summary: context.revision.summary,
     body: context.revision.body,
-    blocks: context.revision.sections.filter((section) => section.is_enabled).flatMap((section) => Array.isArray(section.data.legacy_blocks) ? section.data.legacy_blocks : [{ type: section.section_type, ...section.data }]),
+    blocks: context.revision.sections.filter((section) => section.is_enabled).sort((a, b) => a.position - b.position).flatMap((section) => Array.isArray(section.data.legacy_blocks) ? section.data.legacy_blocks : [{ type: section.section_type, ...section.data }]),
   };
   return page;
+}
+
+export function cmsItemsInBlocks(blocks: unknown[], type: string): unknown[] {
+  return blocks.flatMap((block) => {
+    if (!block || typeof block !== "object" || !("type" in block) || block.type !== type || !("items" in block)) return [];
+    return Array.isArray(block.items) ? block.items : [];
+  });
 }
 
 export function cmsCta(blocks: unknown[], fallback: { label: string; href: string }) {

@@ -5,7 +5,7 @@ import { BuiltInSection } from "@/components/cms/BuiltInSection";
 
 import Image from "next/image";
 
-import { useCmsPage } from "@/components/content/useCmsContent";
+import { cmsItemsInBlocks, useCmsPage } from "@/components/content/useCmsContent";
 import { Icon } from "@/components/ui/Icon";
 
 type VideoItem = { id: string; title: string; description: string; date: string; href: string; videoId: string };
@@ -24,8 +24,7 @@ function youtubeVideoId(value: unknown) {
 
 export function CpdVideoLibrary() {
   const page = useCmsPage("training-cpd", { eyebrow: "", title: "", summary: "", body: "", blocks: [] });
-  const block = page.blocks.find((item) => typeof item === "object" && item !== null && "type" in item && (item as { type?: unknown }).type === "video_list") as { items?: unknown } | undefined;
-  const videos = (Array.isArray(block?.items) ? block.items : []).flatMap((item, index): VideoItem[] => {
+  const videos = cmsItemsInBlocks(page.blocks, "video_list").flatMap((item, index): VideoItem[] => {
     if (!item || typeof item !== "object" || Array.isArray(item)) return [];
     const entry = item as Record<string, unknown>;
     const videoId = youtubeVideoId(entry.href);

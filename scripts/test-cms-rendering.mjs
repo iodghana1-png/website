@@ -265,3 +265,20 @@ test("The retired vision-and-mission address redirects to the combined history p
   const Component = load(path.join(root, "src/app/about/[slug]/page")).default;
   await assert.rejects(Component({ params: Promise.resolve({ slug: "vision-mission" }) }), (error) => error.digest?.includes("/about/history"));
 });
+
+test("CPD renders entries from every enabled seminar and recording section in saved order", () => {
+  const { ImageConfigContext } = createRequire(import.meta.url)("next/dist/shared/lib/image-config-context.shared-runtime");
+  const { imageConfigDefault } = createRequire(import.meta.url)("next/dist/shared/lib/image-config");
+  for (const [name, section_type] of [["CpdMonthlySeminars", "seminar_list"], ["CpdVideoLibrary", "video_list"]]) {
+    const Component = load(path.join(root, "src/components/training", name))[name];
+    const sections = [2, 1, 3].map((position) => ({ slot: "main", section_type, position, is_enabled: position !== 3, data: { items: [
+      { id: String(position), title: `CMS entry ${position}`, href: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
+    ] } }));
+    const element = React.createElement(ImageConfigContext.Provider, { value: { ...imageConfigDefault, remotePatterns: [{ protocol: "https", hostname: "i.ytimg.com", pathname: "/vi/**" }] } }, React.createElement(Component));
+    const html = cmsRender(element, sections, "training-cpd");
+    assert.ok(html.includes("CMS entry 1") && html.includes("CMS entry 2"));
+    assert.ok(html.indexOf("CMS entry 1") < html.indexOf("CMS entry 2"));
+    assert.doesNotMatch(html, /CMS entry 3/);
+    assert.equal(cmsRender(element, [], "training-cpd"), "");
+  }
+});
