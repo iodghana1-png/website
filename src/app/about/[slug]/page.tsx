@@ -122,7 +122,7 @@ export default async function AboutDetail({
               </div>
               <div className="space-y-5 lg:col-span-7 lg:col-start-6">
                 {sections.history.map((text) => (
-                  <p className="leading-7 text-[var(--color-slate)]" key={text}><EditableCopy label="Text" fallback={String(text ?? "")} /></p>
+                  <p className="text-sm leading-6 text-[var(--color-slate)] sm:text-base sm:leading-7" key={text}><EditableCopy label="Text" fallback={String(text ?? "")} /></p>
                 ))}
               </div>
             </div>
@@ -132,7 +132,7 @@ export default async function AboutDetail({
             <div className="site-container grid gap-8 lg:grid-cols-12 lg:gap-12">
               <div className="lg:col-span-4">
                 <p className="eyebrow"><EditableCopy label="Text" fallback={"Our direction"} /></p>
-                <p className="mt-4 max-w-sm leading-7 text-[var(--color-slate)]"><EditableCopy label="Text" fallback={"The purpose behind our work."} /></p>
+                <p className="mt-4 max-w-sm text-sm leading-6 text-[var(--color-slate)]"><EditableCopy label="Text" fallback={"The purpose behind our work."} /></p>
               </div>
               <div className="border-t border-[var(--color-ink)] lg:col-span-7 lg:col-start-6">
                 {visionMission.map(([label, statement]) => (
@@ -141,7 +141,7 @@ export default async function AboutDetail({
                     key={label}
                   >
                     <p className="eyebrow"><EditableCopy label="Text" fallback={String(label ?? "")} /></p>
-                    <p className="mt-3 max-w-3xl text-xl leading-8 text-[var(--color-ink)] sm:text-2xl sm:leading-9"><EditableCopy label="Text" fallback={String(statement ?? "")} /></p>
+                    <p className="mt-3 max-w-3xl text-base leading-7 text-[var(--color-ink)] sm:text-lg"><EditableCopy label="Text" fallback={String(statement ?? "")} /></p>
                   </article>
                 ))}
               </div>
@@ -152,7 +152,7 @@ export default async function AboutDetail({
             <div className="site-container grid gap-8 lg:grid-cols-12 lg:gap-12">
               <div className="lg:col-span-4">
                 <p className="eyebrow"><EditableCopy label="Text" fallback={"Our core values"} /></p>
-                <p className="mt-4 max-w-sm leading-7 text-[var(--color-slate)]"><EditableCopy label="Text" fallback={"How we lead."} /></p>
+                <p className="mt-4 max-w-sm text-sm leading-6 text-[var(--color-slate)]"><EditableCopy label="Text" fallback={"How we lead."} /></p>
               </div>
               <div className="border-t border-[var(--color-ink)] lg:col-span-8">
                 {coreValues.map(([number, title, description]) => (
@@ -160,12 +160,12 @@ export default async function AboutDetail({
                     className="grid gap-3 border-b border-[var(--color-line)] py-5 sm:grid-cols-[56px_1fr] sm:py-6"
                     key={title}
                   >
-                    <p className="text-lg font-semibold text-[var(--color-accent-dark)]">
+                    <p className="text-sm font-semibold text-[var(--color-accent-dark)]">
                       {number}
                     </p>
                     <div>
-                      <p className="text-xl font-semibold tracking-[-0.02em] text-[var(--color-ink)]"><EditableCopy label="Text" fallback={String(title ?? "")} /></p>
-                      <p className="mt-2 max-w-xl leading-7 text-[var(--color-slate)]"><EditableCopy label="Text" fallback={String(description ?? "")} /></p>
+                      <p className="text-base font-semibold text-[var(--color-ink)]"><EditableCopy label="Text" fallback={String(title ?? "")} /></p>
+                      <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--color-slate)]"><EditableCopy label="Text" fallback={String(description ?? "")} /></p>
                     </div>
                   </article>
                 ))}
