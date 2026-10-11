@@ -31,11 +31,14 @@ type SocialNetwork = typeof socialNetworks[number];
 const socialIcons: Record<SocialNetwork, IconName> = { Facebook: "facebook", Instagram: "instagram", LinkedIn: "linkedin", X: "x-social", YouTube: "youtube" };
 function SocialIcon({ name }: { name: SocialNetwork }) { return <Icon name={socialIcons[name]} className="h-4 w-4" />; }
 
-export function SiteContact({ settings, showContact = true, showSocial = true }: { settings?: Record<string, unknown>; showContact?: boolean; showSocial?: boolean } = {}) {
+export function SiteContact({ settings, showContact = true, showSocial = true, inverse = false }: { settings?: Record<string, unknown>; showContact?: boolean; showSocial?: boolean; inverse?: boolean } = {}) {
   const shared = useSiteSettings();
   const data = settings || shared;
   const text = (key: string) => typeof data[key] === "string" ? data[key] as string : "";
   const phones = Array.from(new Set([text("phone"), ...(Array.isArray(data.phone_numbers) ? data.phone_numbers.filter((value): value is string => typeof value === "string") : [])].map((value) => value.trim()).filter(Boolean)));
   if (!showContact && !showSocial) return null;
-  return <div className="mt-5 space-y-2 text-sm">{showContact && <>{text("contact_email") && <p><a href={"mailto:" + text("contact_email")}>{text("contact_email")}</a></p>}{phones.map((phone) => <p key={phone}><a href={"tel:" + phone}>{phone}</a></p>)}{text("address") && <p className="whitespace-pre-line">{text("address")}</p>}</>}{showSocial && <div className="flex flex-wrap gap-2 pt-2">{socialNetworks.map((name) => linkUrl(text(name.toLowerCase())) && <a key={name} href={linkUrl(text(name.toLowerCase()))} target="_blank" rel="noreferrer" aria-label={name} className="grid h-9 w-9 place-items-center rounded-full border border-white/30 text-[var(--color-gold-light)] transition hover:border-[var(--color-gold-light)] hover:bg-white hover:text-[var(--color-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"><SocialIcon name={name} /></a>)}</div>}</div>;
+  const socialClass = inverse
+    ? "border-white/30 text-[var(--color-gold-light)] hover:border-[var(--color-gold-light)] hover:bg-white hover:text-[var(--color-ink)] focus-visible:outline-white"
+    : "border-[var(--color-accent)] text-[var(--color-accent-dark)] hover:border-[var(--color-ink)] hover:bg-[var(--color-paper)] hover:text-[var(--color-ink)] focus-visible:outline-[var(--color-accent-dark)]";
+  return <div className="mt-5 space-y-2 text-sm">{showContact && <>{text("contact_email") && <p><a href={"mailto:" + text("contact_email")}>{text("contact_email")}</a></p>}{phones.map((phone) => <p key={phone}><a href={"tel:" + phone}>{phone}</a></p>)}{text("address") && <p className="whitespace-pre-line">{text("address")}</p>}</>}{showSocial && <div className="flex flex-wrap gap-2 pt-2">{socialNetworks.map((name) => linkUrl(text(name.toLowerCase())) && <a key={name} href={linkUrl(text(name.toLowerCase()))} target="_blank" rel="noreferrer" aria-label={name} className={`grid h-9 w-9 place-items-center rounded-full border ${socialClass} transition focus-visible:outline-2 focus-visible:outline-offset-2`}><SocialIcon name={name} /></a>)}</div>}</div>;
 }
