@@ -12,7 +12,7 @@ import { MediaHero } from "@/components/media/MediaHero";
 import { Icon } from "@/components/ui/Icon";
 import { newsItems } from "@/data/site";
 
-const fallbackItems = newsItems.map((item, index) => ({ id: `news-${index}`, title: item.title, summary: item.description, href: item.href, metadata: { display_meta: [item.category, item.date].filter(Boolean).join(" · "), alt_text: "Ghanaian executives at a professional leadership forum" }, image_url: index === 0 ? "/images/leadership-forum.png" : "", sort_order: index + 1 }));
+const fallbackItems = newsItems.map((item, index) => ({ id: `news-${index}`, title: item.title, summary: item.description, href: item.href, metadata: { display_meta: [item.category, item.date].filter(Boolean).join(" · "), alt_text: "Ghanaian executives at a professional leadership forum" }, image_url: "", sort_order: index + 1 }));
 const fallbackPage = { eyebrow: "IoD-Gh news", title: "The conversation on governance.", summary: "News, perspectives and practical insight from the Institute and Ghana's director community.", body: "", blocks: [] };
 
 function NewsCard({ item }: { item: CmsItem }) {

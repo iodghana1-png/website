@@ -42,7 +42,7 @@ const fallbackItems: HomepageItems = {
   membership: membershipCategories.map((item, index) => ({ id: `fallback-membership-${index}`, title: item.title, summary: item.description, href: item.href, image_url: "", sort_order: index + 1, metadata: { display_meta: item.meta || "" } })),
   training: events.map((item, index) => ({ id: `fallback-event-${index}`, title: item.title, summary: item.description, href: item.href, image_url: "", sort_order: index + 1, metadata: { display_meta: item.date || "", detail: item.meta || "" } })),
   knowledge: [],
-  news: newsItems.map((item, index) => ({ id: `fallback-news-${index}`, title: item.title, summary: item.description, href: item.href, image_url: index === 0 ? "/images/leadership-forum.png" : "", sort_order: index + 1, metadata: { display_meta: [item.category, item.date].filter(Boolean).join(" · "), alt_text: "Leadership forum participants" } })),
+  news: newsItems.map((item, index) => ({ id: `fallback-news-${index}`, title: item.title, summary: item.description, href: item.href, image_url: "", sort_order: index + 1, metadata: { display_meta: [item.category, item.date].filter(Boolean).join(" · "), alt_text: "Leadership forum participants" } })),
   partners: [],
 };
 
