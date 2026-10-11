@@ -120,7 +120,6 @@ test("CMS actual static pages honor every registered built-in section control", 
     ["/services", "services/page"], ["/about", "about/page"], ["/events", "events/page"],
     ["/training", "training/page"], ["/membership", "membership/page"], ["/news", "news/page"],
     ["/knowledge", "knowledge/page"], ["/contact", "contact/page"],
-    ["/about/vision-mission", "about/[slug]/page", "vision-mission"],
     ["/about/council", "about/[slug]/page", "council"],
     ["/about/secretariat", "about/[slug]/page", "secretariat"],
     ["/about/partners", "about/[slug]/page", "partners"],
@@ -181,16 +180,19 @@ test("Public articles and previews render byline, category, date, image, caption
   assert.ok(html.indexOf("test-news.png", html.indexOf("<figure")) < html.indexOf("Edited article body"));
 });
 
-test("Homepage partners render uploaded logos in saved order, with optional links", () => {
-  const html = renderToStaticMarkup(React.createElement(HomepageContent, { revision: {
-    sections: [{ slot: "main", section_type: "card_grid", is_enabled: true, position: 0, data: {
-      home_section: "partners", heading: "Corporate partners", items: [
+test("Homepage partner groups render the shared partner collection in saved order", () => {
+  const { PartnerGroupSlider, partnerPageEntries } = load(path.join(root, "src/components/content/PartnerLogos"));
+  const page = { revision: {
+    sections: [{ slot: "main", section_type: "partner_logos", is_enabled: true, position: 0, data: {
+      heading: "Corporate partners", items: [
         { id: "one", title: "First partner", image_url: "/images/partner-one.png", href: "https://partner.example" },
         { id: "two", title: "Second partner", image_url: "/images/partner-two.png", href: "" },
         { id: "empty", title: "Not uploaded yet", image_url: "", href: "" },
       ],
     } }],
-  } }));
+  } };
+  const partners = partnerPageEntries(page).filter((item) => item.image_url);
+  const html = renderToStaticMarkup(React.createElement(PartnerGroupSlider, { groups: [{ title: "Corporate partners", partners }], fallbackHref: "" }));
   assert.match(html, /alt="First partner"/);
   assert.match(html, /alt="Second partner"/);
   assert.match(html, /href="https:\/\/partner.example"/);
@@ -244,4 +246,22 @@ test("Homepage feed editors direct staff to the source instead of editing unused
     assert.match(html, /Manage (news|document pages)/);
     assert.match(html, /Button text/);
   }
+});
+
+test("Council profiles use CMS names and biographies, including draft-only and new profiles", () => {
+  const { ProfilePhotosProvider } = load(path.join(root, "src/components/about/ProfilePhotos"));
+  const { CouncilProfiles } = load(path.join(root, "src/components/about/CouncilProfiles"));
+  const element = React.createElement(ProfilePhotosProvider, { pageSlug: "about-council" }, React.createElement(CouncilProfiles));
+  const sections = [{ section_type: "profile_gallery", is_enabled: true, data: { items: [
+    { id: "new-person", title: "", metadata: { display_name: "New Council Name", role: "New role", summary: "Draft summary", biography: "Draft biography" } },
+  ] } }];
+  const html = cmsRender(element, sections, "about-council");
+  for (const value of ["New Council Name", "New role", "Draft summary", "Draft biography"]) assert.ok(html.includes(value));
+  assert.doesNotMatch(html, /Mary Asare-Yeboah/);
+  assert.equal(cmsRender(element, [], "about-council"), "");
+});
+
+test("The retired vision-and-mission address redirects to the combined history page", async () => {
+  const Component = load(path.join(root, "src/app/about/[slug]/page")).default;
+  await assert.rejects(Component({ params: Promise.resolve({ slug: "vision-mission" }) }), (error) => error.digest?.includes("/about/history"));
 });

@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
+import { CmsPageContext } from "@/components/cms/PageContext";
 import { CmsPublicPage, getPublishedCmsPage } from "@/lib/api/cms";
 import { Icon } from "@/components/ui/Icon";
 
@@ -51,7 +52,7 @@ function PartnerGrid({ title, partners }: { title: string; partners: Partner[] }
   })}</ul></section>;
 }
 
-function partnerPageEntries(page: CmsPublicPage): Partner[] {
+export function partnerPageEntries(page: CmsPublicPage): Partner[] {
   return page.revision.sections.filter((section) => section.section_type === "partner_logos" && section.is_enabled && Array.isArray(section.data.items)).flatMap((section) => (section.data.items as unknown[]).filter((item): item is Record<string, unknown> => !!item && typeof item === "object" && !Array.isArray(item)).map((item, index) => ({
     id: String(item.id || `${section.id}-${index}`), title: typeof item.title === "string" ? item.title : "", image_url: typeof item.image_url === "string" ? item.image_url : "", href: typeof item.href === "string" ? item.href : "",
     metadata: item.metadata && typeof item.metadata === "object" && !Array.isArray(item.metadata) ? item.metadata as Record<string, unknown> : {},
@@ -70,7 +71,7 @@ export function HomepagePartnerLogos({ fallbackHref }: { fallbackHref: string })
   return <PartnerGroupSlider groups={groups} fallbackHref={fallbackHref} />;
 }
 
-function PartnerGroupSlider({ groups, fallbackHref }: { groups: Array<{ title: string; partners: Partner[] }>; fallbackHref: string }) {
+export function PartnerGroupSlider({ groups, fallbackHref }: { groups: Array<{ title: string; partners: Partner[] }>; fallbackHref: string }) {
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
   const changeGroup = (direction: -1 | 1) => setActive((current) => (current + direction + groups.length) % groups.length);
@@ -83,9 +84,11 @@ function PartnerGroupSlider({ groups, fallbackHref }: { groups: Array<{ title: s
 }
 
 export function PartnersShowcase() {
+  const context = useContext(CmsPageContext);
+  const revision = context?.slug === "about-partners" ? context.revision : null;
   const [partners, setPartners] = useState<Partner[]>([]);
   useEffect(() => { let active = true; getPublishedCmsPage("about-partners").then((page) => { if (active) setPartners(partnerPageEntries(page)); }).catch(() => {}); return () => { active = false; }; }, []);
-  const logos = partners.filter((item) => webUrl(item.image_url));
+  const logos = (revision ? partnerPageEntries({ revision } as CmsPublicPage) : partners).filter((item) => webUrl(item.image_url));
   const strategic = logos.filter((item) => item.metadata.partner_type === "strategic");
   const corporate = logos.filter((item) => item.metadata.partner_type !== "strategic");
   return <div className="space-y-10"><PartnerGrid title="Strategic partners" partners={strategic} /><PartnerGrid title="Corporate partners" partners={corporate} /></div>;

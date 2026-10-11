@@ -3,14 +3,12 @@ import { BuiltInSection } from "@/components/cms/BuiltInSection";
 
 import { EditableCopy } from "@/components/cms/EditableCopy";
 import { notFound, permanentRedirect } from "next/navigation";
-import { EditableImage as Image } from "@/components/cms/EditableCopy";
 import { AboutHero } from "@/components/about/AboutHero";
 import { SecretariatGrid } from "@/components/about/SecretariatGrid";
 import { PartnersShowcase } from "@/components/content/PartnerLogos";
-import { ProfilePhoto, ProfilePhotosProvider } from "@/components/about/ProfilePhotos";
-import { councilMembers } from "@/data/council";
+import { ProfilePhotosProvider } from "@/components/about/ProfilePhotos";
+import { CouncilProfiles } from "@/components/about/CouncilProfiles";
 import { pageCopy } from "@/data/site";
-import { Icon } from "@/components/ui/Icon";
 
 export function generateStaticParams() {
   return Object.keys(pageCopy)
@@ -57,42 +55,6 @@ const coreValues = [
   ],
   ["03", "Integrity", "Providing leadership with honesty and integrity."],
 ];
-
-function CouncilMemberCard({ member, featured = false }: { member: typeof councilMembers[number]; featured?: boolean }) {
-  return (
-    <details className={`group border border-[var(--color-line)] bg-[var(--color-warm-white)] ${featured ? "border-t-4 border-t-[var(--color-ink)]" : ""}`}>
-      <summary className="list-none cursor-pointer p-6 [&::-webkit-details-marker]:hidden sm:p-7">
-        <div className="flex items-start justify-between gap-5">
-          <div className="flex min-w-0 items-start gap-4">
-            <ProfilePhoto profileKey={[member.name, member.role]} alt={`Portrait of ${member.name}`} className="h-[95px] w-[76px] shrink-0 object-cover object-top">
-              {member.image ? (
-                <Image src={member.image} alt={`Portrait of ${member.name}`} width={152} height={190} className="h-[95px] w-[76px] shrink-0 object-cover object-top" />
-              ) : (
-                <span className="grid h-[95px] w-[76px] shrink-0 place-items-center bg-[var(--color-ink)] text-sm font-bold text-white">
-                  {member.name.split(" ").filter((part) => part.length > 2).slice(-2).map((part) => part[0]).join("")}
-                </span>
-              )}
-            </ProfilePhoto>
-            <div>
-              <p className="text-xs font-bold tracking-[0.1em] text-[var(--color-accent-dark)]"><EditableCopy label="Text" fallback={String(member.role ?? "")} /></p>
-              <h3 className="mt-2 font-serif text-2xl leading-tight tracking-[-0.035em] text-[var(--color-ink)]">
-                {member.name}{member.credentials && <span className="text-[0.65em]">, {member.credentials}</span>}
-              </h3>
-            </div>
-          </div>
-          <Icon name="plus" className="mt-1 h-5 w-5 text-[var(--color-ink)] transition-transform group-open:rotate-45" />
-        </div>
-        <p className="mt-6 max-w-xl leading-7 text-[var(--color-slate)]"><EditableCopy label="Text" fallback={String(member.summary ?? "")} /></p>
-        <span className="mt-6 inline-flex border-b border-[var(--color-accent)] pb-1 text-sm font-bold text-[var(--color-ink)] group-open:hidden">Read profile</span>
-      </summary>
-      <div className="border-t border-[var(--color-line)] px-6 pb-7 pt-6 sm:px-7">
-        <div className="space-y-4 text-sm leading-7 text-[var(--color-slate)]">
-          {member.profile.map((paragraph) => <p key={paragraph}><EditableCopy label="Text" fallback={String(paragraph ?? "")} /></p>)}
-        </div>
-      </div>
-    </details>
-  );
-}
 
 export default async function AboutDetail({
   params,
@@ -175,7 +137,7 @@ export default async function AboutDetail({
         </>
       ) : isCouncil ? (
         <ProfilePhotosProvider pageSlug="about-council">
-        <BuiltInSection sectionId="council" className="bg-white py-20 sm:py-28">
+        <BuiltInSection sectionId="council" sectionType="profile_gallery" className="bg-white py-20 sm:py-28">
           <div className="site-container">
             <div className="grid gap-8 border-b border-[var(--color-line)] pb-12 lg:grid-cols-12 lg:items-end">
               <div className="lg:col-span-7">
@@ -185,14 +147,7 @@ export default async function AboutDetail({
               <p className="max-w-md leading-7 text-[var(--color-slate)] lg:col-span-4 lg:col-start-9"><EditableCopy label="Text" fallback={"The Council provides stewardship, strategic direction and oversight for IoD-Gh and the standards of professional directorship in Ghana."} /></p>
             </div>
 
-            <div className="mt-12 grid gap-10">
-              <div className="grid gap-5 border-b border-[var(--color-line)] pb-10">
-                {councilMembers.slice(0, 2).map((member) => <CouncilMemberCard key={member.name} member={member} featured />)}
-              </div>
-              <div className="grid gap-5 md:grid-cols-2">
-                {councilMembers.slice(2).map((member) => <CouncilMemberCard key={member.name} member={member} />)}
-              </div>
-            </div>
+            <CouncilProfiles />
           </div>
         </BuiltInSection>
         </ProfilePhotosProvider>

@@ -28,3 +28,19 @@ class CmsEventConnectionTests(TestCase):
         page.refresh_from_db()
         self.assertEqual(page.published_revision_id, live.id)
         self.assertEqual(page.current_draft_revision_id, draft.id)
+
+    def test_council_migration_keeps_photos_and_populates_existing_copy(self):
+        migration = import_module("apps.content.migrations.0025_connect_council_profiles")
+        page = CMSPage.objects.create(path="/about/council", slug="about-council", label="Council", template_key="legacy")
+        live = CMSPageRevision.objects.create(page=page, number=1, state="published", title="Council")
+        page.published_revision = live
+        page.save()
+        gallery = CMSPageSection.objects.create(revision=live, section_type="profile_gallery", data={"items": [{"title": "President, Institute of Directors-Ghana", "image_url": "/saved-photo.png", "metadata": {"summary": "Saved summary"}}]})
+        migration.connect_council(apps, None)
+        migration.connect_council(apps, None)
+        gallery.refresh_from_db()
+        entry = gallery.data["items"][0]
+        self.assertEqual(entry["image_url"], "/saved-photo.png")
+        self.assertEqual(entry["metadata"]["summary"], "Saved summary")
+        self.assertEqual(entry["metadata"]["display_name"], "Mrs. Mary Asare-Yeboah")
+        self.assertTrue(entry["metadata"]["biography"])
