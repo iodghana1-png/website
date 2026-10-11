@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { Icon } from "./Icon";
 
@@ -92,8 +93,16 @@ export function HeroCarousel({ slides = fallbackSlides }: { slides?: HeroSlide[]
           role="img"
           aria-label={index === currentIndex ? slide.alt : undefined}
           className={`absolute inset-0 -z-20 bg-cover bg-center transition-[opacity,transform] duration-1000 ease-in-out motion-reduce:transition-none ${index === currentIndex ? "hero-image-motion opacity-100" : "scale-[1.025] opacity-0"}`}
-          style={{ backgroundImage: `url("${slide.imageUrl}")` }}
-        />
+        >
+          <Image
+            src={slide.imageUrl}
+            alt=""
+            fill
+            preload={index === 0}
+            sizes="100vw"
+            className="object-cover object-center"
+          />
+        </div>
       ))}
       <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(39,27,84,0.97)_0%,rgba(39,27,84,0.86)_38%,rgba(39,27,84,0.34)_70%,rgba(39,27,84,0.18)_100%)] sm:bg-[linear-gradient(90deg,rgba(39,27,84,0.95)_0%,rgba(39,27,84,0.8)_42%,rgba(39,27,84,0.12)_76%)]" />
       <div className="site-container flex min-h-[565px] flex-col pb-8 pt-24 sm:min-h-[605px] sm:pb-10 sm:pt-28 lg:pt-32">
