@@ -20,10 +20,6 @@ const enquiryOptions = ["Membership", "Training", "Governance services", "Genera
 type ContactForm = { firstName: string; lastName: string; email: string; phoneNumber: string; enquiryType: string; message: string };
 const initialForm: ContactForm = { firstName: "", lastName: "", email: "", phoneNumber: "", enquiryType: "", message: "" };
 
-function csrfToken() {
-  return document.cookie.split("; ").find((item) => item.startsWith("csrftoken="))?.split("=")[1] || "";
-}
-
 export default function ContactPage() {
   const siteSettings = useSiteSettings();
   const [form, setForm] = useState<ContactForm>(initialForm);
@@ -43,10 +39,15 @@ export default function ContactPage() {
     try {
       const csrfResponse = await fetch(`${apiBaseUrl}/api/v1/auth/csrf/`, { credentials: "include" });
       if (!csrfResponse.ok) throw new Error("We could not start a secure contact session. Please try again.");
+      // The API is on a separate origin in production, so its CSRF cookie is
+      // deliberately not readable through document.cookie on this website.
+      // Use the matching token returned by the CSRF endpoint instead.
+      const { csrfToken } = await csrfResponse.json() as { csrfToken?: string };
+      if (!csrfToken) throw new Error("We could not start a secure contact session. Please try again.");
       const response = await fetch(`${apiBaseUrl}/api/v1/contact/enquiries/`, {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken() },
+        headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken },
         body: JSON.stringify({
           first_name: form.firstName,
           last_name: form.lastName,
