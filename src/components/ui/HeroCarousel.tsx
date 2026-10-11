@@ -86,7 +86,7 @@ export function HeroCarousel({ slides = fallbackSlides }: { slides?: HeroSlide[]
   const next = () => setCurrent((currentIndex + 1) % slides.length);
 
   return (
-    <section className="relative isolate min-h-[510px] overflow-hidden bg-[var(--color-ink)] text-white sm:min-h-[605px]" aria-roledescription="carousel" aria-label="IoD-Gh highlights">
+    <section className="relative isolate min-h-[565px] overflow-hidden bg-[var(--color-ink)] text-white sm:min-h-[605px]" aria-roledescription="carousel" aria-label="IoD-Gh highlights">
       {slides.map((slide, index) => (
         <div
           key={slide.id}
@@ -104,20 +104,20 @@ export function HeroCarousel({ slides = fallbackSlides }: { slides?: HeroSlide[]
           />
         </div>
       ))}
-      <div className="absolute inset-0 -z-10 bg-[linear-gradient(180deg,rgba(39,27,84,0.94)_0%,rgba(39,27,84,0.78)_58%,rgba(39,27,84,0.9)_100%)] sm:bg-[linear-gradient(90deg,rgba(39,27,84,0.95)_0%,rgba(39,27,84,0.8)_42%,rgba(39,27,84,0.12)_76%)]" />
-      <div className="site-container flex min-h-[510px] flex-col pb-6 pt-20 sm:min-h-[605px] sm:pb-10 sm:pt-28 lg:pt-32">
-        <div className="flex flex-1 items-center py-5 sm:py-8">
-          <div className="relative min-h-[255px] w-full sm:min-h-[290px]">
+      <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(39,27,84,0.97)_0%,rgba(39,27,84,0.86)_38%,rgba(39,27,84,0.34)_70%,rgba(39,27,84,0.18)_100%)] sm:bg-[linear-gradient(90deg,rgba(39,27,84,0.95)_0%,rgba(39,27,84,0.8)_42%,rgba(39,27,84,0.12)_76%)]" />
+      <div className="site-container flex min-h-[565px] flex-col pb-8 pt-24 sm:min-h-[605px] sm:pb-10 sm:pt-28 lg:pt-32">
+        <div className="flex flex-1 items-center py-6 sm:py-8">
+          <div className="relative min-h-[270px] w-full sm:min-h-[290px]">
             {slides.map((slide, index) => (
               <div key={slide.id} className={`absolute inset-0 max-w-2xl transition-[opacity,transform] duration-700 ease-out motion-reduce:transition-none ${index === currentIndex ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0"}`} aria-hidden={index !== currentIndex}>
                 <p className="eyebrow text-[var(--color-accent-light)]">{slide.eyebrow}</p>
-                <h1 className="mt-4 max-w-[13ch] font-serif text-[clamp(2.35rem,10vw,3rem)] font-semibold leading-[1.02] tracking-[-0.052em] text-white sm:mt-5 sm:max-w-[15ch] sm:text-[clamp(3.2rem,4.6vw,4.9rem)] sm:leading-[0.98]">{slide.title}</h1>
-                <p className="mt-4 max-w-[34ch] text-[0.9375rem] leading-6 text-[var(--color-mist)] sm:mt-5 sm:max-w-md sm:text-[1.0625rem] sm:leading-7">{slide.description}</p>
-                <div className="mt-6 flex flex-col items-stretch gap-4 sm:mt-7 sm:flex-row sm:items-center sm:gap-6">
-                  <Link href={slide.primaryHref} tabIndex={index === currentIndex ? 0 : -1} style={{ color: "#271B54" }} className="inline-flex min-h-11 w-full items-center justify-center bg-white px-5 text-sm font-bold transition-[background-color,color] duration-200 hover:bg-[var(--color-accent-light)] sm:w-auto">
+                <h1 className="mt-5 max-w-[15ch] font-serif text-[clamp(2.7rem,4.6vw,4.9rem)] font-semibold leading-[0.98] tracking-[-0.052em] text-white">{slide.title}</h1>
+                <p className="mt-5 max-w-md text-base leading-7 text-[var(--color-mist)] sm:text-[1.0625rem]">{slide.description}</p>
+                <div className="mt-7 flex flex-wrap items-center gap-6">
+                  <Link href={slide.primaryHref} tabIndex={index === currentIndex ? 0 : -1} style={{ color: "#271B54" }} className="inline-flex min-h-11 items-center justify-center bg-white px-5 text-sm font-bold transition-[background-color,color] duration-200 hover:bg-[var(--color-accent-light)]">
                     {slide.primaryLabel} <Icon name="arrow-right" className="ml-2 h-4 w-4" />
                   </Link>
-                  <Link href={slide.secondaryHref} tabIndex={index === currentIndex ? 0 : -1} className="inline-flex w-fit border-b border-white/60 pb-1 text-sm font-bold text-white transition-colors duration-200 hover:border-[var(--color-accent-light)] hover:text-[var(--color-accent-light)]">
+                  <Link href={slide.secondaryHref} tabIndex={index === currentIndex ? 0 : -1} className="inline-flex border-b border-white/60 pb-1 text-sm font-bold text-white transition-colors duration-200 hover:border-[var(--color-accent-light)] hover:text-[var(--color-accent-light)]">
                     {slide.secondaryLabel} <Icon name="arrow-right" className="ml-2 h-4 w-4" />
                   </Link>
                 </div>
@@ -125,13 +125,13 @@ export function HeroCarousel({ slides = fallbackSlides }: { slides?: HeroSlide[]
             ))}
           </div>
         </div>
-        <div className="flex items-center justify-between border-t border-white/25 pt-3 sm:justify-end sm:gap-6 sm:pt-4">
-          <div className="flex gap-1.5 sm:gap-2" role="group" aria-label="Choose slide">
+        <div className="flex items-center justify-between border-t border-white/25 pt-4 sm:justify-end sm:gap-6">
+          <div className="flex gap-2" role="group" aria-label="Choose slide">
             {slides.map((slide, index) => (
-              <button key={slide.id} type="button" onClick={() => setCurrent(index)} aria-label={`Show slide ${index + 1}: ${slide.feature}`} aria-current={index === currentIndex} className={`h-2.5 w-6 border transition-colors sm:w-7 ${index === currentIndex ? "border-[var(--color-accent-light)] bg-[var(--color-accent-light)]" : "border-white/70 bg-transparent hover:bg-white"}`} />
+              <button key={slide.id} type="button" onClick={() => setCurrent(index)} aria-label={`Show slide ${index + 1}: ${slide.feature}`} aria-current={index === currentIndex} className={`h-2.5 w-7 border transition-colors ${index === currentIndex ? "border-[var(--color-accent-light)] bg-[var(--color-accent-light)]" : "border-white/70 bg-transparent hover:bg-white"}`} />
             ))}
           </div>
-          {slides.length > 1 && <div className="flex gap-2"><button type="button" onClick={previous} aria-label="Previous slide" className="grid h-10 w-10 place-items-center border border-white/60 transition-colors hover:bg-white hover:text-[var(--color-ink)] sm:h-9 sm:w-9"><Icon name="arrow-left" className="h-4 w-4" /></button><button type="button" onClick={next} aria-label="Next slide" className="grid h-10 w-10 place-items-center border border-white/60 transition-colors hover:bg-white hover:text-[var(--color-ink)] sm:h-9 sm:w-9"><Icon name="arrow-right" className="h-4 w-4" /></button></div>}
+          {slides.length > 1 && <div className="flex gap-2"><button type="button" onClick={previous} aria-label="Previous slide" className="grid h-9 w-9 place-items-center border border-white/60 transition-colors hover:bg-white hover:text-[var(--color-ink)]"><Icon name="arrow-left" className="h-4 w-4" /></button><button type="button" onClick={next} aria-label="Next slide" className="grid h-9 w-9 place-items-center border border-white/60 transition-colors hover:bg-white hover:text-[var(--color-ink)]"><Icon name="arrow-right" className="h-4 w-4" /></button></div>}
         </div>
       </div>
     </section>
