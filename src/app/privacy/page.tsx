@@ -1,10 +1,16 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { EditableCopy, EditableLink as Link } from "@/components/cms/EditableCopy";
+import { BuiltInSection } from "@/components/cms/BuiltInSection";
+import { CmsPageText } from "@/components/content/useCmsContent";
+import { CmsHeroImage } from "@/components/cms/HeroImage";
+import { cmsMetadata } from "@/lib/api/cms-server";
 
-export const metadata: Metadata = {
+const fallbackMetadata: Metadata = {
   title: "Privacy Notice | Institute of Directors-Ghana",
   description: "How the Institute of Directors-Ghana handles personal information collected through this website.",
 };
+
+export async function generateMetadata(): Promise<Metadata> { return { ...fallbackMetadata, ...await cmsMetadata("/privacy") }; }
 
 const sections = [
   {
@@ -74,29 +80,29 @@ const sections = [
 export default function PrivacyPage() {
   return (
     <main className="bg-white">
-      <header className="border-b border-[var(--color-line)] bg-[var(--color-paper)] py-16 sm:py-20">
-        <div className="site-container">
-          <p className="eyebrow">Legal</p>
-          <h1 className="mt-5 max-w-4xl font-serif text-[clamp(3rem,6vw,5.25rem)] leading-[0.96] tracking-[-0.055em]">Privacy Notice.</h1>
-          <p className="mt-6 max-w-3xl text-lg leading-8 text-[var(--color-slate)]">How Institute of Directors-Ghana handles personal information across our website and online services.</p>
-          <p className="mt-6 text-sm font-semibold text-[var(--color-slate)]">Last updated: 11 October 2026</p>
+      <BuiltInSection sectionId="hero" className="relative isolate overflow-hidden border-b border-[var(--color-line)] bg-[var(--color-paper)] py-16 sm:py-20">
+        <CmsHeroImage /><div className="site-container">
+          <p className="eyebrow"><CmsPageText slug="privacy-page" field="eyebrow" fallback="Legal" /></p>
+          <h1 className="mt-5 max-w-4xl font-serif text-[clamp(3rem,6vw,5.25rem)] leading-[0.96] tracking-[-0.055em]"><CmsPageText slug="privacy-page" field="title" fallback="Privacy Notice." /></h1>
+          <p className="mt-6 max-w-3xl text-lg leading-8 text-[var(--color-slate)]"><CmsPageText slug="privacy-page" field="summary" fallback="How Institute of Directors-Ghana handles personal information across our website and online services." /></p>
+          <p className="mt-6 text-sm font-semibold text-[var(--color-slate)]"><EditableCopy label="Revision date" fallback="Last updated: 11 October 2026" /></p>
         </div>
-      </header>
+      </BuiltInSection>
 
-      <section className="py-16 sm:py-24">
+      <BuiltInSection sectionId="policy-content" className="py-16 sm:py-24">
         <div className="site-container grid gap-12 lg:grid-cols-12">
           <aside className="lg:col-span-3">
-            <p className="eyebrow">Your privacy</p>
-            <p className="mt-4 text-sm leading-6 text-[var(--color-slate)]">A clear explanation of the information we collect, why we need it and the choices available to you.</p>
-            <Link href="/terms" className="link-arrow mt-6">Read our Terms of Use</Link>
+            <p className="eyebrow"><EditableCopy label="Text" fallback={"Your privacy"} /></p>
+            <p className="mt-4 text-sm leading-6 text-[var(--color-slate)]"><EditableCopy label="Text" fallback={"A clear explanation of the information we collect, why we need it and the choices available to you."} /></p>
+            <Link href="/terms" className="link-arrow mt-6"><EditableCopy label="Link text" fallback={"Read our Terms of Use"} /></Link>
           </aside>
 
           <article className="space-y-10 lg:col-span-8 lg:col-start-5">
             {sections.map((section) => (
               <section key={section.title}>
-                <h2 className="font-serif text-3xl tracking-[-0.04em]">{section.title}</h2>
+                <h2 className="font-serif text-3xl tracking-[-0.04em]"><EditableCopy label="Heading" fallback={section.title} /></h2>
                 <div className="mt-4 space-y-4 leading-7 text-[var(--color-slate)]">
-                  {section.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+                  {section.paragraphs.map((paragraph) => <p key={paragraph}><EditableCopy label="Text" fallback={paragraph} /></p>)}
                 </div>
               </section>
             ))}
@@ -106,7 +112,7 @@ export default function PrivacyPage() {
             </p>
           </article>
         </div>
-      </section>
+      </BuiltInSection>
     </main>
   );
 }

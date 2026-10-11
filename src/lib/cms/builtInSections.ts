@@ -38,6 +38,7 @@ export function builtInSections(path: string, legacy = true): BuiltInSectionDefi
   else if (path === "/events") entries = [["events-list", "Upcoming events"]];
   else if (path === "/news") entries = [["news-list", "News articles"]];
   else if (path === "/media/event-gallery") entries = [["event-gallery", "Event gallery photos"]];
+  else if (["/privacy", "/terms"].includes(path)) entries = [["policy-content", "Policy text and links"]];
   else if (path === "/contact") entries = [["contact-form", "Contact information and enquiry form"]];
   return definitions([["hero", "Page hero / introduction"], ...entries, ["body", "Additional page content"]]);
 }

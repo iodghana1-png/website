@@ -44,3 +44,15 @@ class CmsEventConnectionTests(TestCase):
         self.assertEqual(entry["metadata"]["summary"], "Saved summary")
         self.assertEqual(entry["metadata"]["display_name"], "Mrs. Mary Asare-Yeboah")
         self.assertTrue(entry["metadata"]["biography"])
+
+    def test_legal_pages_are_registered_without_overwriting_existing_edits(self):
+        migration = import_module("apps.content.migrations.0026_connect_legal_pages")
+        for slug in ["privacy-page", "terms-page"]:
+            page = CMSPage.objects.get(slug=slug)
+            self.assertIsNotNone(page.published_revision_id)
+            self.assertGreater(len(page.published_revision.sections.get(slot="page_copy").data["fields"]), 15)
+            page.published_revision.title = "Existing edited heading"
+            page.published_revision.save(update_fields=["title"])
+        migration.connect_legal_pages(apps, None)
+        for slug in ["privacy-page", "terms-page"]:
+            self.assertEqual(CMSPage.objects.get(slug=slug).published_revision.title, "Existing edited heading")

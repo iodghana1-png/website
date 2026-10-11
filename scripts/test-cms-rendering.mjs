@@ -21,7 +21,8 @@ function load(source) {
   const compiled = ts.transpileModule(readFileSync(filename, "utf8"), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true },
   }).outputText;
-  const dependency = (specifier) => specifier.startsWith("@/") ? load(path.join(root, "src", specifier.slice(2))) : specifier.startsWith(".") ? load(path.resolve(path.dirname(filename), specifier)) : createRequire(filename)(specifier);
+  // This isolated server-rendering harness can load server-only page modules.
+  const dependency = (specifier) => specifier === "server-only" ? {} : specifier.startsWith("@/") ? load(path.join(root, "src", specifier.slice(2))) : specifier.startsWith(".") ? load(path.resolve(path.dirname(filename), specifier)) : createRequire(filename)(specifier);
   runInThisContext(`(function(require,module,exports){${compiled}\n})`, { filename })(dependency, loadedModule, loadedModule.exports);
   return loadedModule.exports;
 }
@@ -280,5 +281,20 @@ test("CPD renders entries from every enabled seminar and recording section in sa
     assert.ok(html.indexOf("CMS entry 1") < html.indexOf("CMS entry 2"));
     assert.doesNotMatch(html, /CMS entry 3/);
     assert.equal(cmsRender(element, [], "training-cpd"), "");
+  }
+});
+
+test("Privacy and Terms render saved CMS text and honor section visibility", () => {
+  const defaults = JSON.parse(readFileSync(path.join(root, "backend/apps/content/migrations/data/legal_pages.json"), "utf8"));
+  for (const source of defaults) {
+    const Page = load(path.join(root, "src/app", source.kind, "page")).default;
+    const fields = source.fields.map((field, index) => index === 0 ? { ...field, value: "Edited policy heading" } : field);
+    const sections = [{ slot: "page_copy", section_type: "rich_text", is_enabled: true, data: { fields } }];
+    const html = cmsRender(React.createElement(Page), sections, source.slug);
+    assert.match(html, /Edited policy heading/);
+    assert.match(html, /Updated member register/);
+    assert.doesNotMatch(html, new RegExp(source.fields[0].value));
+    const hidden = builtInSections(source.path).reduce((sections, { key }) => setSectionState(sections, key, "hidden"), sections);
+    assert.equal(cmsRender(React.createElement(Page), hidden, source.slug), '<main class="bg-white"></main>');
   }
 });

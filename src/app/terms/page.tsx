@@ -1,10 +1,16 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { EditableCopy, EditableLink as Link } from "@/components/cms/EditableCopy";
+import { BuiltInSection } from "@/components/cms/BuiltInSection";
+import { CmsPageText } from "@/components/content/useCmsContent";
+import { CmsHeroImage } from "@/components/cms/HeroImage";
+import { cmsMetadata } from "@/lib/api/cms-server";
 
-export const metadata: Metadata = {
+const fallbackMetadata: Metadata = {
   title: "Terms of Use | Institute of Directors-Ghana",
   description: "Terms governing use of the Institute of Directors-Ghana website and online services.",
 };
+
+export async function generateMetadata(): Promise<Metadata> { return { ...fallbackMetadata, ...await cmsMetadata("/terms") }; }
 
 const sections = [
   {
@@ -81,35 +87,35 @@ const sections = [
 export default function TermsPage() {
   return (
     <main className="bg-white">
-      <header className="border-b border-[var(--color-line)] bg-[var(--color-paper)] py-16 sm:py-20">
-        <div className="site-container">
-          <p className="eyebrow">Legal</p>
-          <h1 className="mt-5 max-w-4xl font-serif text-[clamp(3rem,6vw,5.25rem)] leading-[0.96] tracking-[-0.055em]">Terms of Use.</h1>
-          <p className="mt-6 max-w-3xl text-lg leading-8 text-[var(--color-slate)]">The conditions for using the IoD-Gh website, member services and Examination Portal.</p>
-          <p className="mt-6 text-sm font-semibold text-[var(--color-slate)]">Last updated: 11 October 2026</p>
+      <BuiltInSection sectionId="hero" className="relative isolate overflow-hidden border-b border-[var(--color-line)] bg-[var(--color-paper)] py-16 sm:py-20">
+        <CmsHeroImage /><div className="site-container">
+          <p className="eyebrow"><CmsPageText slug="terms-page" field="eyebrow" fallback="Legal" /></p>
+          <h1 className="mt-5 max-w-4xl font-serif text-[clamp(3rem,6vw,5.25rem)] leading-[0.96] tracking-[-0.055em]"><CmsPageText slug="terms-page" field="title" fallback="Terms of Use." /></h1>
+          <p className="mt-6 max-w-3xl text-lg leading-8 text-[var(--color-slate)]"><CmsPageText slug="terms-page" field="summary" fallback="The conditions for using the IoD-Gh website, member services and Examination Portal." /></p>
+          <p className="mt-6 text-sm font-semibold text-[var(--color-slate)]"><EditableCopy label="Revision date" fallback="Last updated: 11 October 2026" /></p>
         </div>
-      </header>
+      </BuiltInSection>
 
-      <section className="py-16 sm:py-24">
+      <BuiltInSection sectionId="policy-content" className="py-16 sm:py-24">
         <div className="site-container grid gap-12 lg:grid-cols-12">
           <aside className="lg:col-span-3">
-            <p className="eyebrow">Website terms</p>
-            <p className="mt-4 text-sm leading-6 text-[var(--color-slate)]">The rules for using IoD-Gh online services safely and responsibly.</p>
-            <Link href="/privacy" className="link-arrow mt-6">Read our Privacy Notice</Link>
+            <p className="eyebrow"><EditableCopy label="Text" fallback={"Website terms"} /></p>
+            <p className="mt-4 text-sm leading-6 text-[var(--color-slate)]"><EditableCopy label="Text" fallback={"The rules for using IoD-Gh online services safely and responsibly."} /></p>
+            <Link href="/privacy" className="link-arrow mt-6"><EditableCopy label="Link text" fallback={"Read our Privacy Notice"} /></Link>
           </aside>
 
           <article className="space-y-10 lg:col-span-8 lg:col-start-5">
             {sections.map((section) => (
               <section key={section.title}>
-                <h2 className="font-serif text-3xl tracking-[-0.04em]">{section.title}</h2>
+                <h2 className="font-serif text-3xl tracking-[-0.04em]"><EditableCopy label="Heading" fallback={section.title} /></h2>
                 <div className="mt-4 space-y-4 leading-7 text-[var(--color-slate)]">
-                  {section.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+                  {section.paragraphs.map((paragraph) => <p key={paragraph}><EditableCopy label="Text" fallback={paragraph} /></p>)}
                 </div>
               </section>
             ))}
           </article>
         </div>
-      </section>
+      </BuiltInSection>
     </main>
   );
 }

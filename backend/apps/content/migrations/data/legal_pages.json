@@ -1,0 +1,339 @@
+[
+  {
+    "kind": "privacy",
+    "slug": "privacy-page",
+    "path": "/privacy",
+    "label": "Privacy Notice",
+    "eyebrow": "Legal",
+    "title": "Privacy Notice.",
+    "summary": "How Institute of Directors-Ghana handles personal information across our website and online services.",
+    "fields": [
+      {
+        "key": "zzwu9h",
+        "label": "Heading",
+        "value": "Who this notice covers"
+      },
+      {
+        "key": "wmtwsu",
+        "label": "Text",
+        "value": "This Privacy Notice explains how the Institute of Directors-Ghana (IoD-Gh, we, us or our) handles personal information collected through iodghana.org, its member and CMS services, and the IoD-Gh Examination Portal. It applies when you browse the site, contact us, apply for membership, use an account, register interest in a programme or sit an examination."
+      },
+      {
+        "key": "1rpkcdq",
+        "label": "Text",
+        "value": "Please read this notice together with any service-specific information shown when you provide your details. If another notice applies to a particular programme or service, that notice will explain any additional handling of your information."
+      },
+      {
+        "key": "mx0bk1",
+        "label": "Heading",
+        "value": "Information we collect"
+      },
+      {
+        "key": "7m0kqh",
+        "label": "Text",
+        "value": "We collect the information you choose to give us, such as your name, email address, telephone number, organisation, professional role, membership details, enquiry messages and information included in a membership application."
+      },
+      {
+        "key": "1owa77x",
+        "label": "Text",
+        "value": "For a membership application, your CV is sent as an email attachment directly to authorised IoD-Gh membership staff for assessment. The website does not retain the uploaded CV after that delivery."
+      },
+      {
+        "key": "wom3j4",
+        "label": "Text",
+        "value": "When you use an account or the Examination Portal, we collect the information needed to provide that service. This can include account and sign-in details, your name and email address, examination access and session records, answers, submitted work, results and relevant security logs."
+      },
+      {
+        "key": "uoj8i6",
+        "label": "Heading",
+        "value": "Why we use information"
+      },
+      {
+        "key": "uhze4f",
+        "label": "Text",
+        "value": "We use personal information to respond to enquiries, assess and administer membership applications, provide member, programme and examination services, send the updates or results you ask us to send, and communicate with you about your relationship with IoD-Gh."
+      },
+      {
+        "key": "1t0bc0f",
+        "label": "Text",
+        "value": "We also use information to protect our services, prevent misuse, maintain records, improve the website and meet legal, regulatory and governance responsibilities. Membership decisions are made by authorised IoD-Gh staff. Examination results are calculated from answers submitted in the portal and are available for authorised staff review."
+      },
+      {
+        "key": "1amzyrw",
+        "label": "Heading",
+        "value": "Cookies and site analytics"
+      },
+      {
+        "key": "15zd0z3",
+        "label": "Text",
+        "value": "We use essential cookies only where they are needed to keep sign-in, security and examination sessions working. These cookies are not used for advertising or cross-site tracking. You can manage cookies through your browser, but blocking essential cookies may prevent some secure services from working properly."
+      },
+      {
+        "key": "17amc3s",
+        "label": "Text",
+        "value": "The public website uses first-party, cookie-free analytics to understand aggregate visits and improve our pages. It records the page viewed, referral host and broad device type. A one-way visitor marker is rotated daily for aggregate counts; we do not store raw IP addresses or a persistent analytics identifier."
+      },
+      {
+        "key": "1mkqng1",
+        "label": "Heading",
+        "value": "Who receives information"
+      },
+      {
+        "key": "16tewyp",
+        "label": "Text",
+        "value": "Access is limited to authorised IoD-Gh staff and trusted service providers that help us operate the website, hosting, email delivery, security and related services. They may process personal information only as needed to provide services to us and in line with appropriate instructions."
+      },
+      {
+        "key": "9mo8cz",
+        "label": "Text",
+        "value": "We may also share information when required by law, to protect the rights, safety or security of IoD-Gh and others, or as part of a lawful organisational process. Where information is processed outside Ghana, we will take reasonable steps to ensure that it is handled with appropriate safeguards."
+      },
+      {
+        "key": "1l4yroh",
+        "label": "Heading",
+        "value": "How long we keep it"
+      },
+      {
+        "key": "1duhgu0",
+        "label": "Text",
+        "value": "We keep personal information only for as long as reasonably necessary for the purpose for which it was collected. This includes membership administration, examination records, programme delivery, security, record-keeping and any legal or regulatory obligations."
+      },
+      {
+        "key": "1wcf5ri",
+        "label": "Text",
+        "value": "Retention periods vary according to the type of information and the service involved. When information is no longer needed, we will securely delete it or make it anonymous where appropriate."
+      },
+      {
+        "key": "o0myxu",
+        "label": "Heading",
+        "value": "Your choices and rights"
+      },
+      {
+        "key": "j7oxfw",
+        "label": "Text",
+        "value": "Subject to applicable law, you may ask about the personal information we hold about you, request correction of inaccurate information, object to certain processing, ask for restriction or deletion in appropriate circumstances, or withdraw consent where our use of information depends on consent."
+      },
+      {
+        "key": "1dp7l4c",
+        "label": "Text",
+        "value": "To make a request, please contact us using the details below. We may need to confirm your identity before responding. You may also raise a concern with Ghana’s Data Protection Commission if you believe your privacy rights have been affected."
+      },
+      {
+        "key": "1xylu9j",
+        "label": "Heading",
+        "value": "Keeping information secure"
+      },
+      {
+        "key": "1lunh84",
+        "label": "Text",
+        "value": "We use reasonable organisational and technical measures designed to protect personal information from unauthorised access, loss, misuse or alteration. No online service can be completely risk-free, so please protect your account credentials and do not share examination access codes or other confidential information."
+      },
+      {
+        "key": "1dbmjas",
+        "label": "Heading",
+        "value": "Contact and updates"
+      },
+      {
+        "key": "r6d61x",
+        "label": "Text",
+        "value": "For a privacy request or question, contact IoD-Gh at info@iodghana.org. We may update this notice when our services or legal obligations change. The latest version will always be published on this page with its revision date."
+      },
+      {
+        "key": "12fwets",
+        "label": "Revision date",
+        "value": "Last updated: 11 October 2026"
+      },
+      {
+        "key": "a3n3ty",
+        "label": "Text",
+        "value": "Your privacy"
+      },
+      {
+        "key": "2va0ii",
+        "label": "Text",
+        "value": "A clear explanation of the information we collect, why we need it and the choices available to you."
+      },
+      {
+        "key": "bfa6gm",
+        "label": "Link text",
+        "value": "Read our Terms of Use"
+      }
+    ]
+  },
+  {
+    "kind": "terms",
+    "slug": "terms-page",
+    "path": "/terms",
+    "label": "Terms of Use",
+    "eyebrow": "Legal",
+    "title": "Terms of Use.",
+    "summary": "The conditions for using the IoD-Gh website, member services and Examination Portal.",
+    "fields": [
+      {
+        "key": "e427uj",
+        "label": "Heading",
+        "value": "Accepting these terms"
+      },
+      {
+        "key": "119odqm",
+        "label": "Text",
+        "value": "These Terms of Use govern your use of the Institute of Directors-Ghana (IoD-Gh) website and its online services. By accessing or using them, you agree to these Terms and to use the services lawfully and responsibly."
+      },
+      {
+        "key": "14tpf8z",
+        "label": "Text",
+        "value": "If you use a service on behalf of an organisation, you confirm that you have authority to do so. Additional terms, notices, eligibility criteria or fees may apply to a membership, programme or examination. Where they do, they form part of the relevant arrangement."
+      },
+      {
+        "key": "6xx4u1",
+        "label": "Heading",
+        "value": "Using the website responsibly"
+      },
+      {
+        "key": "4cwuod",
+        "label": "Text",
+        "value": "You must not interfere with the security, availability or normal operation of the website, attempt to gain unauthorised access to an account or restricted system, introduce malicious code, scrape restricted content, or use the service to submit unlawful, misleading or harmful material."
+      },
+      {
+        "key": "sk5ad0",
+        "label": "Text",
+        "value": "We may take reasonable steps to protect the website and its users, including limiting access, removing material or suspending a service where we reasonably believe these Terms have been breached or there is a security risk."
+      },
+      {
+        "key": "6beffm",
+        "label": "Heading",
+        "value": "Accounts and access"
+      },
+      {
+        "key": "1ndz7zx",
+        "label": "Text",
+        "value": "You are responsible for keeping your account details, passwords and other access information confidential. You must tell us promptly if you believe your account has been accessed without permission or any credentials have been lost, disclosed or compromised."
+      },
+      {
+        "key": "venoht",
+        "label": "Text",
+        "value": "We may suspend, reset or protect access where this is reasonably necessary to keep an account, a member, an applicant, an examination candidate or the wider service secure."
+      },
+      {
+        "key": "1dgtyun",
+        "label": "Heading",
+        "value": "Membership and programmes"
+      },
+      {
+        "key": "142ubpq",
+        "label": "Text",
+        "value": "Submitting an application or expression of interest does not itself create membership, confirm programme enrolment or guarantee eligibility. Membership applications are assessed by the appropriate IoD-Gh committee, and any decision will be communicated through the relevant process."
+      },
+      {
+        "key": "1ebiv02",
+        "label": "Text",
+        "value": "Programme information, dates, fees, availability and requirements may change. We will make reasonable efforts to keep published information current, but a separate programme communication may contain the final details for a particular event or course."
+      },
+      {
+        "key": "goa86g",
+        "label": "Heading",
+        "value": "Examination Portal"
+      },
+      {
+        "key": "nytrfd",
+        "label": "Text",
+        "value": "Examination access is assigned by authorised administrators. Access codes are personal to the eligible cohort and must not be shared. Candidates must enter their own name and email address, provide accurate information and complete assessments independently unless the examination instructions expressly allow otherwise."
+      },
+      {
+        "key": "1gcty96",
+        "label": "Text",
+        "value": "We may invalidate, pause or review an examination attempt where there is a reasonable concern about eligibility, identity, integrity, misuse or a technical or security issue. Results are calculated from submitted answers and may be reviewed by authorised IoD-Gh staff before they are treated as final."
+      },
+      {
+        "key": "11svjbk",
+        "label": "Heading",
+        "value": "Content and intellectual property"
+      },
+      {
+        "key": "ie8ngr",
+        "label": "Text",
+        "value": "Unless stated otherwise, the website’s content, branding, publications, examination materials and design are owned by or licensed to IoD-Gh. You may view or download material made available for personal, professional and non-commercial use, but may not reproduce, modify, distribute or commercially exploit it without permission."
+      },
+      {
+        "key": "u4mq4a",
+        "label": "Text",
+        "value": "Materials you submit remain yours. By submitting them, you give IoD-Gh permission to use them only as necessary to provide, assess or administer the requested service and to meet related record-keeping obligations."
+      },
+      {
+        "key": "1rea2mj",
+        "label": "Heading",
+        "value": "Availability and external links"
+      },
+      {
+        "key": "1iviqs6",
+        "label": "Text",
+        "value": "We aim to keep the website accurate, secure and available, but content, services and links may change or be temporarily unavailable. We may correct errors, update content, maintain systems or withdraw a feature when reasonably needed."
+      },
+      {
+        "key": "xudnup",
+        "label": "Text",
+        "value": "Links to external websites are provided for convenience. IoD-Gh does not control those sites and is not responsible for their content, availability, security or privacy practices."
+      },
+      {
+        "key": "1tswm4x",
+        "label": "Heading",
+        "value": "Disclaimers and liability"
+      },
+      {
+        "key": "tnadmr",
+        "label": "Text",
+        "value": "Website content is provided for general information. Unless we explicitly agree otherwise in writing, it is not professional, legal, financial or other advice and should not be relied on as a substitute for advice tailored to your circumstances."
+      },
+      {
+        "key": "11cr1a6",
+        "label": "Text",
+        "value": "To the extent permitted by applicable law, IoD-Gh is not liable for indirect or consequential loss arising from use of, or inability to use, this website. Nothing in these Terms excludes liability that cannot lawfully be excluded."
+      },
+      {
+        "key": "cjh9t1",
+        "label": "Heading",
+        "value": "Privacy, law and changes"
+      },
+      {
+        "key": "8szou6",
+        "label": "Text",
+        "value": "Our handling of personal information is explained in our Privacy Notice. These Terms are governed by the laws of Ghana. Any dispute will be addressed in accordance with applicable Ghanaian law, subject to any mandatory rights you may have."
+      },
+      {
+        "key": "koz3fd",
+        "label": "Text",
+        "value": "We may update these Terms from time to time by publishing a revised version on this page. Continuing to use the website after an update means you accept the updated Terms."
+      },
+      {
+        "key": "14k3kid",
+        "label": "Heading",
+        "value": "Contact us"
+      },
+      {
+        "key": "1equ3cw",
+        "label": "Text",
+        "value": "Questions about these Terms can be sent to info@iodghana.org."
+      },
+      {
+        "key": "12fwets",
+        "label": "Revision date",
+        "value": "Last updated: 11 October 2026"
+      },
+      {
+        "key": "5a5uod",
+        "label": "Text",
+        "value": "Website terms"
+      },
+      {
+        "key": "ogxw26",
+        "label": "Text",
+        "value": "The rules for using IoD-Gh online services safely and responsibly."
+      },
+      {
+        "key": "bp18wx",
+        "label": "Link text",
+        "value": "Read our Privacy Notice"
+      }
+    ]
+  }
+]
