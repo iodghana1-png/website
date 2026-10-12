@@ -85,6 +85,8 @@ class ResendEmailTests(TestCase):
 
         html = mail.outbox[0].alternatives[0].content
         self.assertEqual(html.count("cid:iod-gh-logo"), 2)
+        self.assertIn('width="112"', html)
+        self.assertIn('width="64"', html)
 
     @patch("apps.common.email.urlopen")
     @override_settings(RESEND_API_KEY="re_test-key", DEFAULT_FROM_EMAIL="membership@example.com")
