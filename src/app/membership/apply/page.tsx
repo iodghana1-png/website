@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { FormInput } from "@/components/ui/FormFields";
 import { Icon } from "@/components/ui/Icon";
-import { MembershipApplicationResult, submitMembershipApplication } from "@/lib/api/membership";
+import { submitMembershipApplication } from "@/lib/api/membership";
 
 const steps = ["Application", "Personal information", "Professional profile", "Curriculum vitae", "Review", "Confirmation"];
 
@@ -43,7 +43,6 @@ function MembershipPaymentDetails() {
 export default function ApplyPage() {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<FormState>(initialForm);
-  const [result, setResult] = useState<MembershipApplicationResult | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const complete = step === steps.length - 1;
@@ -86,7 +85,7 @@ export default function ApplyPage() {
       payload.append("recommending_agent", form.recommendingAgent);
       payload.append("cv", form.cv);
 
-      setResult(await submitMembershipApplication(payload));
+      await submitMembershipApplication(payload);
       setStep(steps.length - 1);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Your application could not be submitted. Please try again.");
@@ -115,7 +114,7 @@ export default function ApplyPage() {
             <p className="eyebrow">Step {step + 1} of {steps.length}</p>
             <h2 className="mt-4 font-serif text-4xl">{steps[step]}</h2>
             {error && <p role="alert" className="mt-6 border-l-2 border-[var(--color-error)] bg-red-50 px-4 py-3 text-sm text-[var(--color-ink)]">{error}</p>}
-            {complete ? <div className="mt-7 border-l-2 border-[var(--color-gold)] bg-[var(--color-warm-white)] p-6"><h3 className="font-serif text-2xl">Your application has been received.</h3><p className="mt-3 leading-7 text-[var(--color-slate)]">We have sent a receipt to <strong>{form.email}</strong>. The membership committee will review your CV and assign the appropriate membership category.</p>{result && <div className="mt-6 space-y-3 border-t border-[var(--color-line)] pt-5 text-sm"><p><strong>Application reference:</strong> {result.reference}</p><p><strong>Tracking token:</strong> <span className="break-all font-mono text-xs">{result.tracking_token}</span></p><p className="text-[var(--color-slate)]">For your privacy, this tracking token is shown only once. Save it in a secure place.</p></div>}</div> : <><div className="mt-8 grid gap-5 sm:grid-cols-2">
+            {complete ? <div className="mt-7 border-l-2 border-[var(--color-gold)] bg-[var(--color-warm-white)] p-6"><h3 className="font-serif text-2xl">Your application has been received.</h3><p className="mt-3 leading-7 text-[var(--color-slate)]">We have sent a receipt to <strong>{form.email}</strong>. The membership committee will review your CV and assign the appropriate membership category.</p></div> : <><div className="mt-8 grid gap-5 sm:grid-cols-2">
               {step === 0 && <div className="sm:col-span-2"><p className="max-w-2xl leading-7 text-[var(--color-slate)]">The membership committee determines the appropriate membership category after assessing your application and CV.</p><div className="mt-6 grid gap-4 sm:grid-cols-2"><button type="button" onClick={() => update("applicationKind", "new_membership")} className={`border p-5 text-left transition-colors ${form.applicationKind === "new_membership" ? "border-[var(--color-ink)] bg-[var(--color-paper)]" : "border-[var(--color-line)] hover:border-[var(--color-ink)]"}`}><strong className="block">New membership</strong><span className="mt-2 block text-sm leading-6 text-[var(--color-slate)]">I am applying to join IoD-Gh.</span></button><button type="button" onClick={() => update("applicationKind", "upgrade")} className={`border p-5 text-left transition-colors ${form.applicationKind === "upgrade" ? "border-[var(--color-ink)] bg-[var(--color-paper)]" : "border-[var(--color-line)] hover:border-[var(--color-ink)]"}`}><strong className="block">Membership upgrade</strong><span className="mt-2 block text-sm leading-6 text-[var(--color-slate)]">I am an existing member applying for an upgrade.</span></button></div>{form.applicationKind === "upgrade" && <div className="mt-5 max-w-md"><FormInput label="Existing membership number" required value={form.membershipNumber} onChange={(event) => update("membershipNumber", event.target.value)} /></div>}</div>}
               {step === 1 && <><FormInput label="First name" required value={form.firstName} onChange={(event) => update("firstName", event.target.value)} /><FormInput label="Last name" required value={form.lastName} onChange={(event) => update("lastName", event.target.value)} /><FormInput label="Email address" type="email" required value={form.email} onChange={(event) => update("email", event.target.value)} /><FormInput label="Phone number" value={form.phoneNumber} onChange={(event) => update("phoneNumber", event.target.value)} /></>}
               {step === 2 && <><FormInput label="Organisation" required value={form.organisation} onChange={(event) => update("organisation", event.target.value)} /><FormInput label="Current role" required value={form.currentRole} onChange={(event) => update("currentRole", event.target.value)} /><div className="sm:col-span-2"><FormInput label="Recommending agent" value={form.recommendingAgent} onChange={(event) => update("recommendingAgent", event.target.value)} /><p className="mt-2 text-sm text-[var(--color-slate)]">Optional — enter the name of the person, organisation, or agent who recommended IoD-Gh to you.</p></div></>}
