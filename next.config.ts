@@ -17,6 +17,9 @@ const nextConfig: NextConfig = {
     }];
   },
   images: {
+    // The development API serves CMS files from localhost. Never allow this
+    // in a deployed environment, where it could expose private-network hosts.
+    dangerouslyAllowLocalIP: process.env.NODE_ENV !== "production",
     remotePatterns: [
       { protocol: "https", hostname: "i.ytimg.com", pathname: "/vi/**" },
       { protocol: "https", hostname: "api-production-54a4a.up.railway.app", pathname: "/api/v2/cms/media/**" },
@@ -25,6 +28,14 @@ const nextConfig: NextConfig = {
         hostname: cmsApiUrl.hostname,
         port: cmsApiUrl.port,
         pathname: "/api/v2/cms/media/**",
+      },
+      // Legacy content and Django's development media storage use this route.
+      // Keep it restricted to the configured CMS API host and port.
+      {
+        protocol: cmsApiUrl.protocol.slice(0, -1) as "http" | "https",
+        hostname: cmsApiUrl.hostname,
+        port: cmsApiUrl.port,
+        pathname: "/media/**",
       },
     ],
   },
