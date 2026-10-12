@@ -4,12 +4,12 @@ import { notFound } from "next/navigation";
 
 import { PageHero } from "@/components/ui/PageHero";
 import { newsItems } from "@/data/site";
-import { publishedArticle } from "@/lib/api/cms-server";
+import { cmsMetadata, publishedArticle } from "@/lib/api/cms-server";
 import { ArticlePage } from "@/components/cms/ArticlePage";
 
 export async function generateMetadata({ params }: { params: Promise<{ article: string }> }) {
   const article = await publishedArticle((await params).article);
-  return article ? { title: article.revision.seo_title || article.revision.title, description: article.revision.seo_description || article.revision.standfirst, authors: article.author_display_name ? [{ name: article.author_display_name }] : undefined, openGraph: { type: "article", publishedTime: article.published_at || undefined, authors: article.author_display_name ? [article.author_display_name] : [], images: article.revision.cover_media ? [article.revision.cover_media.file_url] : [] } } : {};
+  return article ? { title: article.revision.seo_title || article.revision.title, description: article.revision.seo_description || article.revision.standfirst, authors: article.author_display_name ? [{ name: article.author_display_name }] : undefined, openGraph: { type: "article", publishedTime: article.published_at || undefined, authors: article.author_display_name ? [article.author_display_name] : [], images: article.revision.cover_media ? [article.revision.cover_media.file_url] : [] } } : cmsMetadata("/news/" + (await params).article);
 }
 
 export function generateStaticParams() {

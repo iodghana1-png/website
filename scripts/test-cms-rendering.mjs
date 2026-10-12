@@ -298,3 +298,28 @@ test("Privacy and Terms render saved CMS text and honor section visibility", () 
     assert.equal(cmsRender(React.createElement(Page), hidden, source.slug), '<main class="bg-white"></main>');
   }
 });
+
+test("Each CMS subpage resolves its own SEO metadata instead of the parent page", async () => {
+  const originalFetch = globalThis.fetch;
+  const requested = [];
+  globalThis.fetch = async (url) => {
+    requested.push(String(url));
+    const route = new URL(url).searchParams.get("path");
+    return { ok: !!route, json: async () => ({ revision: { title: "Heading for " + route, seo_title: "SEO for " + route, seo_description: "Saved description", canonical_path: route } }) };
+  };
+  try {
+    for (const [section, slug] of [["about", "history"], ["membership", "fees"], ["training", "professional"], ["services", "board-evaluation"], ["knowledge", "reports"]]) {
+      const { generateMetadata } = load(path.join(root, "src/app", section, "[slug]/layout"));
+      const result = await generateMetadata({ params: Promise.resolve({ slug }) });
+      assert.equal(result.title, "SEO for /" + section + "/" + slug);
+      assert.equal(result.description, "Saved description");
+    }
+    const gallery = load(path.join(root, "src/app/media/event-gallery/layout"));
+    assert.equal((await gallery.generateMetadata()).title, "SEO for /media/event-gallery");
+    const event = load(path.join(root, "src/app/events/[event]/layout"));
+    assert.equal((await event.generateMetadata({ params: Promise.resolve({ event: "conference" }) })).title, "SEO for /events/conference");
+    assert.ok(requested.every((url) => !url.endsWith("path=%2Fabout")));
+  } finally { globalThis.fetch = originalFetch; }
+});
+
+
