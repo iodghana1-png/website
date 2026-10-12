@@ -73,6 +73,19 @@ class ContactEnquiryTests(TestCase):
 
 
 class ResendEmailTests(TestCase):
+    def test_institutional_email_places_the_inline_logo_in_its_header_and_footer(self):
+        send_institutional_email(
+            subject="Test email",
+            recipient="recipient@example.com",
+            recipient_name="Recipient",
+            heading="Test heading",
+            introduction="Test introduction.",
+            closing="Test closing.",
+        )
+
+        html = mail.outbox[0].alternatives[0].content
+        self.assertEqual(html.count("cid:iod-gh-logo"), 2)
+
     @patch("apps.common.email.urlopen")
     @override_settings(RESEND_API_KEY="re_test-key", DEFAULT_FROM_EMAIL="membership@example.com")
     def test_resend_https_delivery_contains_the_cv_attachment_and_idempotency_key(self, urlopen):
