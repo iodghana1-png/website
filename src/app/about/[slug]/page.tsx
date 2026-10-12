@@ -83,7 +83,7 @@ export default async function AboutDetail({
               <div className="lg:col-span-4">
                 <p className="eyebrow">Our history</p>
                 <div className="mt-5">
-                  <Logo showName={false} markClassName="h-16 w-16" />
+                  <Logo showName={false} markClassName="h-40 w-40 sm:h-48 sm:w-48" />
                 </div>
               </div>
               <div className="space-y-5 lg:col-span-7 lg:col-start-6">
