@@ -93,7 +93,9 @@ def send_institutional_email(
 ) -> None:
     """Send a consistently branded IoD-Gh email, preferring Resend HTTPS when configured."""
     detail_rows = [{"label": label, "value": value} for label, value in details]
-    logo_path = Path(settings.BASE_DIR).parent / "public" / "images" / "iod-logo-white.png"
+    # Keep the inline email logo within the backend package. Railway deploys the
+    # API from the backend directory, so frontend public assets are not present.
+    logo_path = Path(__file__).resolve().parent / "static" / "apps" / "common" / "images" / "iod-logo-white.png"
     has_logo = logo_path.is_file()
     logo = logo_path if has_logo else None
     attachment_list = list(attachments)

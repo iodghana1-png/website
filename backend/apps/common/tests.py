@@ -106,8 +106,11 @@ class ResendEmailTests(TestCase):
         request = urlopen.call_args.args[0]
         payload = json.loads(request.data)
         cv_attachment = next(attachment for attachment in payload["attachments"] if attachment["filename"] == "applicant-cv.pdf")
+        logo_attachment = next(attachment for attachment in payload["attachments"] if attachment.get("content_id") == "iod-gh-logo")
         self.assertEqual(payload["to"], ["committee@example.com"])
         self.assertEqual(cv_attachment["content"], base64.b64encode(b"%PDF-test").decode("ascii"))
+        self.assertEqual(logo_attachment["filename"], "iod-logo-white.png")
+        self.assertEqual(logo_attachment["content_type"], "image/png")
         headers = {name.lower(): value for name, value in request.header_items()}
         self.assertEqual(headers["authorization"], "Bearer re_test-key")
         self.assertEqual(headers["idempotency-key"], "membership-staff/APP-TEST")
