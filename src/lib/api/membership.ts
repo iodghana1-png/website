@@ -42,6 +42,7 @@ export const verifyPublicMember = (memberName: string) => apiRequest<PublicMembe
 export const getStaffDirectory = () => apiRequest<DirectoryEntry[]>("/membership/staff/directory/");
 export const createDirectoryEntry = (data: Omit<DirectoryEntry, "id">) => apiRequest<DirectoryEntry>("/membership/staff/directory/", { method: "POST", body: JSON.stringify(data) });
 export const updateDirectoryEntry = (id: string, data: Partial<Omit<DirectoryEntry, "id">>) => apiRequest<DirectoryEntry>(`/membership/staff/directory/${id}/`, { method: "PATCH", body: JSON.stringify(data) });
+export const deleteDirectoryEntry = (id: string) => apiRequest<void>(`/membership/staff/directory/${id}/`, { method: "DELETE" });
 export const updateDirectoryPublication = (data: { is_published: boolean; designation?: DirectoryEntry["designation"]; current_state?: boolean }) => apiRequest<{ updated: number }>("/membership/staff/directory/bulk-publication/", { method: "PATCH", body: JSON.stringify(data) });
 export const reviewApplication = (reference: string, internal_notes: string) => apiRequest<MembershipApplication>(`/membership/staff/applications/${encodeURIComponent(reference)}/review/`, { method: "POST", body: JSON.stringify({ internal_notes }) });
 export const resendApplicationReceipt = (reference: string) => apiRequest<void>(`/membership/staff/applications/${encodeURIComponent(reference)}/receipt-email/`, { method: "POST" });

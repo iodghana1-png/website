@@ -80,6 +80,16 @@ class MembershipApiTests(TestCase):
         response = self.csrf_client(staff).post("/api/v1/membership/staff/directory/", data={"full_name": "Example, Staff", "designation": "AIoD", "as_of_date": "2026-09-30"}, content_type="application/json")
         self.assertEqual(response.status_code, 201)
 
+    def test_directory_manager_can_delete_an_entry(self):
+        entry = MemberDirectoryEntry.objects.create(full_name="Former, Member", designation="MIoD", as_of_date=date(2026, 9, 30), is_published=True)
+
+        response = self.csrf_client(self.officer).delete(f"/api/v1/membership/staff/directory/{entry.id}/")
+
+        self.assertEqual(response.status_code, 204)
+        self.assertFalse(MemberDirectoryEntry.objects.filter(pk=entry.id).exists())
+        self.assertEqual(self.client.get("/api/v1/membership/directory/").json(), [])
+        self.assertTrue(AuditLog.objects.filter(action="membership.directory_entry_deleted", target_id=entry.id).exists())
+
     def test_directory_bulk_publication_respects_the_category_filter(self):
         MemberDirectoryEntry.objects.create(full_name="Example, Member", designation="MIoD", as_of_date=date(2026, 9, 30))
         fellow = MemberDirectoryEntry.objects.create(full_name="Example, Fellow", designation="FIoD", as_of_date=date(2026, 9, 30))
