@@ -5,21 +5,13 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { navigation as defaultNavigation } from "@/data/navigation";
-import { CmsNavigationItem, getPublishedCmsMenu } from "@/lib/api/cms";
-import { examinationHref } from "@/lib/examinationPortal";
+import { getPublishedCmsMenu } from "@/lib/api/cms";
+import { asHeaderLinks, type HeaderLink } from "@/lib/cms/navigation";
 import { Logo } from "./Logo";
 
-type HeaderLink = { label: string; href: string; newTab?: boolean; children?: Array<{ label: string; href: string; description?: string; newTab?: boolean }> };
 const homeLink: HeaderLink = { label: "Home", href: "/" };
 
 function withHomeLink(items: HeaderLink[]) { return [homeLink, ...items.filter((item) => item.href !== "/" && item.label.toLowerCase() !== "home")]; }
-function hasMenuBeyondHome(items: HeaderLink[]) { return items.some((item) => item.href !== "/" && item.label.trim().toLowerCase() !== "home"); }
-function isVisibleNavigationItem(item: CmsNavigationItem) { return item.href.replace(/\/$/, "") !== "/training/customized"; }
-function asHeaderLinks(items: CmsNavigationItem[]): HeaderLink[] {
-  const enabled = items.filter((item) => item.is_enabled && isVisibleNavigationItem(item));
-  return enabled.filter((item) => !item.parent_id).map((item) => ({ label: item.label, href: examinationHref(item.href || "/"), newTab: item.open_in_new_tab, children: enabled.filter((child) => child.parent_id === item.id).map((child) => ({ label: child.label, href: examinationHref(child.href || "/"), newTab: child.open_in_new_tab })) }));
-}
-
 export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [desktopMenuDismissed, setDesktopMenuDismissed] = useState(false);
@@ -27,7 +19,7 @@ export function Header() {
   const [menu, setMenu] = useState<HeaderLink[]>(() => withHomeLink(defaultNavigation));
   const pathname = usePathname();
   const isHomepage = pathname === "/";
-  const mobileMenu = menu.length > 1 ? menu : withHomeLink(defaultNavigation);
+  const mobileMenu = menu;
   const closeNavigation = () => { setMenuOpen(false); setDesktopMenuDismissed(true); (document.activeElement instanceof HTMLElement ? document.activeElement : null)?.blur(); };
 
   useEffect(() => {
@@ -37,8 +29,20 @@ export function Header() {
   }, []);
   useEffect(() => {
     let cancelled = false;
-    const timer = window.setTimeout(() => { getPublishedCmsMenu("header-primary").then((cmsMenu) => { const links = asHeaderLinks(cmsMenu.published_revision?.items || []); if (!cancelled && cmsMenu.published_revision && hasMenuBeyondHome(links)) setMenu(withHomeLink(links)); }).catch(() => undefined); }, 0);
-    return () => { cancelled = true; window.clearTimeout(timer); };
+    const refreshMenu = () => {
+      getPublishedCmsMenu("header-primary").then((cmsMenu) => {
+        if (!cancelled && cmsMenu.published_revision) setMenu(asHeaderLinks(cmsMenu.published_revision.items));
+      }).catch(() => undefined);
+    };
+    const timer = window.setTimeout(refreshMenu, 0);
+    window.addEventListener("cms:navigation-published", refreshMenu);
+    window.addEventListener("focus", refreshMenu);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+      window.removeEventListener("cms:navigation-published", refreshMenu);
+      window.removeEventListener("focus", refreshMenu);
+    };
   }, []);
 
   if (pathname === "/admin" || pathname.startsWith("/admin/")) return <header className="sticky top-0 z-40 flex h-[72px] items-center justify-between border-b border-[var(--color-line)] bg-white px-5"><Logo /><Link href="/" className="inline-flex items-center gap-1.5 text-sm font-semibold">View website <Icon name="external" className="h-3.5 w-3.5" /></Link></header>;

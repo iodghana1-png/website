@@ -3,7 +3,7 @@ from importlib import import_module
 from django.apps import apps
 from django.test import TestCase
 
-from .models import CMSPage, CMSPageRevision, CMSPageSection, ContentItem
+from .models import CMSNavigationMenu, CMSNavigationRevision, CMSNavigationItem, CMSPage, CMSPageRevision, CMSPageSection, ContentItem
 
 
 class CmsEventConnectionTests(TestCase):
@@ -56,3 +56,29 @@ class CmsEventConnectionTests(TestCase):
         migration.connect_legal_pages(apps, None)
         for slug in ["privacy-page", "terms-page"]:
             self.assertEqual(CMSPage.objects.get(slug=slug).published_revision.title, "Existing edited heading")
+
+    def test_navigation_bootstrap_preserves_private_draft_and_existing_public_menu(self):
+        migration = import_module("apps.content.migrations.0027_connect_header_navigation")
+        menu = CMSNavigationMenu.objects.get(key="header-primary")
+        menu.published_revision = None
+        draft = CMSNavigationRevision.objects.create(menu=menu, number=2, state="draft")
+        CMSNavigationItem.objects.create(revision=draft, label="Private menu label", href="/private")
+        menu.current_draft_revision = draft
+        menu.save()
+        migration.connect_navigation(apps, None)
+        menu.refresh_from_db()
+        live_id = menu.published_revision_id
+        self.assertEqual(menu.current_draft_revision_id, draft.id)
+        self.assertEqual(menu.published_revision.number, 3)
+        self.assertTrue(menu.published_revision.items.filter(label="Home", href="/").exists())
+        self.assertTrue(menu.published_revision.items.filter(label="Examinations", href="/training/exams", parent__label="Training").exists())
+        self.assertFalse(menu.published_revision.items.filter(href="/private").exists())
+        response = self.client.get("/api/v2/cms/navigation/header-primary/")
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("Private menu label", response.content.decode())
+        self.assertNotIn("current_draft_revision", response.json())
+        menu.published_revision.items.filter(href="/").update(label="Edited home")
+        migration.connect_navigation(apps, None)
+        menu.refresh_from_db()
+        self.assertEqual(menu.published_revision_id, live_id)
+        self.assertTrue(menu.published_revision.items.filter(label="Edited home").exists())

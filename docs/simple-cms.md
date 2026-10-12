@@ -10,10 +10,16 @@ Open **Content → Pages**, search for a page, and choose **Edit**. The editor o
 - **Save Draft** keeps changes private.
 - **Preview** saves a draft and opens a private preview. It never publishes.
 - **Home** is one page, with the existing homepage sections available to edit, hide and reorder.
-- Home’s **Partners** section shows a logo grid. Choose **Add partner logo**, enter the partner name, select/upload its logo and optionally add a website link. Reorder with Move up/down, then Save Changes. Logo proportions are preserved; entries without logos remain hidden from the public site.
+- Home’s **Partners** section uses the shared **Partners** page collection. Edit partner names, logos, website links and ordering there. Home controls the section heading and visibility; entries without logos remain hidden.
 - **News** has its own list and editor. Existing news was copied into article records.
 - **Media Library** supports search, upload, image selection, details, replacement and removal from the library. Removal archives the record; files referenced by existing content remain available.
-- **Navigation** edits names, page/external links, ordering and nesting.
+- **Events → Event cards** controls the event listings on both Events and Home. Edit titles, descriptions, dates, venue/details, images and links there; removing the last card leaves the list empty.
+- Home’s **News** and **Knowledge** sections control their headings and buttons. Their cards come from **News** articles and the relevant **Knowledge** document pages, not separate homepage copies.
+- **Council → Council profiles** controls names, credentials, roles, biographies, photos and ordering. New and removed profiles appear in the preview and on the public page after publishing.
+- **CPD & Seminars** displays entries from every enabled seminar and recording section in saved order.
+- **Privacy** and **Terms** are editable under Pages, with the existing wording preserved. Their hero and policy-content sections can also be hidden.
+- Each page’s **Search-engine settings** controls its own browser/search title and description, including subpages.
+- **Navigation** edits names, page/external links, ordering, nesting and visibility on desktop and mobile. The existing header is registered automatically; unpublished drafts remain private. Removing items, including Home, does not restore a hardcoded copy. Use `/training/exams` for the environment-aware examination-portal link.
 - **Settings** edits the organisation name, logo, favicon, contact details and social links.
 
 ## Developer integration

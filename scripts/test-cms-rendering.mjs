@@ -322,4 +322,29 @@ test("Each CMS subpage resolves its own SEO metadata instead of the parent page"
   } finally { globalThis.fetch = originalFetch; }
 });
 
+test("Published navigation honors order, names, visibility, empty menus and the exam URL", () => {
+  const { asHeaderLinks } = load(path.join(root, "src/lib/cms/navigation"));
+  const { examinationPortalUrl } = load(path.join(root, "src/lib/examinationPortal"));
+  const item = (id, label, href, position, extra = {}) => ({ id, label, href, position, is_enabled: true, open_in_new_tab: false, ...extra });
+  const items = [
+    item("training", "Learning", "/training", 3),
+    item("exam", "Take your exam", "/training/exams", 2, { parent_id: "training" }),
+    item("cpd", "Seminars", "/training/cpd", 1, { parent_id: "training" }),
+    item("custom", "Customised programmes", "/training/customized", 0, { parent_id: "training" }),
+    item("home", "Welcome", "/", 0),
+    item("hidden", "Hidden", "/about", 1, { is_enabled: false }),
+    item("child", "Hidden parent's child", "/about/history", 0, { parent_id: "hidden" }),
+  ];
+  const links = asHeaderLinks(items);
+  assert.deepEqual(links.map((entry) => entry.label), ["Welcome", "Learning"]);
+  assert.deepEqual(links[1].children.map((entry) => entry.label), ["Seminars", "Take your exam"]);
+  assert.equal(links[1].children[1].href, examinationPortalUrl);
+  assert.deepEqual(asHeaderLinks([]), []);
+  assert.deepEqual(asHeaderLinks(items.map((entry) => ({ ...entry, is_enabled: false }))), []);
+  const headerSource = readFileSync(path.join(root, "src/components/layout/Header.tsx"), "utf8");
+  assert.ok(!headerSource.includes("hasMenuBeyondHome"));
+  assert.ok(!headerSource.includes("menu.length >"));
+  assert.match(headerSource, /cms:navigation-published/);
+});
+
 

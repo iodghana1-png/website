@@ -40,7 +40,7 @@ export function MediaAdmin({ access }: { access: CmsAccess }) {
 
 type MenuItem = CmsNavigationItem & { id: string };
 function initialNavigation(): MenuItem[] {
-  return defaultNavigation.flatMap((item, index) => {
+  return [{ label: "Home", href: "/" }, ...defaultNavigation].flatMap((item, index) => {
     const parent = "menu-" + index;
     return [{ id: parent, label: item.label, href: item.href, position: index, parent_id: null, link_type: "internal" as const, open_in_new_tab: false, is_enabled: true }, ...(item.children || []).map((child, childIndex) => ({ id: parent + "-" + childIndex, label: child.label, href: child.href, position: childIndex, parent_id: parent, link_type: "internal" as const, open_in_new_tab: false, is_enabled: true }))];
   });
@@ -55,7 +55,7 @@ export function NavigationAdmin({ access }: { access: CmsAccess }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  useEffect(() => { Promise.all([listCmsMenus(), listCmsPages()]).then(([menus, pages]) => { setMenus(menus); setPages(pages); if (menus[0]) { setMenu(menus[0]); setItems(editableMenu(menus[0])); } else setItems(initialNavigation()); setReady(true); }).catch(() => setError("Could not load navigation.")); }, []);
+  useEffect(() => { Promise.all([listCmsMenus(), listCmsPages()]).then(([menus, pages]) => { setMenus(menus); setPages(pages); const header = menus.find((entry) => entry.key === "header-primary") || menus[0]; if (header) { setMenu(header); setItems(editableMenu(header)); } else setItems(initialNavigation()); setReady(true); }).catch(() => setError("Could not load navigation.")); }, []);
   const update = (index: number, patch: Partial<MenuItem>) => setItems(items.map((item, i) => i === index ? { ...item, ...patch } : item));
   function move(index: number, step: number) { const siblings = items.map((item, i) => ({ item, i })).filter(({ item }) => item.parent_id === items[index].parent_id); const sibling = siblings[siblings.findIndex(({ i }) => i === index) + step]; if (!sibling) return; const copy = [...items]; [copy[index], copy[sibling.i]] = [copy[sibling.i], copy[index]]; setItems(copy); }
   async function save(e: FormEvent) { e.preventDefault(); setBusy(true); setError(""); setNotice(""); try {
@@ -64,7 +64,7 @@ export function NavigationAdmin({ access }: { access: CmsAccess }) {
     const visit = (parent: string | null, parentIndex: number | null) => items.filter((item) => (item.parent_id || null) === parent).forEach((item) => { const index = ordered.length; ordered.push({ ...item, parent_index: parentIndex, position: index, page: item.link_type === "page" ? item.page : null }); visit(item.id, index); });
     visit(null, null);
     if (ordered.length !== items.length) throw new Error("Check that every menu item has a valid parent.");
-    const saved = await saveCmsMenuDraft(target.id, { items: ordered, change_summary: "" }); await publishCmsMenu(target.id, saved.current_draft_revision!.number); const next = await listCmsMenus(); setMenus(next); const current = next.find((m) => m.id === target.id)!; setMenu(current); setItems(editableMenu(current)); setNotice("Navigation saved successfully.");
+    const saved = await saveCmsMenuDraft(target.id, { items: ordered, change_summary: "" }); await publishCmsMenu(target.id, saved.current_draft_revision!.number); const next = await listCmsMenus(); setMenus(next); const current = next.find((m) => m.id === target.id)!; setMenu(current); setItems(editableMenu(current)); window.dispatchEvent(new Event("cms:navigation-published")); setNotice("Navigation saved successfully.");
   } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not save navigation."); } finally { setBusy(false); } }
   return <form onSubmit={save} className="max-w-5xl"><Feedback error={error} notice={notice} />{menus.length > 1 && <label className="mb-4 block text-sm">Menu<select value={menu?.id || ""} className={inputClass} onChange={(e) => { const selected = menus.find((m) => m.id === e.target.value)!; setMenu(selected); setItems(editableMenu(selected)); }}>{menus.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}</select></label>}
     <fieldset disabled={busy || !access.manage || !ready} className="space-y-3"><h2 className="mb-4 text-lg">{menu?.label || "Header"}</h2>{items.map((item, index) => <details key={item.id} className={"rounded-xl border bg-white " + (item.parent_id ? "ml-5" : "")}><summary className="cursor-pointer px-5 py-4 font-semibold">{item.label || "New item"}</summary><div className="space-y-4 border-t p-5"><Field label="Name" required value={item.label} onChange={(label) => update(index, { label })} /><label className="block text-sm">Link to<select className={inputClass} value={item.link_type === "page" ? item.page || "" : "custom"} onChange={(e) => update(index, e.target.value === "custom" ? { link_type: "internal", page: null } : { link_type: "page", page: e.target.value })}><option value="custom">Website address</option>{pages.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}</select></label>{item.link_type !== "page" && <Field label="Link address" required value={item.href} onChange={(href) => update(index, { href, link_type: href.startsWith("/") ? "internal" : "external" })} />}
