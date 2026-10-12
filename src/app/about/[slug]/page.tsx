@@ -8,6 +8,7 @@ import { SecretariatGrid } from "@/components/about/SecretariatGrid";
 import { PartnersShowcase } from "@/components/content/PartnerLogos";
 import { ProfilePhotosProvider } from "@/components/about/ProfilePhotos";
 import { CouncilProfiles } from "@/components/about/CouncilProfiles";
+import { Logo } from "@/components/layout/Logo";
 import { pageCopy } from "@/data/site";
 
 export function generateStaticParams() {
@@ -81,6 +82,9 @@ export default async function AboutDetail({
             <div className="site-container grid gap-8 lg:grid-cols-12 lg:gap-12">
               <div className="lg:col-span-4">
                 <p className="eyebrow">Our history</p>
+                <div className="mt-5">
+                  <Logo showName={false} markClassName="h-16 w-16" />
+                </div>
               </div>
               <div className="space-y-5 lg:col-span-7 lg:col-start-6">
                 {sections.history.map((text) => (
