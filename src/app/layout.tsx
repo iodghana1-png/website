@@ -6,7 +6,6 @@ import { Header } from "@/components/layout/Header";
 import { CmsRouteSwitch } from "@/components/cms/CmsPublishedRoute";
 import { SiteSettingsProvider } from "@/components/cms/SiteSettings";
 import { apiBaseUrl } from "@/lib/api/client";
-import { cmsMediaUrl } from "@/lib/cms/media";
 import { AnalyticsTracker } from "@/components/analytics/AnalyticsTracker";
 import "./globals.css";
 
@@ -25,8 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
   try {
     const response = await fetch(apiBaseUrl + "/api/v2/cms/site/", { cache: "no-store" });
     const { settings } = await response.json();
-    const favicon = cmsMediaUrl(settings, "favicon");
-    return { ...defaultMetadata, ...(settings.website_name ? { title: settings.website_name } : {}), ...(favicon ? { icons: { icon: favicon } } : {}) };
+    return { ...defaultMetadata, ...(settings.website_name ? { title: settings.website_name } : {}) };
   } catch { return defaultMetadata; }
 }
 
