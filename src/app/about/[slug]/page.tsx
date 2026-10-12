@@ -80,10 +80,10 @@ export default async function AboutDetail({
         <>
           <BuiltInSection sectionId="about-story" className="bg-white py-14 sm:py-18">
             <div className="site-container grid gap-8 lg:grid-cols-12 lg:gap-12">
-              <div className="relative min-h-48 lg:col-span-4 lg:min-h-0">
-                <p className="relative z-10 eyebrow">Our history</p>
-                <div className="pointer-events-none absolute -left-4 top-2 opacity-[0.16] sm:-left-8 lg:-left-10 lg:top-8">
-                  <Logo decorative showName={false} markClassName="h-48 w-48 sm:h-60 sm:w-60 lg:h-72 lg:w-72" />
+              <div className="lg:col-span-4">
+                <p className="eyebrow">Our history</p>
+                <div className="mt-5">
+                  <Logo showName={false} markClassName="h-16 w-16" />
                 </div>
               </div>
               <div className="space-y-5 lg:col-span-7 lg:col-start-6">
