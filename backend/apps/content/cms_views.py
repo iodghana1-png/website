@@ -3,8 +3,9 @@ from __future__ import annotations
 import mimetypes
 
 from django.core import signing
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.db.models import Q
+from django.db.models.deletion import ProtectedError
 from django.http import FileResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_protect
@@ -52,11 +53,18 @@ from .cms_services import (
 from .cms_media import resolve_legacy_media_urls
 from .models import (
     CMSArticle,
+    CMSArticleRevision,
     CMSCategory,
     CMSMediaAsset,
     CMSNavigationMenu,
+    CMSNavigationRevision,
     CMSPage,
+    CMSPageRevision,
+    CMSPageSection,
     CMSSiteSettings,
+    CMSSiteSettingsRevision,
+    ContentItem,
+    ContentPage,
 )
 
 
@@ -81,6 +89,59 @@ def settings_record() -> CMSSiteSettings:
 
 def save_event(*, action: str, target_type: str, target, request, metadata: dict | None = None) -> None:
     record_event(action=action, target_type=target_type, target_id=target.id, actor=request.user, request=request, metadata=metadata)
+
+
+def _stored_value_references_media(value, asset: CMSMediaAsset) -> bool:
+    """Return whether JSON or text content still points to a CMS media asset.
+
+    Older content stores full URLs while current CMS records normally store an
+    asset UUID. Checking both means a permanent deletion cannot leave either
+    format pointing at a missing file.
+    """
+    identifiers = (str(asset.id), asset.file.name)
+    if isinstance(value, str):
+        return any(identifier and identifier in value for identifier in identifiers)
+    if isinstance(value, dict):
+        return any(_stored_value_references_media(item, asset) for item in value.values())
+    if isinstance(value, (list, tuple)):
+        return any(_stored_value_references_media(item, asset) for item in value)
+    return False
+
+
+def _media_reference_reason(asset: CMSMediaAsset) -> str | None:
+    """Find any current or historical CMS reference to ``asset``.
+
+    Revision snapshots deliberately remain part of this check: deleting an
+    image from an old revision would make an otherwise restorable revision
+    incomplete.
+    """
+    if CMSPageRevision.objects.filter(social_image=asset).exists():
+        return "a page social image"
+    if CMSPageSection.objects.filter(primary_media=asset).exists():
+        return "a page section"
+    if CMSArticleRevision.objects.filter(cover_media=asset).exists():
+        return "a news or event article"
+    if CMSArticleRevision.objects.filter(gallery_media=asset).exists():
+        return "a news or event gallery"
+
+    stored_sources = (
+        ("page section content", CMSPageSection.objects.values_list("data", flat=True)),
+        ("page revision history", CMSPageRevision.objects.values_list("snapshot", flat=True)),
+        ("news or event revision history", CMSArticleRevision.objects.values_list("snapshot", flat=True)),
+        ("site settings", CMSSiteSettingsRevision.objects.values_list("data", flat=True)),
+        ("navigation history", CMSNavigationRevision.objects.values_list("snapshot", flat=True)),
+    )
+    for label, values in stored_sources:
+        if any(_stored_value_references_media(value, asset) for value in values.iterator()):
+            return label
+
+    for page in ContentPage.objects.values("eyebrow", "title", "summary", "body", "blocks").iterator():
+        if _stored_value_references_media(page, asset):
+            return "legacy page content"
+    for item in ContentItem.objects.values("title", "summary", "href", "metadata", "image_url").iterator():
+        if _stored_value_references_media(item, asset):
+            return "legacy site content"
+    return None
 
 
 class PublicCMSPageResolveView(APIView):
@@ -369,6 +430,38 @@ class StaffCMSMediaDetailView(APIView):
             asset.save()
         save_event(action="cms.media_updated", target_type="cms_media", target=asset, request=request)
         return Response(CMSMediaAssetSerializer(asset, context={"request": request}).data)
+
+    def delete(self, request, media_id):
+        # Lock the asset while checking references so another CMS save cannot
+        # attach it through a ForeignKey between the check and deletion.
+        with transaction.atomic():
+            asset = CMSMediaAsset.objects.select_for_update().filter(pk=media_id).first()
+            if not asset:
+                raise NotFound("CMS media asset was not found.")
+            if reason := _media_reference_reason(asset):
+                raise ValidationError({"media": [f"This file is still used by {reason}. Remove that reference before permanently deleting it."]})
+
+            asset_id = asset.id
+            file_name = asset.file.name
+            storage = asset.file.storage
+            try:
+                # Storage deletion happens before the record deletion so a
+                # storage outage never makes the CMS forget a billable file.
+                if file_name:
+                    storage.delete(file_name)
+                asset.delete()
+            except ProtectedError as error:
+                raise ValidationError({"media": ["This file was just added to content and cannot be permanently deleted."]}) from error
+
+        record_event(
+            action="cms.media_permanently_deleted",
+            target_type="cms_media",
+            target_id=asset_id,
+            actor=request.user,
+            request=request,
+            metadata={"file_name": file_name},
+        )
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @method_decorator(csrf_protect, name="dispatch")

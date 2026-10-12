@@ -1,5 +1,10 @@
 import json
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase
+from django.test.utils import override_settings
 from django.contrib.auth.models import Group
 from django.utils import timezone
 
@@ -358,6 +363,48 @@ class RevisionedCMSApiTests(TestCase):
         page = client.post("/api/v2/cms/staff/pages/", data=json.dumps(payload), content_type="application/json")
         self.assertEqual(page.status_code, 201)
         self.assertEqual(page.json()["current_draft_revision"]["sections"][0]["primary_media"]["id"], str(asset.id))
+
+    def test_staff_can_permanently_delete_unused_media_and_its_file(self):
+        from .models import CMSMediaAsset
+
+        client = self.csrf_client(self.staff)
+        with TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
+            asset = CMSMediaAsset.objects.create(
+                file=SimpleUploadedFile("unused.png", b"unused image", content_type="image/png"),
+                original_filename="unused.png",
+                mime_type="image/png",
+                kind="image",
+            )
+            file_path = Path(asset.file.path)
+            self.assertTrue(file_path.exists())
+
+            response = client.delete(f"/api/v2/cms/staff/media/{asset.id}/")
+
+            self.assertEqual(response.status_code, 204)
+            self.assertFalse(CMSMediaAsset.objects.filter(pk=asset.id).exists())
+            self.assertFalse(file_path.exists())
+        self.assertTrue(AuditLog.objects.filter(action="cms.media_permanently_deleted").exists())
+
+    def test_permanent_media_delete_refuses_any_cms_reference(self):
+        from .models import CMSMediaAsset, CMSSiteSettings, CMSSiteSettingsRevision
+
+        client = self.csrf_client(self.staff)
+        asset = CMSMediaAsset.objects.create(file="cms/site-logo.png", original_filename="Site logo", mime_type="image/png", kind="image")
+        page = client.post("/api/v2/cms/staff/pages/", data=json.dumps(self.page_payload(sections=[{"slot": "hero_image", "section_type": "image", "position": 0, "primary_media": str(asset.id)}])), content_type="application/json").json()
+        direct_reference = client.delete(f"/api/v2/cms/staff/media/{asset.id}/")
+        self.assertEqual(direct_reference.status_code, 400)
+        self.assertIn("page section", str(direct_reference.json()))
+        self.assertTrue(CMSMediaAsset.objects.filter(pk=asset.id).exists())
+
+        # Remove the direct revision so the test also covers CMS settings JSON,
+        # where footer and header logos are stored.
+        CMSPage.objects.get(pk=page["id"]).delete()
+        settings = CMSSiteSettings.objects.create(key="media-delete-test")
+        CMSSiteSettingsRevision.objects.create(settings=settings, number=1, data={"footer": {"logo_id": str(asset.id)}})
+        settings_reference = client.delete(f"/api/v2/cms/staff/media/{asset.id}/")
+        self.assertEqual(settings_reference.status_code, 400)
+        self.assertIn("site settings", str(settings_reference.json()))
+        self.assertTrue(CMSMediaAsset.objects.filter(pk=asset.id).exists())
 
     def test_news_is_private_until_published(self):
         client = self.csrf_client(self.staff)
