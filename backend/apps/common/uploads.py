@@ -10,8 +10,9 @@ import filetype
 import olefile
 from defusedxml import ElementTree
 from django.conf import settings
+from django.core.files.uploadedfile import SimpleUploadedFile
 from PIL import Image
-from pypdf import PdfReader
+from pypdf import PdfReader, PdfWriter
 from pypdf.generic import ArrayObject, DictionaryObject, IndirectObject
 from rest_framework.exceptions import APIException, ValidationError
 
@@ -146,7 +147,49 @@ MEDIA_TYPES = {
 DOCUMENT_TYPES = {".pdf": "application/pdf", ".doc": "application/msword", ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"}
 
 
-def validate_upload(upload, *, cv=False, scan_for_malware=True):
+def _validate_image(data, suffix):
+    expected, mime = IMAGE_TYPES[suffix]
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", Image.DecompressionBombWarning)
+        with Image.open(io.BytesIO(data)) as image:
+            if image.format != expected or image.width * image.height > 25_000_000:
+                raise ValueError("Image format or dimensions not supported")
+            image.verify()
+        with Image.open(io.BytesIO(data)) as image:
+            image.load()
+    return expected, mime
+
+
+def _rasterize_image(data, suffix, filename):
+    """Return a new, metadata-free raster image for the scanner-outage fallback."""
+    expected, mime = _validate_image(data, suffix)
+    with Image.open(io.BytesIO(data)) as image:
+        image.load()
+        clean = image.copy()
+    if expected == "JPEG" and clean.mode not in {"RGB", "L"}:
+        clean = clean.convert("RGB")
+    encoded = io.BytesIO()
+    clean.save(encoded, format=expected)
+    contents = encoded.getvalue()
+    if not contents:
+        raise ValueError("Image could not be safely re-encoded")
+    return SimpleUploadedFile(filename, contents, content_type=mime)
+
+
+def _rewrite_pdf(data, filename):
+    """Write a structurally validated PDF afresh, without source metadata."""
+    reader = PdfReader(io.BytesIO(data), strict=True)
+    writer = PdfWriter()
+    for page in reader.pages:
+        writer.add_page(page)
+    encoded = io.BytesIO()
+    writer.write(encoded)
+    contents = encoded.getvalue()
+    validate_pdf(contents)
+    return SimpleUploadedFile(filename, contents, content_type=DOCUMENT_TYPES[".pdf"])
+
+
+def validate_upload(upload, *, cv=False, scan_for_malware=True, allow_safe_media_fallback=False):
     """Validate an upload without trusting its browser-supplied content type.
 
     Membership CVs are delivered as email attachments and are never persisted by
@@ -164,19 +207,21 @@ def validate_upload(upload, *, cv=False, scan_for_malware=True):
     upload.seek(0)
     if len(data) > limit:
         raise ValidationError("The uploaded file is too large.")
+    scanner_unavailable = False
     if scan_for_malware:
-        scan_upload(data)
+        try:
+            scan_upload(data)
+        except UploadScannerUnavailable:
+            # CMS images and static PDFs can remain available during a scanner
+            # outage because we rebuild their safe, inspected content before
+            # persistence. Audio and video still fail closed until they can be
+            # malware-scanned.
+            if not allow_safe_media_fallback or suffix not in {*IMAGE_TYPES, ".pdf"}:
+                raise
+            scanner_unavailable = True
     try:
         if suffix in IMAGE_TYPES:
-            expected, mime = IMAGE_TYPES[suffix]
-            with warnings.catch_warnings():
-                warnings.simplefilter("error", Image.DecompressionBombWarning)
-                with Image.open(io.BytesIO(data)) as image:
-                    if image.format != expected or image.width * image.height > 25_000_000:
-                        raise ValueError("Image format or dimensions not supported")
-                    image.verify()
-                with Image.open(io.BytesIO(data)) as image:
-                    image.load()
+            _, mime = _validate_image(data, suffix)
         elif suffix == ".pdf":
             validate_pdf(data)
             mime = DOCUMENT_TYPES[suffix]
@@ -193,6 +238,13 @@ def validate_upload(upload, *, cv=False, scan_for_malware=True):
             mime = detected.mime
     except Exception as exc:
         raise ValidationError("The file is invalid, unsafe, encrypted, or does not match its extension. Export a fresh copy and try again.") from exc
+    if scanner_unavailable:
+        try:
+            upload = _rasterize_image(data, suffix, upload.name) if suffix in IMAGE_TYPES else _rewrite_pdf(data, upload.name)
+        except Exception as exc:
+            raise ValidationError("The file could not be safely processed. Export a fresh copy and try again.") from exc
+        if upload.size > limit:
+            raise ValidationError("The processed file is too large. Choose a smaller file and try again.")
     # Never persist or email the browser's untrusted MIME declaration.
     upload.content_type = mime
     upload.seek(0)

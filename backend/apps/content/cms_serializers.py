@@ -40,7 +40,7 @@ class CMSMediaAssetSerializer(serializers.ModelSerializer):
     file_url = serializers.SerializerMethodField()
 
     def validate_file(self, upload):
-        return validate_upload(upload)
+        return validate_upload(upload, allow_safe_media_fallback=True)
 
     class Meta:
         model = CMSMediaAsset

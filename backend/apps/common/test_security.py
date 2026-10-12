@@ -6,7 +6,7 @@ from unittest.mock import patch, MagicMock
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, SimpleTestCase, override_settings
-from PIL import Image
+from PIL import Image, PngImagePlugin
 from pypdf import PdfWriter
 from rest_framework.exceptions import ValidationError
 from rest_framework.test import APIClient, APIRequestFactory
@@ -112,6 +112,26 @@ class UploadValidationTests(SimpleTestCase):
         self.assertEqual(upload.content_type, "image/png")
         with self.assertRaises(ValidationError):
             validate_upload(SimpleUploadedFile("photo.jpg", output.getvalue(), "image/jpeg"))
+
+    @override_settings(UPLOAD_SCAN_REQUIRED=True, CLAMAV_HOST="")
+    def test_cms_images_and_pdfs_are_sanitized_when_scanner_is_unavailable(self):
+        output = io.BytesIO()
+        metadata = PngImagePlugin.PngInfo()
+        metadata.add_text("unsafe-note", "untrusted metadata")
+        Image.new("RGB", (10, 10)).save(output, format="PNG", pnginfo=metadata)
+
+        upload = CMSMediaAssetSerializer().validate_file(SimpleUploadedFile("photo.png", output.getvalue(), "image/png"))
+
+        self.assertEqual(upload.content_type, "image/png")
+        with Image.open(upload) as image:
+            self.assertNotIn("unsafe-note", image.info)
+            self.assertEqual(image.size, (10, 10))
+        original_pdf = pdf_bytes()
+        document = CMSMediaAssetSerializer().validate_file(SimpleUploadedFile("document.pdf", original_pdf, "application/pdf"))
+        self.assertEqual(document.content_type, "application/pdf")
+        self.assertTrue(document.read().startswith(b"%PDF-"))
+        with self.assertRaises(UploadScannerUnavailable):
+            CMSMediaAssetSerializer().validate_file(SimpleUploadedFile("audio.mp3", b"ID3", "audio/mpeg"))
 
     def test_docx_rejects_macros_external_templates_and_xml_entities(self):
         validate_upload(SimpleUploadedFile("cv.docx", docx_bytes()), cv=True)

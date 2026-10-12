@@ -14,6 +14,12 @@ export class ApiError extends Error {
   }
 }
 
+export function apiErrorMessage(reason: unknown, fallback: string) {
+  if (!(reason instanceof ApiError)) return fallback;
+  const detail = Object.values(reason.details || {}).flatMap((value) => Array.isArray(value) ? value : [value]).find((value) => value.trim());
+  return detail || reason.message || fallback;
+}
+
 export async function initialiseCsrf() {
   const response = await fetch(`${apiBaseUrl}/api/v1/auth/csrf/`, { credentials: "include" });
   if (!response.ok) throw new ApiError("We could not start a secure session. Please try again.");

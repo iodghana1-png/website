@@ -3,7 +3,7 @@
 import Image from "next/image";
 
 import { FormEvent, useEffect, useState } from "react";
-import { apiRequestAt } from "@/lib/api/client";
+import { apiErrorMessage, apiRequestAt } from "@/lib/api/client";
 import { CmsMedia, CmsNavigationItem, CmsNavigationMenu, CmsPage, createCmsMenu, getCmsSettings, listCmsMedia, listCmsMenus, listCmsPages, publishCmsMenu, publishCmsSettings, saveCmsMenuDraft, saveCmsSettingsDraft, updateCmsMedia, uploadCmsMedia } from "@/lib/api/cms";
 import { CmsAccess } from "../CmsAdmin";
 import { Area, buttonClass, Field, inputClass, primaryClass, safeHref } from "./Fields";
@@ -26,7 +26,7 @@ export function MediaAdmin({ access }: { access: CmsAccess }) {
   async function upload(file?: File, replace?: string) {
     if (!file) return;
     setBusy(true); setError(""); setNotice("");
-    try { const form = new FormData(); form.append("file", file); const asset = replace ? await apiRequestAt<CmsMedia>("/api/v2/cms/staff/media/" + replace + "/", { method: "PATCH", body: form }) : await uploadCmsMedia(form); setSelected(asset); setItems(await listCmsMedia()); setNotice("Media saved successfully."); } catch { setError("Upload failed. Choose a supported file under 20 MB."); } finally { setBusy(false); }
+    try { const form = new FormData(); form.append("file", file); const asset = replace ? await apiRequestAt<CmsMedia>("/api/v2/cms/staff/media/" + replace + "/", { method: "PATCH", body: form }) : await uploadCmsMedia(form); setSelected(asset); setItems(await listCmsMedia()); setNotice("Media saved successfully."); } catch (reason) { setError(apiErrorMessage(reason, "Upload failed. Please try again.")); } finally { setBusy(false); }
   }
   return <div><div className="flex flex-wrap items-end gap-3"><label className="w-64 text-sm font-semibold">Search media<input className={inputClass + " mt-1"} type="search" value={query} onChange={(e) => setQuery(e.target.value)} /></label><label className="w-48 text-sm font-semibold">Type<select className={inputClass + " mt-1"} value={kind} onChange={(e) => setKind(e.target.value)}><option value="">All media</option><option value="image">Images</option><option value="document">Documents</option><option value="video">Videos</option><option value="audio">Audio</option></select></label>{access.manage && <label className={buttonClass + " cursor-pointer px-3 py-2"}>Upload media<input className="sr-only" type="file" accept="image/png,image/jpeg,image/webp,image/gif,application/pdf,video/*,audio/*" disabled={busy} onChange={(e) => { void upload(e.target.files?.[0]); e.target.value = ""; }} /></label>}</div>
     <Feedback error={error} notice={notice} />
