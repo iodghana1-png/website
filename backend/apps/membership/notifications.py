@@ -3,22 +3,59 @@ from __future__ import annotations
 from django.conf import settings
 
 from apps.common.email import send_institutional_email
+from apps.content.models import CMSSiteSettings
 
 from .models import MemberProfile, MembershipApplication, MembershipRenewal
 
 
+APPLICATION_RECEIPT_DEFAULTS = {
+    "membership_receipt_subject": "We received your IoD-Gh membership application",
+    "membership_receipt_heading": "Your application is with us.",
+    "membership_receipt_message": (
+        "Thank you for applying for IoD-Gh membership. We have received your application and CV. "
+        "The membership committee will assess your application and assign the appropriate category."
+    ),
+    "membership_receipt_closing": "We will contact you when there is an update.",
+}
+
+
+def _render_receipt_copy(value: str, application: MembershipApplication) -> str:
+    return (
+        value.replace("{{applicant_name}}", application.applicant_name)
+        .replace("{{application_type}}", application.get_application_kind_display())
+    )
+
+
+def membership_application_receipt_template(application: MembershipApplication) -> dict[str, str]:
+    data = (
+        CMSSiteSettings.objects.filter(key="global", published_revision__isnull=False)
+        .values_list("published_revision__data", flat=True)
+        .first()
+        or {}
+    )
+    if not isinstance(data, dict):
+        data = {}
+
+    template = {}
+    for key, fallback in APPLICATION_RECEIPT_DEFAULTS.items():
+        value = data.get(key)
+        copy = value.strip() if isinstance(value, str) and value.strip() else fallback
+        template[key] = _render_receipt_copy(copy, application)
+
+    # Email subjects must remain a single header line even when a CMS editor pastes a line break.
+    template["membership_receipt_subject"] = " ".join(template["membership_receipt_subject"].splitlines())
+    return template
+
+
 def send_application_received_email(application: MembershipApplication, *, idempotency_key: str | None = None) -> None:
+    template = membership_application_receipt_template(application)
     send_institutional_email(
-        subject="We received your IoD-Gh membership application",
+        subject=template["membership_receipt_subject"],
         recipient=application.email,
         recipient_name=application.applicant_name,
-        heading="Your application is with us.",
-        introduction=(
-            "Thank you for applying for IoD-Gh membership. We have received your application and CV. "
-            "The membership committee will assess your application and assign the appropriate category."
-        ),
-        details=(("Application reference", application.reference),),
-        closing="Please retain this reference while your application is under review. We will contact you when there is an update.",
+        heading=template["membership_receipt_heading"],
+        introduction=template["membership_receipt_message"],
+        closing=template["membership_receipt_closing"],
         idempotency_key=idempotency_key or f"membership-received/{application.reference}",
     )
 

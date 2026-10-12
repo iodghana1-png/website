@@ -16,6 +16,7 @@ from django.utils import timezone
 
 from apps.accounts.models import User
 from apps.audit.models import AuditLog
+from apps.content.models import CMSRevisionState, CMSSiteSettings, CMSSiteSettingsRevision
 
 from .models import MemberDirectoryEntry, MemberProfile, MembershipApplication, MembershipRenewal, MembershipType
 
@@ -101,7 +102,7 @@ class MembershipApiTests(TestCase):
         self.assertTrue(payload["tracking_token"])
         self.assertEqual(len(mail.outbox), 2)
         self.assertEqual(mail.outbox[0].subject, "We received your IoD-Gh membership application")
-        self.assertIn(payload["reference"], mail.outbox[0].body)
+        self.assertNotIn("Application reference", mail.outbox[0].body)
         self.assertEqual(mail.outbox[1].subject, f"New IoD-Gh membership application — {payload['reference']}")
         self.assertIn("Membership Team", mail.outbox[1].body)
         self.assertTrue(mail.outbox[1].attachments[1].filename.startswith("akosua-owusu-cv"))
@@ -121,6 +122,31 @@ class MembershipApiTests(TestCase):
         self.assertEqual(tracked.json()["application_kind"], MembershipApplication.Kind.NEW_MEMBERSHIP)
         self.assertNotIn("tracking_token", tracked.json())
         self.assertTrue(AuditLog.objects.filter(action="membership.application_submitted").exists())
+
+    @override_settings(UPLOAD_SCAN_REQUIRED=True, CLAMAV_HOST="")
+    def test_application_receipt_uses_the_published_cms_email_template(self):
+        cms_settings = CMSSiteSettings.objects.create(key="global")
+        revision = CMSSiteSettingsRevision.objects.create(
+            settings=cms_settings,
+            number=1,
+            state=CMSRevisionState.PUBLISHED,
+            data={
+                "membership_receipt_subject": "Welcome, {{applicant_name}}",
+                "membership_receipt_heading": "CV received",
+                "membership_receipt_message": "We received your {{application_type}} application.",
+                "membership_receipt_closing": "Our committee will be in touch.",
+            },
+        )
+        cms_settings.published_revision = revision
+        cms_settings.save(update_fields=["published_revision"])
+
+        self.submit_application()
+
+        receipt = mail.outbox[0]
+        self.assertEqual(receipt.subject, "Welcome, Akosua Owusu")
+        self.assertIn("We received your New membership application.", receipt.body)
+        self.assertIn("Our committee will be in touch.", receipt.body)
+        self.assertNotIn("Application reference", receipt.body)
 
     def test_membership_officer_can_approve_and_manage_a_member_renewal(self):
         application = self.submit_application()
@@ -168,7 +194,7 @@ class MembershipApiTests(TestCase):
         )
         self.assertEqual(response.status_code, 204)
         self.assertEqual(mail.outbox[-1].subject, "We received your IoD-Gh membership application")
-        self.assertIn(application["reference"], mail.outbox[-1].body)
+        self.assertNotIn("Application reference", mail.outbox[-1].body)
         self.assertTrue(AuditLog.objects.filter(action="membership.application_receipt_resent").exists())
 
     def test_public_verification_only_exposes_members_in_good_standing(self):
