@@ -33,6 +33,7 @@ CMS_SECTION_TYPES = (
     ("seminar_list", "Seminar list"),
     ("video_list", "Video list"),
     ("training_countdown", "Next training countdown"),
+    ("cohort_availability", "Application cohort availability"),
     ("article_feed", "Article feed"),
     ("event_feed", "Event feed"),
     ("cta_banner", "CTA banner"),

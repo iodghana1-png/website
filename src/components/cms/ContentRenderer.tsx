@@ -25,7 +25,7 @@ function Feed({ type }: { type: "news" | "event" }) {
 }
 export function SectionRenderer({ section }: { section: CmsSection }) {
   if (!section.is_enabled || section.slot === layoutSlot || section.slot === "event_cards") return null;
-  if (["partner_logos", "profile_gallery", "seminar_list", "video_list"].includes(section.section_type)) return null;
+  if (["partner_logos", "profile_gallery", "seminar_list", "video_list", "cohort_availability"].includes(section.section_type)) return null;
   const data = section.data;
   const title = copy(data, "heading", "title", "label");
   const image = section.primary_media?.file_url || copy(data, "image_url");

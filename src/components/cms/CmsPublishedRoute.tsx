@@ -57,6 +57,15 @@ export function CmsRouteSwitch({ children }: { children: ReactNode }) {
   }, [excluded, pathname]);
 
   if (!excluded && previewError) return <p role="alert" className="p-8">{previewError}</p>;
+  // Keep the form mounted while CMS content loads, preserving entered application data.
+  if (pathname === "/membership/apply") {
+    const applicationPage = page?.path === pathname ? page : null;
+    return <CmsPageContext.Provider value={applicationPage ? { slug: applicationPage.slug, revision: applicationPage.revision } : null}>
+      {applicationPage && previewing && <p className="bg-amber-100 p-3 text-center text-sm">Private preview</p>}
+      {children}
+      {applicationPage && <PageContent revision={applicationPage.revision} sectionsOnly omitSectionTypes={nativeSectionTypes(pathname)} />}
+    </CmsPageContext.Provider>;
+  }
   if (!excluded && page?.path === pathname) {
     if (page.template_key === "legacy") return <CmsPageContext.Provider value={{ slug: page.slug, revision: page.revision }}>{previewing && <p className="bg-amber-100 p-3 text-center text-sm">Private preview</p>}{children}<PageContent revision={page.revision} sectionsOnly omitSectionTypes={nativeSectionTypes(page.path)} /></CmsPageContext.Provider>;
     return <CmsRevisionRenderer revision={page.revision} templateKey={page.template_key} />;

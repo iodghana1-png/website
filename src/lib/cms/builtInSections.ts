@@ -3,7 +3,7 @@ const definitions = (entries: [string, string][]): BuiltInSectionDefinition[] =>
 
 export function nativeSectionTypes(path: string): string[] {
   if (path === "/training/exams") return ["exam_assessment"];
-  if (path.startsWith("/training/") && !["/training/cpd", "/training/exams"].includes(path)) return ["cohort_availability"];
+  if (path === "/membership/apply") return ["cohort_availability"];
   if (path === "/media/event-gallery") return ["gallery"];
   if (["/knowledge/resources", "/knowledge/reports", "/knowledge/research"].includes(path)) return ["document_list"];
   return [];
@@ -25,7 +25,7 @@ export function builtInSections(path: string, legacy = true): BuiltInSectionDefi
   else if (path === "/services") entries = [["services-perspective", "Our perspective"], ["services-offering", "What we offer"], ["services-process", "What to expect"], ["services-contact", "Start a conversation"]];
   else if (path.startsWith("/services/")) entries = [["service-overview", "Service overview"], ["service-outcomes", "Service outcomes"], ["service-contact", "Contact / enquiry"]];
   else if (path === "/training") entries = [["training-programmes", "Upcoming programmes"], ["training-pathways", "Learning pathways"]];
-  else if (["/training/professional", "/training/corporate-governance-for-directors"].includes(path)) entries = [["course-overview", "Course overview"], ["course-objectives", "Learning objectives"], ["course-audience", "Duration and flexibility"], ["course-modules", "Faculty and target group"], ["course-fees", "Completion and certification"], ["course-registration", "Cohort availability and registration"]];
+  else if (["/training/professional", "/training/corporate-governance-for-directors"].includes(path)) entries = [["course-overview", "Course overview"], ["course-objectives", "Learning objectives"], ["course-audience", "Duration and flexibility"], ["course-modules", "Faculty and target group"], ["course-fees", "Completion and certification"], ["course-registration", "Training schedules and fees"]];
   else if (path === "/training/exams") entries = [["exam-introduction", "Examinations introduction"], ["exam-assessment", "Practice assessment"]];
   else if (path === "/training/cpd") entries = [["cpd-introduction", "CPD introduction"], ["cpd-seminars", "Monthly seminars"], ["cpd-videos", "Seminar recordings"]];
   else if (path.startsWith("/training/")) entries = [["programme-overview", "Programme overview and registration"]];

@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { CpdVideoLibrary } from "@/components/training/CpdVideoLibrary";
 import { CpdMonthlySeminars } from "@/components/training/CpdMonthlySeminars";
-import { CohortAvailability } from "@/components/training/CohortAvailability";
 import { TrainingHero } from "@/components/training/TrainingHero";
 import { trainingProgrammes } from "@/data/site";
 
@@ -150,18 +149,19 @@ function CorporateGovernanceTraining() {
       >
         <div className="site-container grid gap-10 lg:grid-cols-12 lg:items-end">
           <div className="lg:col-span-7">
-            <p className="eyebrow text-[var(--color-accent-light)]"><EditableCopy label="Text" fallback={"Cohort availability"} /></p>
-            <h2 className="mt-5 max-w-3xl font-serif text-[clamp(2.6rem,4vw,4.4rem)] leading-[0.98] tracking-[-0.05em]"><EditableCopy label="Heading" fallback={"Register your interest for the next cohort."} /></h2>
-            <p className="mt-5 max-w-2xl leading-7 text-[var(--color-mist)]"><EditableCopy label="Text" fallback={"We review each registration before confirming a place, so you can see where you stand before making any payment."} /></p>
+            <p className="eyebrow text-[var(--color-accent-light)]"><EditableCopy label="Text" fallback={"Training schedules and fees · 2026"} /></p>
+            <h2 className="mt-5 max-w-3xl font-serif text-[clamp(2.6rem,4vw,4.4rem)] leading-[0.98] tracking-[-0.05em]"><EditableCopy label="Heading" fallback={"Weekday evening sessions."} /></h2>
+            <p className="mt-5 max-w-2xl leading-7 text-[var(--color-mist)]"><EditableCopy label="Text" fallback={"Dates are tentative. Commencement is based on the required minimum number of participants."} /></p>
           </div>
           <div className="border-l border-white/20 pl-6 lg:col-span-4 lg:col-start-9">
-            <CohortAvailability dark />
+            <p className="text-xs font-bold tracking-[0.1em] text-[var(--color-accent-light)]"><EditableCopy label="Text" fallback={"TRAINING FEE PER PARTICIPANT"} /></p>
+            <p className="mt-4 font-serif text-5xl tracking-[-0.05em]"><EditableCopy label="Text" fallback={"GHS 5,700"} /></p>
             <Button
               href="/contact"
               cmsKey="training-course-register-interest"
               cmsLabel="Registration link: Course details"
               variant="secondary"
-              className="mt-7 w-full border-white text-white hover:bg-white hover:text-[var(--color-ink)]"
+              className="mt-7 border-white text-white hover:bg-white hover:text-[var(--color-ink)]"
             ><EditableCopy label="Link text" fallback={"Register interest"} /></Button>
           </div>
         </div>
@@ -411,9 +411,16 @@ export default async function TrainingDetail({
               id="register"
               className="self-start border-t-4 border-[var(--color-gold)] bg-[var(--color-paper)] p-7 lg:col-span-4 lg:col-start-9"
             >
-              <CohortAvailability />
+              <p className="eyebrow"><EditableCopy label="Text" fallback={"Programme details"} /></p>
+              <p className="mt-6 font-serif text-3xl">
+                {programme?.date ?? "Dates to be announced"}
+              </p>
+              <p className="mt-4 leading-7 text-[var(--color-slate)]">
+                {programme?.meta ?? "Available online and in person"}
+              </p>
+              <p className="mt-7 text-sm font-bold"><EditableCopy label="Text" fallback={"Indicative fee: GHS 4,500"} /></p>
               <Button href="/contact" cmsKey="training-programme-register-interest" cmsLabel="Registration link: Programme details" className="mt-6 w-full"><EditableCopy label="Link text" fallback={"Register interest"} /></Button>
-              <p className="mt-4 text-xs leading-5 text-[var(--color-slate)]"><EditableCopy label="Text" fallback={"We will confirm availability and the next steps with you."} /></p>
+              <p className="mt-4 text-xs leading-5 text-[var(--color-slate)]"><EditableCopy label="Text" fallback={"Register your interest and an IoD-Gh team member will be in touch."} /></p>
             </aside>
           </div>
         </BuiltInSection>

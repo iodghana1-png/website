@@ -149,6 +149,26 @@ class ContentItemApiTests(TestCase):
 
 
 class RevisionedCMSApiTests(TestCase):
+    def test_application_cohort_can_be_saved_and_published_without_exposing_drafts(self):
+        client = self.csrf_client(self.staff)
+        page = CMSPage.objects.get(path="/membership/apply")
+        data = {"spaces": "5 places remaining", "current_date": "12 November 2026", "next_date": "18 January 2027"}
+        payload = self.page_payload(
+            label=page.label, slug=page.slug, path=page.path, template_key="legacy",
+            sections=[{"slot": "application_cohort", "section_type": "cohort_availability",
+                       "position": 0, "is_enabled": True, "data": data}],
+        )
+        saved = client.post(f"/api/v2/cms/staff/pages/{page.id}/drafts/",
+                            data=json.dumps(payload), content_type="application/json")
+        self.assertEqual(saved.status_code, 201, saved.content)
+        public_url = "/api/v2/cms/pages/resolve/"
+        self.assertNotIn("5 places remaining", self.client.get(public_url, {"path": page.path}).content.decode())
+        number = saved.json()["number"]
+        published = client.post(f"/api/v2/cms/staff/pages/{page.id}/revisions/{number}/publish/")
+        self.assertEqual(published.status_code, 200, published.content)
+        live = self.client.get(public_url, {"path": page.path}).json()["revision"]
+        self.assertEqual(live["sections"][0]["data"], data)
+
     def setUp(self):
         self.staff = User.objects.create_user(
             "cms-admin@example.com",

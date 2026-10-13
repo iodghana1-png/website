@@ -8,6 +8,7 @@ Open **Content → Pages**, search for a page, and choose **Edit**. The editor o
 
 - **Save Changes** updates a published page immediately. A never-published page stays a draft until **Publish** is selected.
 - **Save Draft** keeps changes private.
+- **Membership application → After application: cohort availability** controls the upcoming/following cohort dates, availability and confirmation guidance shown only after a successful new membership application. Staff maintain these numbers; submitting an application does not reserve a place or reduce a count. Leave unconfirmed dates and availability as “to be confirmed”. Upgrade applicants receive separate review guidance. Bank and mobile-money payment details are not displayed on the application form.
 - **Preview** saves a draft and opens a private preview. It never publishes.
 - **Home** is one page, with the existing homepage sections available to edit, hide and reorder.
 - Home’s **Partners** section uses the shared **Partners** page collection. Edit partner names, logos, website links and ordering there. Home controls the section heading and visibility; entries without logos remain hidden.

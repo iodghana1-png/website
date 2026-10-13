@@ -5,6 +5,7 @@ import { CmsPageDraft } from "@/lib/api/cms";
 import { Area, buttonClass, Field, inputClass, RichText } from "./Fields";
 import { MediaPicker } from "./MediaPicker";
 import { Icon } from "@/components/ui/Icon";
+import { applicationCohortDefaults } from "@/components/membership/ApplicationCohortStatus";
 
 export const sectionNames: Record<string, string> = { hero: "Hero", rich_text: "Text", image_with_copy: "Image + Text", feature_list: "Features", stat_grid: "Statistics", cta_banner: "Call to action", article_feed: "News", event_feed: "Events", quote: "Testimonial", gallery: "Gallery", faq: "FAQ", image: "Image", card_grid: "Cards", document_list: "Documents", seminar_list: "Monthly seminars", video_list: "Seminar recordings", training_countdown: "Next training countdown", cohort_availability: "Cohort availability", callout: "Highlight", member_directory: "Member directory", contact_details: "Contact details", partner_logos: "Partner logos", profile_gallery: "Profile photos" };
 export type Section = CmsPageDraft["sections"][number];
@@ -23,7 +24,7 @@ export function PageCopyFields({ data, onChange, canUpload, visibleKeys }: { dat
   })}</div></details>)}</div>;
 }
 export const text = (data: Record<string, unknown>, ...keys: string[]) => { for (const key of keys) if (typeof data[key] === "string") return data[key] as string; return ""; };
-export function Sections({ sections, onChange, canUpload, sectionTypes = Object.keys(sectionNames), allowAdd = true, addLabel = "+ Add Section", removeLabel = "Remove section" }: { sections: Section[]; onChange: (sections: Section[]) => void; canUpload: boolean; sectionTypes?: string[]; allowAdd?: boolean; addLabel?: string; removeLabel?: string }) {
+export function Sections({ sections, onChange, canUpload, sectionTypes = Object.keys(sectionNames).filter((type) => type !== "cohort_availability"), allowAdd = true, addLabel = "+ Add Section", removeLabel = "Remove section" }: { sections: Section[]; onChange: (sections: Section[]) => void; canUpload: boolean; sectionTypes?: string[]; allowAdd?: boolean; addLabel?: string; removeLabel?: string }) {
   const [choice, setChoice] = useState(sectionTypes[0] || "rich_text");
   const update = (index: number, patch: Partial<Section>) => onChange(sections.map((item, i) => i === index ? { ...item, ...patch } : item));
   const move = (index: number, step: number) => { const copy = [...sections]; [copy[index], copy[index + step]] = [copy[index + step], copy[index]]; onChange(copy); };
@@ -138,7 +139,17 @@ function TrainingCountdownFields({ data, onChange }: { data: Record<string, unkn
 
 function CohortAvailabilityFields({ data, onChange }: { data: Record<string, unknown>; onChange: (data: Record<string, unknown>) => void }) {
   const set = (key: string, value: string) => onChange({ ...data, [key]: value });
-  return <div className="space-y-4"><p className="text-sm text-[var(--color-slate)]">Show visitors whether the current cohort can still take registrations and what happens if it fills. Keep payment information off this page: only share it after the training team confirms a place.</p><Field label="Section heading" value={text(data, "heading") || "Cohort availability"} onChange={(value) => set("heading", value)} /><Field label="Current cohort status" value={text(data, "cohort") || "Registration is open for the next cohort."} onChange={(value) => set("cohort", value)} /><Field label="Spaces remaining" value={text(data, "spaces") || "Places are limited"} onChange={(value) => set("spaces", value)} /><Area label="Next cohort guidance" value={text(data, "next_cohort") || "If this cohort reaches capacity, we will contact you about the next available intake."} onChange={(value) => set("next_cohort", value)} /><Area label="Registration note" value={text(data, "note") || "Submitting an expression of interest does not confirm a place. Please wait for a confirmed place from the training team before making any payment."} onChange={(value) => set("note", value)} /></div>;
+  const saved = (key: keyof typeof applicationCohortDefaults) => typeof data[key] === "string" ? data[key] as string : applicationCohortDefaults[key];
+  return <div className="space-y-4">
+    <p className="text-sm text-[var(--color-slate)]">New membership applicants see this message after a successful application. Keep dates and availability up to date. For a full cohort, enter Full and provide the following cohort date. If the cohort needs more participants to begin, state that explicitly rather than calling those places remaining.</p>
+    <Field label="Section heading" value={saved("heading")} onChange={(value) => set("heading", value)} />
+    <Field label="Current cohort status" value={saved("cohort")} onChange={(value) => set("cohort", value)} />
+    <Field label="Upcoming cohort date" value={saved("current_date")} onChange={(value) => set("current_date", value)} />
+    <Field label="Spaces remaining / participants needed" value={saved("spaces")} onChange={(value) => set("spaces", value)} />
+    <Field label="Following cohort date" value={saved("next_date")} onChange={(value) => set("next_date", value)} />
+    <Area label="Next cohort guidance" value={saved("next_cohort")} onChange={(value) => set("next_cohort", value)} />
+    <Area label="Registration note" value={saved("note")} onChange={(value) => set("note", value)} />
+  </div>;
 }
 
 function VideoFields({ items, onChange }: { items: Record<string, unknown>[]; onChange: (items: Record<string, unknown>[]) => void }) {

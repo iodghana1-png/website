@@ -159,22 +159,32 @@ test("Professional development registration buttons have working, independent CM
   assert.match(edited, /href="https:\/\/registration\.example\.test\/professional"/);
 });
 
-test("Professional development shows CMS-managed cohort availability instead of fees", async () => {
-  const TrainingDetail = load(path.join(root, "src/app/training/[slug]/page")).default;
-  const { CohortAvailability } = load(path.join(root, "src/components/training/CohortAvailability"));
-  const page = await TrainingDetail({ params: Promise.resolve({ slug: "professional" }) });
+test("Membership application shows cohort guidance only after success, with no payment accounts", () => {
+  const ApplyPage = load(path.join(root, "src/app/membership/apply/page")).default;
+  const { ApplicationCohortStatus } = load(path.join(root, "src/components/membership/ApplicationCohortStatus"));
   const sections = [{
     section_type: "cohort_availability", is_enabled: true, data: {
-      heading: "Places for the July cohort",
-      cohort: "Registration is open until 18 June.",
-      spaces: "12 places remaining",
-      next_cohort: "The next cohort is planned for September 2026.",
+      heading: "Your training cohort",
+      cohort: "The upcoming cohort is full.",
+      spaces: "0 places remaining",
+      current_date: "12 November 2026",
+      next_date: "18 January 2027",
+      next_cohort: "We will contact you about the following cohort.",
       note: "We will confirm your place before sending payment instructions.",
     },
   }];
-  const availability = cmsRender(React.createElement(CohortAvailability), sections, "training-professional");
-  for (const value of ["PLACES FOR THE JULY COHORT", "12 places remaining", "September 2026", "before sending payment instructions"]) assert.match(availability, new RegExp(value));
-  assert.doesNotMatch(cmsRender(page, [], "training-professional"), /GHS 5,700|TRAINING FEE PER PARTICIPANT|Indicative fee/);
+  const renderStatus = (complete, applicationKind, data = sections) => cmsRender(React.createElement(ApplicationCohortStatus, { complete, applicationKind }), data, "membership-apply");
+  assert.equal(renderStatus(false, "new_membership"), "");
+  const submitted = renderStatus(true, "new_membership");
+  for (const value of ["Your training cohort", "0 places remaining", "12 November 2026", "18 January 2027", "before sending payment instructions"]) assert.ok(submitted.includes(value));
+  assert.match(renderStatus(true, "upgrade"), /review your upgrade request/);
+  assert.doesNotMatch(renderStatus(true, "upgrade"), /0 places remaining/);
+  assert.match(renderStatus(true, "new_membership", []), /Availability will be confirmed/);
+  const initial = cmsRender(React.createElement(ApplyPage), sections, "membership-apply");
+  for (const html of [initial, submitted]) assert.doesNotMatch(html, /1050406378412|1122092871801|0244309058|Pay with the following|Confirm participation by making full payment/);
+  assert.doesNotMatch(initial, /0 places remaining/);
+  const appended = renderToStaticMarkup(React.createElement(PageContent, { sectionsOnly: true, revision: { ...revision, sections } }));
+  assert.equal(appended, "", "The CMS wrapper must not append confirmation content before submission");
 });
 
 test("CMS empty homepage remains empty after the last section is removed", () => {

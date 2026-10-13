@@ -7,6 +7,20 @@ from .models import CMSNavigationMenu, CMSNavigationRevision, CMSNavigationItem,
 
 
 class CmsEventConnectionTests(TestCase):
+    def test_membership_application_page_is_registered_without_overwriting_edits(self):
+        migration = import_module("apps.content.migrations.0028_membership_application_cohort")
+        page = CMSPage.objects.get(path="/membership/apply")
+        self.assertEqual(page.template_key, "legacy")
+        self.assertTrue(page.is_system_page)
+        section = page.published_revision.sections.get(section_type="cohort_availability")
+        self.assertEqual(section.data, {})
+        section.data = {"spaces": "Full", "next_date": "18 January 2027"}
+        section.save()
+        migration.connect_application_page(apps, None)
+        section.refresh_from_db()
+        self.assertEqual(section.data["spaces"], "Full")
+        self.assertEqual(CMSPage.objects.filter(path="/membership/apply").count(), 1)
+
     def test_event_migration_preserves_published_and_private_card_edits(self):
         migration = import_module("apps.content.migrations.0024_connect_event_cards")
         item = ContentItem.objects.create(section="events", title="Original event", summary="Original summary", href="/events/original", status="published")

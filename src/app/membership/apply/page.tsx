@@ -5,6 +5,7 @@ import { useState } from "react";
 import { FormInput } from "@/components/ui/FormFields";
 import { Icon } from "@/components/ui/Icon";
 import { submitMembershipApplication } from "@/lib/api/membership";
+import { ApplicationCohortStatus } from "@/components/membership/ApplicationCohortStatus";
 
 const steps = ["Application", "Personal information", "Professional profile", "Curriculum vitae", "Review", "Confirmation"];
 
@@ -12,33 +13,6 @@ type ApplicationKind = "new_membership" | "upgrade";
 type FormState = { applicationKind: ApplicationKind | ""; membershipNumber: string; firstName: string; lastName: string; email: string; phoneNumber: string; organisation: string; currentRole: string; recommendingAgent: string; cv: File | null; cvConfirmed: boolean };
 
 const initialForm: FormState = { applicationKind: "", membershipNumber: "", firstName: "", lastName: "", email: "", phoneNumber: "", organisation: "", currentRole: "", recommendingAgent: "", cv: null, cvConfirmed: false };
-
-const paymentAccounts = [
-  { provider: "Fidelity Bank", accountName: "Institute of Directors-Ghana", accountNumber: "1050406378412", branch: "Dzorwulu Branch" },
-  { provider: "National Investment Bank", accountName: "Institute of Directors-Ghana", accountNumber: "1122092871801", branch: "Spintex Road Branch" },
-  { provider: "MTN Mobile Money", accountName: "Institute of Directors-Ghana", accountNumber: "0244309058", branch: "" },
-];
-
-function MembershipPaymentDetails() {
-  return (
-    <section className="mt-10 border border-[var(--color-line)] bg-[var(--color-paper)] p-6 sm:p-10">
-      <p className="eyebrow">Payment information</p>
-      <h2 className="mt-4 font-serif text-4xl">Pay with the following account details.</h2>
-      <p className="mt-7 border-l-2 border-[var(--color-accent)] pl-5 text-lg font-semibold leading-8 text-[var(--color-ink)]">Confirm participation by making full payment of the training fees to any of the account details below.</p>
-      <p className="mt-6 leading-7 text-[var(--color-slate)]">For further enquiries, contact us on <a className="font-semibold text-[var(--color-ink)] underline" href="tel:+233240714798">+233 24 071 4798</a>, <a className="font-semibold text-[var(--color-ink)] underline" href="tel:+233593999503">+233 59 399 9503</a>, or email <a className="font-semibold text-[var(--color-ink)] underline" href="mailto:training@iodghana.org">training@iodghana.org</a>.</p>
-      <div className="mt-9 grid gap-4 sm:grid-cols-3">
-        {paymentAccounts.map((account) => (
-          <article className="border border-[var(--color-line)] bg-white p-5" key={account.provider}>
-            <p className="text-xs font-bold tracking-[0.1em] text-[var(--color-accent-dark)]">{account.provider.toUpperCase()}</p>
-            <p className="mt-5 text-sm font-semibold text-[var(--color-ink)]">{account.accountName}</p>
-            <p className="mt-3 break-all font-mono text-lg font-bold text-[var(--color-ink)]">{account.accountNumber}</p>
-            {account.branch && <p className="mt-4 border-t border-[var(--color-line)] pt-3 text-sm text-[var(--color-slate)]">{account.branch}</p>}
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
 
 export default function ApplyPage() {
   const [step, setStep] = useState(0);
@@ -123,7 +97,7 @@ export default function ApplyPage() {
             </div><div className="mt-10 flex justify-between border-t border-[var(--color-line)] pt-6">{step > 0 ? <button type="button" onClick={() => { setError(""); setStep((value) => Math.max(value - 1, 0)); }} className="inline-flex items-center gap-2 text-sm font-bold"><Icon name="arrow-left" className="h-4 w-4" /> Back</button> : <span />}<button type="button" onClick={step === 4 ? submitApplication : next} disabled={submitting} className="inline-flex items-center gap-2 whitespace-nowrap bg-[var(--color-ink)] px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-[#3f2d83] disabled:cursor-not-allowed disabled:opacity-60">{step === 4 ? (submitting ? "Submitting…" : "Submit application") : "Continue"}<Icon name="arrow-right" className="h-4 w-4" /></button></div></>}
           </section>
         </div>
-        <MembershipPaymentDetails />
+        <ApplicationCohortStatus complete={complete} applicationKind={form.applicationKind} />
       </div>
     </main>
   );
