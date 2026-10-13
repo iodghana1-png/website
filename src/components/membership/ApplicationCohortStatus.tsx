@@ -29,7 +29,7 @@ export function ApplicationCohortStatus({ complete, applicationKind }: { complet
 
   return <section className={`mt-10 border ${rule} bg-[var(--color-paper)] p-6 sm:p-10`}>
     <h2 className="text-xs font-bold uppercase tracking-[0.1em] text-[var(--color-accent-dark)]">{value(data, "heading")}</h2>
-    <p className="mt-4 font-serif text-3xl leading-tight tracking-[-0.035em]">{value(data, "cohort")}</p>
+    <p className="mt-4 font-serif text-3xl font-bold leading-tight tracking-[-0.035em]">{value(data, "cohort")}</p>
     <dl className={`mt-6 space-y-5 border-y ${rule} py-5`}>
       <div><dt className={`text-xs font-bold tracking-[0.1em] ${muted}`}>UPCOMING COHORT</dt><dd className="mt-2 text-lg font-semibold">{value(data, "current_date")}</dd></div>
       <div><dt className={`text-xs font-bold tracking-[0.1em] ${muted}`}>SPACES</dt><dd className="mt-2 text-lg font-semibold">{value(data, "spaces")}</dd></div>
