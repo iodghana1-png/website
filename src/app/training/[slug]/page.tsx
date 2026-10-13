@@ -157,7 +157,9 @@ function CorporateGovernanceTraining() {
             <p className="text-xs font-bold tracking-[0.1em] text-[var(--color-accent-light)]"><EditableCopy label="Text" fallback={"TRAINING FEE PER PARTICIPANT"} /></p>
             <p className="mt-4 font-serif text-5xl tracking-[-0.05em]"><EditableCopy label="Text" fallback={"GHS 5,700"} /></p>
             <Button
-              href="#"
+              href="/contact"
+              cmsKey="training-course-register-interest"
+              cmsLabel="Registration link: Course details"
               variant="secondary"
               className="mt-7 border-white text-white hover:bg-white hover:text-[var(--color-ink)]"
             ><EditableCopy label="Link text" fallback={"Register interest"} /></Button>
@@ -371,6 +373,8 @@ export default async function TrainingDetail({
         {!cpd && (
           <Button
             href="#register"
+            cmsKey="training-programme-register-hero"
+            cmsLabel="Registration link: Hero button"
             variant="secondary"
             className="border-white text-white hover:bg-white hover:text-[var(--color-ink)]"
           ><EditableCopy label="Link text" fallback={"Register interest"} /></Button>
@@ -415,8 +419,8 @@ export default async function TrainingDetail({
                 {programme?.meta ?? "Available online and in person"}
               </p>
               <p className="mt-7 text-sm font-bold"><EditableCopy label="Text" fallback={"Indicative fee: GHS 4,500"} /></p>
-              <Button href="#" className="mt-6 w-full"><EditableCopy label="Link text" fallback={"Register interest"} /></Button>
-              <p className="mt-4 text-xs leading-5 text-[var(--color-slate)]"><EditableCopy label="Text" fallback={"Registration is a static interface in Phase 1."} /></p>
+              <Button href="/contact" cmsKey="training-programme-register-interest" cmsLabel="Registration link: Programme details" className="mt-6 w-full"><EditableCopy label="Link text" fallback={"Register interest"} /></Button>
+              <p className="mt-4 text-xs leading-5 text-[var(--color-slate)]"><EditableCopy label="Text" fallback={"Register your interest and an IoD-Gh team member will be in touch."} /></p>
             </aside>
           </div>
         </BuiltInSection>

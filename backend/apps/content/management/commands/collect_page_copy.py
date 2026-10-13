@@ -20,7 +20,7 @@ class CopyParser(HTMLParser):
             self.fields[key] = {'key': key, 'label': 'Image: ' + attrs.get('alt', 'Page image'), 'value': attrs['data-cms-src'], 'kind': 'image'}
         if 'data-cms-link' in attrs and attrs.get('data-cms-href'):
             key = attrs['data-cms-link']
-            self.fields[key] = {'key': key, 'label': 'Link destination', 'value': attrs['data-cms-href'], 'kind': 'link'}
+            self.fields[key] = {'key': key, 'label': attrs.get('data-cms-link-label') or 'Link destination', 'value': attrs['data-cms-href'], 'kind': 'link'}
         if 'data-cms-copy' in attrs:
             self.current = (attrs['data-cms-copy'], attrs.get('data-cms-label', 'Text'))
             self.parts = []

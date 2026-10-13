@@ -27,6 +27,7 @@ function load(source) {
   return loadedModule.exports;
 }
 const { CmsPageContext } = load(path.join(root, "src/components/cms/PageContext"));
+const { copyKey } = load(path.join(root, "src/components/cms/EditableCopy"));
 const { CmsPageText } = load(path.join(root, "src/components/content/useCmsContent"));
 const { ArticlePage } = load(path.join(root, "src/components/cms/ArticlePage"));
 const { HomepageContent } = load(path.join(root, "src/components/content/HomepageContent"));
@@ -139,6 +140,23 @@ test("CMS actual static pages honor every registered built-in section control", 
     const hidden = builtInSections(route).reduce((sections, { key }) => setSectionState(sections, key, "hidden"), []);
     assert.equal(cmsRender(element, hidden), "", `All built-in sections should be hidden on ${route}`);
   }
+});
+
+test("Professional development registration buttons have working, independent CMS destinations", async () => {
+  const TrainingDetail = load(path.join(root, "src/app/training/[slug]/page")).default;
+  const page = await TrainingDetail({ params: Promise.resolve({ slug: "professional" }) });
+  const initial = cmsRender(page, [], "training-professional");
+  assert.match(initial, /href="\/contact"/, "The registration card should send visitors to the enquiry form by default");
+  assert.match(initial, /data-cms-link-label="Registration link: Course details"/);
+  const keys = [...initial.matchAll(/data-cms-link="([^"]+)"/g)].map((match) => match[1]);
+  assert.equal(new Set(keys).size, keys.length, "Each registration action needs its own CMS field");
+  const edited = cmsRender(page, [{
+    slot: "page_copy", is_enabled: true, data: { fields: [{
+      key: copyKey("link:training-course-register-interest"),
+      value: "https://registration.example.test/professional",
+    }] },
+  }], "training-professional");
+  assert.match(edited, /href="https:\/\/registration\.example\.test\/professional"/);
 });
 
 test("CMS empty homepage remains empty after the last section is removed", () => {

@@ -33,11 +33,15 @@ export function EditableImage(props: ComponentProps<typeof Image>) {
   return <Image {...props} alt={props.alt} src={field && linkUrl(field.value) ? field.value : props.src} unoptimized={!!field || props.unoptimized} data-cms-image={key} data-cms-src={fallback} />;
 }
 
-export function EditableLink(props: ComponentProps<typeof Link>) {
+export function EditableLink({ cmsKey, cmsLabel, ...props }: ComponentProps<typeof Link> & { cmsKey?: string; cmsLabel?: string }) {
   const context = useContext(CmsPageContext);
   const fallback = typeof props.href === "string" ? props.href : "";
-  const key = copyKey("link:" + fallback);
+  // Some pages contain several links with the same fallback destination (for
+  // example, multiple registration actions). A caller-supplied key keeps each
+  // CMS field independent while preserving the old href-based key for links
+  // that do not need that distinction.
+  const key = copyKey("link:" + (cmsKey || fallback));
   const fields = context?.revision.sections.find((s) => s.slot === "page_copy")?.data.fields as Array<{ key: string; value: string }> | undefined;
   const field = fields?.find((f) => f.key === key);
-  return <Link {...props} href={field && linkUrl(field.value) ? field.value : props.href} data-cms-link={key} data-cms-href={fallback} />;
+  return <Link {...props} href={field && linkUrl(field.value) ? field.value : props.href} data-cms-link={key} data-cms-href={fallback} data-cms-link-label={cmsLabel} />;
 }
