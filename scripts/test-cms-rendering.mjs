@@ -159,6 +159,24 @@ test("Professional development registration buttons have working, independent CM
   assert.match(edited, /href="https:\/\/registration\.example\.test\/professional"/);
 });
 
+test("Professional development shows CMS-managed cohort availability instead of fees", async () => {
+  const TrainingDetail = load(path.join(root, "src/app/training/[slug]/page")).default;
+  const { CohortAvailability } = load(path.join(root, "src/components/training/CohortAvailability"));
+  const page = await TrainingDetail({ params: Promise.resolve({ slug: "professional" }) });
+  const sections = [{
+    section_type: "cohort_availability", is_enabled: true, data: {
+      heading: "Places for the July cohort",
+      cohort: "Registration is open until 18 June.",
+      spaces: "12 places remaining",
+      next_cohort: "The next cohort is planned for September 2026.",
+      note: "We will confirm your place before sending payment instructions.",
+    },
+  }];
+  const availability = cmsRender(React.createElement(CohortAvailability), sections, "training-professional");
+  for (const value of ["PLACES FOR THE JULY COHORT", "12 places remaining", "September 2026", "before sending payment instructions"]) assert.match(availability, new RegExp(value));
+  assert.doesNotMatch(cmsRender(page, [], "training-professional"), /GHS 5,700|TRAINING FEE PER PARTICIPANT|Indicative fee/);
+});
+
 test("CMS empty homepage remains empty after the last section is removed", () => {
   const html = renderToStaticMarkup(React.createElement(CmsRevisionRenderer, { templateKey: "home", revision: { ...revision, sections: [] } }));
   assert.equal(html, "<main></main>");
