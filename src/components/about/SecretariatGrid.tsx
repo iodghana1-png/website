@@ -15,8 +15,8 @@ function SecretariatProfiles() {
   return <div className="mt-12 grid gap-5 md:grid-cols-2">{profiles.map((profile, index) => <details className={`group border border-[var(--color-line)] bg-white ${index === 0 ? "md:col-span-2 border-t-4 border-t-[var(--color-ink)]" : ""}`} key={profile.id}>
     <summary className="list-none cursor-pointer p-6 [&::-webkit-details-marker]:hidden sm:p-7">
       <div className="flex items-start justify-between gap-5"><div className="flex min-w-0 items-start gap-4">
-        <ProfilePhoto profileKey={profile.key} alt={profile.alt || `Portrait of ${profile.displayName}`} className="h-[95px] w-[76px] shrink-0 object-cover object-top">
-          <div className="relative h-[95px] w-[76px] shrink-0 overflow-hidden bg-[var(--color-ink)]"><span className="absolute -bottom-5 -right-2 font-serif text-6xl leading-none tracking-[-0.12em] text-white/[0.08]">IoD</span><p className="absolute inset-x-3 bottom-3 border-t border-white/25 pt-2 text-[10px] font-bold tracking-[0.08em] text-[var(--color-accent-light)]">PHOTO</p></div>
+        <ProfilePhoto profileKey={profile.key} alt={profile.alt || `Portrait of ${profile.displayName}`} className="h-[95px] w-[76px] shrink-0 object-cover object-top md:h-[150px] md:w-[120px]">
+          <div className="relative h-[95px] w-[76px] shrink-0 overflow-hidden bg-[var(--color-ink)] md:h-[150px] md:w-[120px]"><span className="absolute -bottom-5 -right-2 font-serif text-6xl leading-none tracking-[-0.12em] text-white/[0.08]">IoD</span><p className="absolute inset-x-3 bottom-3 border-t border-white/25 pt-2 text-[10px] font-bold tracking-[0.08em] text-[var(--color-accent-light)]">PHOTO</p></div>
         </ProfilePhoto>
         <div><p className="text-xs font-bold tracking-[0.1em] text-[var(--color-accent-dark)]">{profile.role}</p><h3 className="mt-2 font-serif text-2xl leading-tight tracking-[-0.035em] text-[var(--color-ink)]">{profile.displayName}</h3></div>
       </div><Icon name="plus" className="mt-1 h-5 w-5 text-[var(--color-ink)] transition-transform group-open:rotate-45" /></div>
