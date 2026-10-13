@@ -180,6 +180,15 @@ test("Membership application shows cohort guidance only after success, with no p
   assert.match(renderStatus(true, "upgrade"), /review your upgrade request/);
   assert.doesNotMatch(renderStatus(true, "upgrade"), /0 places remaining/);
   assert.match(renderStatus(true, "new_membership", []), /Availability will be confirmed/);
+  assert.match(submitted, /text-2xl font-bold[^\"]*sm:text-3xl/);
+  assert.match(submitted, /Places remaining/);
+  assert.match(submitted, /NEXT AVAILABLE COHORT/);
+  assert.doesNotMatch(submitted, />SPACES<|FOLLOWING COHORT/);
+  assert.match(submitted, /<strong class="font-bold">Please wait for confirmation before making any payment\.<\/strong>/);
+  const customized = renderStatus(true, "new_membership", [{ ...sections[0], data: { ...sections[0].data, availability_label: "Participants needed to begin", spaces: "4 more participants", payment_heading: "Wait for your confirmed place before paying." } }]);
+  assert.match(customized, /Participants needed to begin/);
+  assert.match(customized, /4 more participants/);
+  assert.match(customized, /<strong class="font-bold">Wait for your confirmed place before paying\.<\/strong>/);
   const initial = cmsRender(React.createElement(ApplyPage), sections, "membership-apply");
   for (const html of [initial, submitted]) assert.doesNotMatch(html, /1050406378412|1122092871801|0244309058|Pay with the following|Confirm participation by making full payment/);
   assert.doesNotMatch(initial, /0 places remaining/);

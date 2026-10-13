@@ -141,14 +141,16 @@ function CohortAvailabilityFields({ data, onChange }: { data: Record<string, unk
   const set = (key: string, value: string) => onChange({ ...data, [key]: value });
   const saved = (key: keyof typeof applicationCohortDefaults) => typeof data[key] === "string" ? data[key] as string : applicationCohortDefaults[key];
   return <div className="space-y-4">
-    <p className="text-sm text-[var(--color-slate)]">New membership applicants see this message after a successful application. Keep dates and availability up to date. For a full cohort, enter Full and provide the following cohort date. If the cohort needs more participants to begin, state that explicitly rather than calling those places remaining.</p>
+    <p className="text-sm text-[var(--color-slate)]">New membership applicants see this message after a successful application. Keep dates and availability up to date. For a full cohort, enter Full and provide the next available cohort date. Use Places remaining for available seats, or Participants needed to begin for the number still needed before training can start.</p>
     <Field label="Section heading" value={saved("heading")} onChange={(value) => set("heading", value)} />
     <Field label="Current cohort status" value={saved("cohort")} onChange={(value) => set("cohort", value)} />
     <Field label="Upcoming cohort date" value={saved("current_date")} onChange={(value) => set("current_date", value)} />
-    <Field label="Spaces remaining / participants needed" value={saved("spaces")} onChange={(value) => set("spaces", value)} />
-    <Field label="Following cohort date" value={saved("next_date")} onChange={(value) => set("next_date", value)} />
+    <Field label="Availability label" value={saved("availability_label")} onChange={(value) => set("availability_label", value)} />
+    <Field label="Availability details / number" value={saved("spaces")} onChange={(value) => set("spaces", value)} />
+    <Field label="Next available cohort date" value={saved("next_date")} onChange={(value) => set("next_date", value)} />
     <Area label="Next cohort guidance" value={saved("next_cohort")} onChange={(value) => set("next_cohort", value)} />
-    <Area label="Registration note" value={saved("note")} onChange={(value) => set("note", value)} />
+    <Field label="Payment reminder (bold)" value={saved("payment_heading")} onChange={(value) => set("payment_heading", value)} />
+    <Area label="Payment and confirmation guidance" value={saved("note")} onChange={(value) => set("note", value)} />
   </div>;
 }
 
