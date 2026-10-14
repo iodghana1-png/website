@@ -5,6 +5,24 @@ import { sectionState } from "./sectionVisibility";
 export type EventCard = Pick<ContentItem, "id" | "title" | "summary" | "href" | "metadata" | "image_url" | "sort_order">;
 export const eventCardsSlot = "event_cards";
 
+/**
+ * Event cards own their detail URL. This prevents a copied or stale CMS link
+ * from making one event's card open the details for a different event.
+ */
+export function eventCardHref(card: Pick<EventCard, "id" | "href" | "metadata">) {
+  if (card.metadata.link_type === "registration") return safeEventHref(card.href);
+  return `/events/${encodeURIComponent(card.id)}`;
+}
+
+export function eventRegistrationHref(card: Pick<EventCard, "href">) {
+  return safeEventHref(card.href, "");
+}
+
+function safeEventHref(value: string, fallback = "/events") {
+  const href = value.trim();
+  return href.startsWith("/") || /^https?:\/\//i.test(href) ? href : fallback;
+}
+
 export function eventCardsFromRevision(revision: CmsPageRevision): EventCard[] {
   if (sectionState(revision, "events-list")) return [];
   return revision.sections.filter((section) => section.slot === eventCardsSlot && section.is_enabled)

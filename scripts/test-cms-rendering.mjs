@@ -284,7 +284,7 @@ test("Homepage upcoming events label and heading link to the Events page", () =>
 });
 
 test("Events page and homepage source use the same editable event cards", () => {
-  const { eventCardsFromRevision } = load(path.join(root, "src/lib/cms/events"));
+    const { eventCardHref, eventCardsFromRevision } = load(path.join(root, "src/lib/cms/events"));
   const sections = [
     { slot: "page_copy", data: { fields: [{ key: "coldlq", value: "Stale event title" }] } },
     { slot: "event_cards", section_type: "card_grid", is_enabled: true, position: 0, data: { items: [
@@ -294,7 +294,10 @@ test("Events page and homepage source use the same editable event cards", () => 
   const html = cmsRender(React.createElement(EventsPage), sections, "events-page");
   for (const text of ["Updated summit", "Edited event summary", "5 December", "Accra"]) assert.ok(html.includes(text));
   assert.doesNotMatch(html, /Stale event title|National Corporate Governance Conference/);
-  assert.equal(eventCardsFromRevision({ sections })[0].title, "Updated summit");
+    const eventCards = eventCardsFromRevision({ sections });
+    assert.equal(eventCards[0].title, "Updated summit");
+    assert.equal(eventCardHref(eventCards[0]), "/events/event-one");
+    assert.equal(eventCardHref({ ...eventCards[0], href: "https://example.com/register", metadata: { link_type: "registration" } }), "https://example.com/register");
   assert.deepEqual(eventCardsFromRevision({ sections: [] }), []);
   assert.deepEqual(eventCardsFromRevision({ sections: setSectionState(sections, "events-list", "hidden") }), []);
   assert.equal(renderToStaticMarkup(React.createElement(PageContent, { revision: { ...revision, sections }, sectionsOnly: true })), "");

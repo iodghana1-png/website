@@ -16,7 +16,7 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 import { events, membershipCategories, newsItems } from "@/data/site";
 import { ContentItem, ContentPage, ContentSection, getPublishedContentItems, getPublishedContentPage } from "@/lib/api/content";
 import { KnowledgeDocument, knowledgeDocumentsFromPage, knowledgeSources } from "@/lib/knowledge-documents";
-import { getPublishedEventCards } from "@/lib/cms/events";
+import { eventCardHref, getPublishedEventCards } from "@/lib/cms/events";
 
 type HomepageItem = Pick<ContentItem, "id" | "title" | "summary" | "href" | "metadata" | "image_url" | "sort_order">;
 type HomepageItems = Record<HomepageSection, HomepageItem[]>;
@@ -91,7 +91,7 @@ function HomeKnowledgeDocumentCard({ item }: { item: HomepageItem }) {
 }
 
 function HomeTrainingCard({ item }: { item: HomepageItem }) {
-  return <article className="group bg-[var(--color-ink)] p-7">{item.image_url && <div className="relative mb-7 aspect-[16/9] overflow-hidden bg-white/10"><Image src={item.image_url} alt={readMeta(item.metadata, "alt_text", item.title)} fill sizes="(max-width: 1023px) 100vw, 33vw" className="object-cover transition duration-700 ease-out group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none" /><div aria-hidden="true" className="absolute inset-0 bg-[var(--color-ink)]/0 transition-colors duration-500 group-hover:bg-[var(--color-ink)]/15 motion-reduce:transition-none" /></div>}<p className="text-xs font-bold tracking-[0.12em] text-[var(--color-gold-light)]">{readMeta(item.metadata, "display_meta")}</p><h3 className="mt-8 font-serif text-3xl">{item.title}</h3><p className="mt-4 leading-7 text-[var(--color-mist)]">{item.summary}</p>{readMeta(item.metadata, "detail") && <p className="mt-5 text-sm text-[var(--color-mist)]">{readMeta(item.metadata, "detail")}</p>}<Link href={safeHref(item.href)} className="mt-8 inline-flex items-center gap-2 whitespace-nowrap border-b border-[var(--color-gold)] pb-2 text-sm font-bold">View event <Icon name="arrow-right" className="h-4 w-4 shrink-0" /></Link></article>;
+  return <article className="group bg-[var(--color-ink)] p-7">{item.image_url && <div className="relative mb-7 aspect-[16/9] overflow-hidden bg-white/10"><Image src={item.image_url} alt={readMeta(item.metadata, "alt_text", item.title)} fill sizes="(max-width: 1023px) 100vw, 33vw" className="object-cover transition duration-700 ease-out group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none" /><div aria-hidden="true" className="absolute inset-0 bg-[var(--color-ink)]/0 transition-colors duration-500 group-hover:bg-[var(--color-ink)]/15 motion-reduce:transition-none" /></div>}<p className="text-xs font-bold tracking-[0.12em] text-[var(--color-gold-light)]">{readMeta(item.metadata, "display_meta")}</p><h3 className="mt-8 font-serif text-3xl">{item.title}</h3><p className="mt-4 leading-7 text-[var(--color-mist)]">{item.summary}</p>{readMeta(item.metadata, "detail") && <p className="mt-5 text-sm text-[var(--color-mist)]">{readMeta(item.metadata, "detail")}</p>}<Link href={eventCardHref(item)} className="mt-8 inline-flex items-center gap-2 whitespace-nowrap border-b border-[var(--color-gold)] pb-2 text-sm font-bold">View event <Icon name="arrow-right" className="h-4 w-4 shrink-0" /></Link></article>;
 }
 
 function copyFromPage(page: ContentPage, fallback: HeadingCopy): HeadingCopy {
