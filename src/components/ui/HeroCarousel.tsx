@@ -84,6 +84,11 @@ export function HeroCarousel({ slides = fallbackSlides }: { slides?: HeroSlide[]
   const currentIndex = Math.min(current, slides.length - 1);
   const previous = () => setCurrent((currentIndex - 1 + slides.length) % slides.length);
   const next = () => setCurrent((currentIndex + 1) % slides.length);
+  const titleWithLeadPhrase = (title: string) => {
+    const leadPhrase = "to lead.";
+    if (!title.endsWith(leadPhrase)) return title;
+    return <>{title.slice(0, -leadPhrase.length)}<span className="whitespace-nowrap">{leadPhrase}</span></>;
+  };
 
   return (
     <section className="relative isolate min-h-[565px] overflow-hidden bg-[var(--color-ink)] text-white sm:min-h-[605px]" aria-roledescription="carousel" aria-label="IoD-Gh highlights">
@@ -111,7 +116,7 @@ export function HeroCarousel({ slides = fallbackSlides }: { slides?: HeroSlide[]
             {slides.map((slide, index) => (
               <div key={slide.id} className={`absolute inset-0 max-w-2xl transition-[opacity,transform] duration-700 ease-out motion-reduce:transition-none ${index === currentIndex ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0"}`} aria-hidden={index !== currentIndex}>
                 <p className="eyebrow text-[var(--color-accent-light)]">{slide.eyebrow}</p>
-                <h1 className="mt-5 max-w-[15ch] font-serif text-[clamp(2.7rem,4.6vw,4.9rem)] font-semibold leading-[0.98] tracking-[-0.052em] text-white">{slide.title}</h1>
+                <h1 className="mt-5 max-w-[15ch] font-serif text-[clamp(2.7rem,4.6vw,4.9rem)] font-semibold leading-[0.98] tracking-[-0.052em] text-white">{titleWithLeadPhrase(slide.title)}</h1>
                 <p className="mt-5 max-w-md text-base leading-7 text-[var(--color-mist)] sm:text-[1.0625rem]">{slide.description}</p>
                 <div className="mt-7 flex flex-wrap items-center gap-6">
                   <Link href={slide.primaryHref} tabIndex={index === currentIndex ? 0 : -1} style={{ color: "#271B54" }} className="inline-flex min-h-11 items-center justify-center bg-white px-5 text-sm font-bold transition-[background-color,color] duration-200 hover:bg-[var(--color-accent-light)]">
