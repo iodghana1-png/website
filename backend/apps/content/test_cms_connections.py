@@ -7,6 +7,20 @@ from .models import CMSNavigationMenu, CMSNavigationRevision, CMSNavigationItem,
 
 
 class CmsEventConnectionTests(TestCase):
+    def test_secretariat_profiles_are_seeded_once_and_remain_editable(self):
+        migration = import_module("apps.content.migrations.0029_connect_secretariat_profiles")
+        page = CMSPage.objects.get(path="/about/secretariat")
+        section = page.published_revision.sections.get(section_type="profile_gallery")
+        profiles = section.data["items"]
+        self.assertEqual([profile["metadata"]["display_name"] for profile in profiles], ["Dr. Alfred Braimah", "Mr. Seyram Kodzo Mankra"])
+        self.assertTrue(profiles[0]["metadata"]["biography"])
+        profiles[0]["metadata"]["biography"] = "Approved biography"
+        section.data["items"] = profiles
+        section.save(update_fields=["data"])
+        migration.connect_secretariat_profiles(apps, None)
+        section.refresh_from_db()
+        self.assertEqual(section.data["items"][0]["metadata"]["biography"], "Approved biography")
+
     def test_membership_application_page_is_registered_without_overwriting_edits(self):
         migration = import_module("apps.content.migrations.0028_membership_application_cohort")
         page = CMSPage.objects.get(path="/membership/apply")
