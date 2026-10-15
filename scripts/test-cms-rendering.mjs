@@ -43,7 +43,7 @@ const { BuiltInSection } = load(path.join(root, "src/components/cms/BuiltInSecti
 const { BuiltInSections } = load(path.join(root, "src/components/admin/cms/BuiltInSections"));
 const { PageContent, SectionRenderer } = load(path.join(root, "src/components/cms/ContentRenderer"));
 const { CmsRevisionRenderer } = load(path.join(root, "src/components/cms/CmsPublishedRoute"));
-const { IoDAssistant } = load(path.join(root, "src/components/assistant/IoDAssistant"));
+const { IoDAssistant, matchAssistantAnswer } = load(path.join(root, "src/components/assistant/IoDAssistant"));
 const { setSectionState, sectionState, replaceSectionGroup } = load(path.join(root, "src/lib/cms/sectionVisibility"));
 const { builtInSections, nativeSectionTypes } = load(path.join(root, "src/lib/cms/builtInSections"));
 const cmsRender = (element, sections, slug = "example") => renderToStaticMarkup(React.createElement(CmsPageContext.Provider, { value: { slug, revision: { ...revision, sections } } }, element));
@@ -74,6 +74,12 @@ test("IoD Assist provides a visible entry point and approved-answer introduction
   const html = renderToStaticMarkup(React.createElement(IoDAssistant));
   assert.match(html, /IoD Assist/);
   assert.match(html, /Open IoD Assist/);
+});
+
+test("IoD Assist recognises common visitor wording without guessing", () => {
+  assert.equal(matchAssistantAnswer("How much does membership cost?")?.answer.id, "fees");
+  assert.equal(matchAssistantAnswer("Which CPD courses can I take?")?.answer.id, "training");
+  assert.equal(matchAssistantAnswer("Good morning")?.score, 0);
 });
 
 test("CMS group edits never duplicate countdowns or galleries, and preserve unrelated sections", () => {
