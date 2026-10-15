@@ -109,12 +109,12 @@ test("CMS custom native sections do not leave headings, placeholders or fallback
   }
 });
 
-test("Secretariat profiles render CMS-managed biographies", () => {
+test("Secretariat profiles show only the CMS-managed name and department", () => {
   const { SecretariatGrid } = load(path.join(root, "src/components/about/SecretariatGrid"));
   const sections = [{ section_type: "profile_gallery", is_enabled: true, data: { items: [{ id: "alfred", title: "Dr. Alfred Braimah", metadata: { display_name: "Dr. Alfred Braimah", role: "Chief Executive Officer", summary: "Leads the Secretariat.", biography: "Leads the Institute's day-to-day work." } }] } }];
   const html = cmsRender(React.createElement(SecretariatGrid), sections, "about-secretariat");
-  for (const value of ["Dr. Alfred Braimah", "Chief Executive Officer", "Leads the Secretariat.", "Leads the Institute&#x27;s day-to-day work."]) assert.ok(html.includes(value));
-  assert.doesNotMatch(html, /Team profile|A full profile will appear here/);
+  for (const value of ["Dr. Alfred Braimah", "Chief Executive Officer"]) assert.ok(html.includes(value));
+  assert.doesNotMatch(html, /Leads the Secretariat.|Leads the Institute&#x27;s day-to-day work.|Read profile|A full profile will appear here/);
 });
 
 test("CMS native document and gallery data is not rendered a second time below the page", () => {
