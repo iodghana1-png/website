@@ -22,5 +22,6 @@ urlpatterns = [
     path("staff/members/<str:membership_number>/renewals/", views.StaffMemberRenewalView.as_view(), name="staff-member-renewals"),
     path("staff/directory/", views.StaffDirectoryListView.as_view(), name="staff-directory"),
     path("staff/directory/bulk-publication/", views.StaffDirectoryBulkPublicationView.as_view(), name="staff-directory-bulk-publication"),
+    path("staff/directory/bulk-delete/", views.StaffDirectoryBulkDeleteView.as_view(), name="staff-directory-bulk-delete"),
     path("staff/directory/<uuid:pk>/", views.StaffDirectoryDetailView.as_view(), name="staff-directory-detail"),
 ]

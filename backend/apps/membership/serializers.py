@@ -162,3 +162,7 @@ class MemberDirectoryBulkPublishSerializer(serializers.Serializer):
     is_published = serializers.BooleanField()
     designation = serializers.ChoiceField(choices=MemberDirectoryEntry.Designation.choices, required=False)
     current_state = serializers.BooleanField(required=False)
+
+
+class MemberDirectoryBulkDeleteSerializer(serializers.Serializer):
+    ids = serializers.ListField(child=serializers.UUIDField(), allow_empty=False)

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from uuid import uuid4
 
+from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -20,6 +21,7 @@ from apps.audit.services import record_event
 from .models import MemberDirectoryEntry, MemberProfile, MembershipApplication, MembershipRenewal, MembershipStatusHistory, MembershipType
 from .notifications import send_application_decision_email, send_application_received_email, send_application_submitted_to_staff_email, send_renewal_created_email
 from .serializers import ApplicationApprovalSerializer, ApplicationRejectionSerializer, ApplicationReviewSerializer, MemberDirectoryBulkPublishSerializer, MemberDirectoryEntrySerializer, MemberProfileSerializer, MemberProfileUpdateSerializer, MemberStatusUpdateSerializer, MembershipApplicationStaffSerializer, MembershipApplicationSubmitSerializer, MembershipApplicationTrackingSerializer, MembershipRenewalCreateSerializer, MembershipRenewalSerializer, MembershipStatusHistorySerializer, MembershipTypeSerializer, PublicMemberVerificationSerializer
+from .serializers import MemberDirectoryBulkDeleteSerializer
 from .services import approve_application, reject_application
 
 
@@ -230,6 +232,34 @@ class StaffDirectoryBulkPublicationView(APIView):
         updated = entries.update(is_published=serializer.validated_data["is_published"])
         record_event(action="membership.directory_bulk_publication_updated", target_type="member_directory", actor=request.user, request=request, metadata={"updated": updated, "designation": designation, "is_published": serializer.validated_data["is_published"]})
         return Response({"updated": updated})
+
+
+@method_decorator(csrf_protect, name="dispatch")
+class StaffDirectoryBulkDeleteView(APIView):
+    permission_classes = [IsDirectoryManager]
+
+    @extend_schema(request=MemberDirectoryBulkDeleteSerializer, responses={200: dict})
+    def post(self, request):
+        serializer = MemberDirectoryBulkDeleteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        ids = set(serializer.validated_data["ids"])
+        with transaction.atomic():
+            entries = list(MemberDirectoryEntry.objects.select_for_update().filter(pk__in=ids))
+            if len(entries) != len(ids):
+                raise ValidationError({"ids": ["Some selected entries no longer exist. Refresh the directory and select again."]})
+            MemberDirectoryEntry.objects.filter(pk__in=ids).delete()
+            record_event(
+                action="membership.directory_entries_bulk_deleted",
+                target_type="member_directory",
+                actor=request.user,
+                request=request,
+                metadata={
+                    "deleted": len(entries),
+                    "ids": sorted(str(entry.id) for entry in entries),
+                    "designations": sorted({entry.designation for entry in entries}),
+                },
+            )
+        return Response({"deleted": len(entries)})
 
 
 class StaffApplicationListView(APIView):

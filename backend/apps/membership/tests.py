@@ -99,6 +99,57 @@ class MembershipApiTests(TestCase):
         fellow.refresh_from_db()
         self.assertTrue(fellow.is_published)
 
+    def test_directory_bulk_delete_removes_only_selected_entries_across_pages(self):
+        selected = [
+            MemberDirectoryEntry.objects.create(
+                full_name=f"Selected Fellow {index}", designation="FIoD",
+                as_of_date=date(2026, 9, 30), is_published=True,
+            ) for index in range(51)
+        ]
+        same_category = MemberDirectoryEntry.objects.create(full_name="Unselected Fellow", designation="FIoD", as_of_date=date(2026, 9, 30))
+        other_category = MemberDirectoryEntry.objects.create(full_name="Unselected Member", designation="MIoD", as_of_date=date(2026, 9, 30))
+        ids = [str(entry.id) for entry in selected]
+        response = self.csrf_client(self.officer).post(
+            "/api/v1/membership/staff/directory/bulk-delete/",
+            data={"ids": ids + [ids[0]]}, content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"deleted": 51})
+        self.assertSetEqual(set(MemberDirectoryEntry.objects.values_list("id", flat=True)), {same_category.id, other_category.id})
+        self.assertEqual(self.client.get("/api/v1/membership/directory/").json(), [])
+        audit = AuditLog.objects.get(action="membership.directory_entries_bulk_deleted")
+        self.assertEqual(audit.actor, self.officer)
+        self.assertEqual(audit.metadata["deleted"], 51)
+        self.assertCountEqual(audit.metadata["ids"], ids)
+        self.assertTrue(MembershipType.objects.filter(pk=self.membership_type.id).exists())
+
+    def test_directory_bulk_delete_rejects_empty_invalid_and_stale_selections(self):
+        entry = MemberDirectoryEntry.objects.create(full_name="Keep Member", designation="MIoD", as_of_date=date(2026, 9, 30))
+        client = self.csrf_client(self.officer)
+        for payload in ({}, {"ids": []}, {"ids": ["invalid"]}, {"ids": [str(entry.id), "00000000-0000-0000-0000-000000000000"]}):
+            with self.subTest(payload=payload):
+                response = client.post("/api/v1/membership/staff/directory/bulk-delete/", data=payload, content_type="application/json")
+                self.assertEqual(response.status_code, 400)
+                self.assertTrue(MemberDirectoryEntry.objects.filter(pk=entry.id).exists())
+        self.assertFalse(AuditLog.objects.filter(action="membership.directory_entries_bulk_deleted").exists())
+
+    def test_directory_bulk_delete_requires_permission_and_csrf(self):
+        entry = MemberDirectoryEntry.objects.create(full_name="Keep Member", designation="MIoD", as_of_date=date(2026, 9, 30))
+        ordinary_user = User.objects.create_user("ordinary@example.com", "Secure-pass-123!", email_verified_at=timezone.now())
+        no_csrf = Client(enforce_csrf_checks=True)
+        no_csrf.force_login(self.officer)
+        for client in (self.csrf_client(), self.csrf_client(ordinary_user), no_csrf):
+            response = client.post("/api/v1/membership/staff/directory/bulk-delete/", data={"ids": [str(entry.id)]}, content_type="application/json")
+            self.assertIn(response.status_code, (401, 403))
+            self.assertTrue(MemberDirectoryEntry.objects.filter(pk=entry.id).exists())
+
+    def test_directory_bulk_delete_rolls_back_if_audit_fails(self):
+        entry = MemberDirectoryEntry.objects.create(full_name="Keep Member", designation="MIoD", as_of_date=date(2026, 9, 30))
+        with patch("apps.membership.views.record_event", side_effect=RuntimeError("Audit unavailable")):
+            response = self.csrf_client(self.officer).post("/api/v1/membership/staff/directory/bulk-delete/", data={"ids": [str(entry.id)]}, content_type="application/json")
+        self.assertEqual(response.status_code, 500)
+        self.assertTrue(MemberDirectoryEntry.objects.filter(pk=entry.id).exists())
+
     def test_public_directory_is_alphabetical_within_a_category(self):
         MemberDirectoryEntry.objects.create(full_name="Zulu, Example", designation="MIoD", as_of_date=date(2026, 9, 30), is_published=True)
         MemberDirectoryEntry.objects.create(full_name="Abena, Example", designation="MIoD", as_of_date=date(2026, 9, 30), is_published=True)
