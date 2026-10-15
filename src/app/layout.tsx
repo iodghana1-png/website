@@ -7,6 +7,7 @@ import { CmsRouteSwitch } from "@/components/cms/CmsPublishedRoute";
 import { SiteSettingsProvider } from "@/components/cms/SiteSettings";
 import { apiBaseUrl } from "@/lib/api/client";
 import { AnalyticsTracker } from "@/components/analytics/AnalyticsTracker";
+import { IoDAssistant } from "@/components/assistant/IoDAssistant";
 import "./globals.css";
 
 const inter = Inter({
@@ -38,6 +39,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <Header />
         <CmsRouteSwitch>{children}</CmsRouteSwitch>
         <Footer />
+        <IoDAssistant />
         <AnalyticsTracker />
         </SiteSettingsProvider>
       </body>

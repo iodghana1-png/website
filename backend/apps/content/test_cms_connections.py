@@ -7,6 +7,15 @@ from .models import CMSNavigationMenu, CMSNavigationRevision, CMSNavigationItem,
 
 
 class CmsEventConnectionTests(TestCase):
+    def test_site_assistant_is_seeded_once_with_editable_answers(self):
+        migration = import_module("apps.content.migrations.0030_add_site_assistant")
+        migration.add_site_assistant(apps, None)
+        page = CMSPage.objects.get(slug="site-assistant")
+        section = page.published_revision.sections.get(slot="assistant_answers")
+        self.assertEqual(section.section_type, "faq")
+        self.assertEqual(section.data["items"][0]["title"], "How do I become a member?")
+        self.assertEqual(CMSPage.objects.filter(slug="site-assistant").count(), 1)
+
     def test_secretariat_profiles_are_seeded_once_and_remain_editable(self):
         migration = import_module("apps.content.migrations.0029_connect_secretariat_profiles")
         page = CMSPage.objects.get(path="/about/secretariat")
