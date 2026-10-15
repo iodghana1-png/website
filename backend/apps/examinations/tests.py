@@ -76,19 +76,18 @@ class ExaminationSecurityTests(ExamFixtures, TestCase):
         client.force_login(self.student)
         self.assertEqual(self.post(f"exams/{self.exam.pk}/start/", client=client).status_code, 403)
 
-    def test_existing_account_login_supports_identifier_and_password(self):
+    def test_account_login_supports_admin_identifier_and_password(self):
         client = self.client_for(None)
-        self.assertEqual(self.post("auth/login/", {"identifier": self.student.email, "password": "Secure-test-password-47!"}, client).status_code, 200)
+        self.assertEqual(self.post("auth/login/", {"identifier": self.staff.email, "password": "Secure-test-password-47!"}, client).status_code, 200)
         client = self.client_for(None)
         self.assertEqual(self.post("auth/login/", {"identifier": self.student.email, "password": "wrong"}, client).status_code, 403)
 
-    def test_membership_number_uses_existing_account_identity(self):
+    def test_membership_number_cannot_bypass_admin_only_login(self):
         from apps.membership.models import MemberProfile, MembershipType
         membership_type = MembershipType.objects.create(name="Exam test member", slug="exam-test-member")
         MemberProfile.objects.create(user=self.student, membership_type=membership_type, membership_number="IOD-TEST-123", first_name="Test", last_name="Candidate", email=self.student.email, joined_date=timezone.now().date(), membership_start_date=timezone.now().date())
         response = self.post("auth/login/", {"identifier": "IOD-TEST-123", "password": "Secure-test-password-47!"}, self.client_for(None))
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["id"], str(self.student.pk))
+        self.assertEqual(response.status_code, 403)
 
     def test_account_throttling_blocks_distributed_login_attempts(self):
         for index in range(21):

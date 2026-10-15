@@ -32,19 +32,19 @@ class AuthenticationApiTests(TestCase):
         client.defaults["HTTP_X_CSRFTOKEN"] = client.cookies["csrftoken"].value
         return client
 
-    def test_registration_requires_csrf_and_sends_verification_email(self):
+    def test_public_registration_is_closed_even_with_valid_csrf(self):
         blocked = Client(enforce_csrf_checks=True).post("/api/v1/auth/register/", data={"email": "member@example.com", "password": "Secure-pass-123!"}, content_type="application/json")
         self.assertEqual(blocked.status_code, 403)
         self.assertEqual(blocked.json()["error"]["code"], "csrf_failed")
 
         response = self.csrf_client().post("/api/v1/auth/register/", data={"email": "member@example.com", "first_name": "Ama", "last_name": "Mensah", "phone_number": "+233201234567", "password": "Secure-pass-123!"}, content_type="application/json")
-        self.assertEqual(response.status_code, 201)
-        self.assertEqual(response.json()["phone_number"], "+233201234567")
-        self.assertEqual(len(mail.outbox), 1)
-        self.assertEqual(AuditLog.objects.filter(action="account.registered").count(), 1)
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(User.objects.filter(email="member@example.com").exists())
+        self.assertEqual(len(mail.outbox), 0)
+        self.assertEqual(AuditLog.objects.filter(action="account.registered").count(), 0)
 
-    def test_verified_user_can_login_and_access_identity(self):
-        user = User.objects.create_user("member@example.com", "Secure-pass-123!", email_verified_at=timezone.now())
+    def test_verified_admin_can_login_and_access_identity(self):
+        user = User.objects.create_user("admin@example.com", "Secure-pass-123!", is_staff=True, email_verified_at=timezone.now())
         client = self.csrf_client()
 
         login_response = client.post("/api/v1/auth/login/", data={"email": user.email, "password": "Secure-pass-123!"}, content_type="application/json")
@@ -55,6 +55,22 @@ class AuthenticationApiTests(TestCase):
         self.assertEqual(me_response.status_code, 200)
         self.assertEqual(me_response.json()["id"], str(user.id))
         self.assertTrue(AuditLog.objects.filter(action="account.logged_in", target_id=user.id).exists())
+
+    def test_verified_non_admin_cannot_login_even_with_a_named_role(self):
+        user = User.objects.create_user("member@example.com", "Secure-pass-123!", email_verified_at=timezone.now())
+        user.groups.add(Group.objects.get(name="Membership Officer"))
+        client = self.csrf_client()
+        response = client.post("/api/v1/auth/login/", data={"email": user.email, "password": "Secure-pass-123!"}, content_type="application/json")
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(client.get("/api/v1/auth/me/").status_code, 403)
+        self.assertFalse(AuditLog.objects.filter(action="account.logged_in", target_id=user.id).exists())
+
+    def test_deleted_member_session_cannot_access_identity(self):
+        user = User.objects.create_user("former@example.com", "Secure-pass-123!", email_verified_at=timezone.now())
+        client = self.csrf_client()
+        client.force_login(user)
+        user.delete()
+        self.assertEqual(client.get("/api/v1/auth/me/").status_code, 403)
 
     def test_unverified_user_cannot_login(self):
         User.objects.create_user("member@example.com", "Secure-pass-123!")
@@ -83,7 +99,7 @@ class AuthenticationApiTests(TestCase):
         self.assertTrue(me_response.json()["is_staff"])
 
     def test_verification_and_password_reset_tokens_are_server_validated(self):
-        user = User.objects.create_user("member@example.com", "Secure-pass-123!")
+        user = User.objects.create_user("admin@example.com", "Secure-pass-123!", is_staff=True)
         client = self.csrf_client()
         verification = user_token_data(user, purpose="verification")
 

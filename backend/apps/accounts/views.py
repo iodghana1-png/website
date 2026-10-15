@@ -13,7 +13,7 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.decorators import api_view
-from rest_framework.exceptions import AuthenticationFailed, ValidationError
+from rest_framework.exceptions import AuthenticationFailed, PermissionDenied, ValidationError
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from apps.common.throttling import ScopedRateThrottle
@@ -22,7 +22,7 @@ from rest_framework.views import APIView
 from apps.audit.services import record_event
 
 from .models import User
-from .serializers import EmailTokenSerializer, LoginSerializer, PasswordChangeSerializer, PasswordResetConfirmSerializer, PasswordResetRequestSerializer, RegistrationSerializer, UserSerializer
+from .serializers import EmailTokenSerializer, LoginSerializer, PasswordChangeSerializer, PasswordResetConfirmSerializer, PasswordResetRequestSerializer, UserSerializer
 from .services import send_password_reset_email, send_verification_email
 from .tokens import password_reset_token_generator, verification_token_generator
 from .throttling import LoginAccountThrottle
@@ -53,14 +53,9 @@ class RegisterView(APIView):
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "registration"
 
-    @extend_schema(request=RegistrationSerializer, responses={201: UserSerializer})
+    @extend_schema(request=None, responses={403: dict})
     def post(self, request):
-        serializer = RegistrationSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()
-        send_verification_email(user)
-        record_event(action="account.registered", target_type="user", target_id=user.id, actor=user, request=request)
-        return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
+        raise PermissionDenied("Public account registration is closed. Membership applications remain available.")
 
 
 @method_decorator(csrf_protect, name="dispatch")
@@ -75,7 +70,7 @@ class LoginView(APIView):
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = authenticate(request, email=serializer.validated_data["email"], password=serializer.validated_data["password"])
-        if not user or not user.email_verified_at:
+        if not user or not user.email_verified_at or not (user.is_staff or user.is_superuser):
             record_event(action="account.login_failed", target_type="authentication", request=request)
             raise AuthenticationFailed("Invalid credentials or unverified account.")
         login(request, user)
