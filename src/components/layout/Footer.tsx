@@ -26,7 +26,7 @@ export function FooterContent({ settings }: { settings: Record<string, unknown> 
   const footer = footerConfig(settings);
   if (!footer.enabled) return null;
   const columns = footer.columns.filter((column) => column.enabled);
-  const bottomLinks = [{ label: "Member login", href: "/login", enabled: true, new_tab: false }, ...footer.bottom_links.filter((item) => item.href !== "/login")];
+  const bottomLinks = footer.bottom_links.filter((item) => item.href !== "/login");
   const logoUrl = cmsMediaUrl(footer, "logo");
   const count = 1 + columns.length + Number(footer.newsletter_enabled);
   const grid = count >= 4 ? "xl:grid-cols-4" : count === 3 ? "xl:grid-cols-3" : "";
