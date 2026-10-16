@@ -21,7 +21,7 @@ from apps.audit.services import record_event
 from .models import MemberDirectoryEntry, MemberProfile, MembershipApplication, MembershipRenewal, MembershipStatusHistory, MembershipType
 from .notifications import send_application_decision_email, send_application_received_email, send_application_submitted_to_staff_email, send_renewal_created_email
 from .serializers import ApplicationApprovalSerializer, ApplicationRejectionSerializer, ApplicationReviewSerializer, MemberDirectoryBulkPublishSerializer, MemberDirectoryEntrySerializer, MemberProfileSerializer, MemberProfileUpdateSerializer, MemberStatusUpdateSerializer, MembershipApplicationStaffSerializer, MembershipApplicationSubmitSerializer, MembershipApplicationTrackingSerializer, MembershipRenewalCreateSerializer, MembershipRenewalSerializer, MembershipStatusHistorySerializer, MembershipTypeSerializer, PublicMemberVerificationSerializer
-from .serializers import MemberDirectoryBulkDeleteSerializer
+from .serializers import MemberDirectoryBulkDeleteSerializer, MemberDirectoryImportSerializer
 from .services import approve_application, reject_application
 
 
@@ -260,6 +260,39 @@ class StaffDirectoryBulkDeleteView(APIView):
                 },
             )
         return Response({"deleted": len(entries)})
+
+
+@method_decorator(csrf_protect, name="dispatch")
+class StaffDirectoryImportView(APIView):
+    permission_classes = [IsDirectoryManager]
+
+    @extend_schema(request=MemberDirectoryImportSerializer, responses={201: dict})
+    def post(self, request):
+        serializer = MemberDirectoryImportSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        entries = serializer.validated_data["entries"]
+        keys = {(entry.full_name.casefold(), entry.designation, entry.as_of_date) for entry in entries}
+        with transaction.atomic():
+            existing = {
+                (name.casefold(), designation, as_of_date)
+                for name, designation, as_of_date in MemberDirectoryEntry.objects.select_for_update().values_list("full_name", "designation", "as_of_date")
+            }
+            duplicates = keys & existing
+            if duplicates:
+                raise ValidationError({"csv_file": [f"{len(duplicates)} row(s) already exist in the directory. Remove them from the CSV and try again."]})
+            MemberDirectoryEntry.objects.bulk_create(entries, batch_size=500)
+            record_event(
+                action="membership.directory_entries_imported",
+                target_type="member_directory",
+                actor=request.user,
+                request=request,
+                metadata={
+                    "imported": len(entries),
+                    "published": sum(entry.is_published for entry in entries),
+                    "designations": sorted({entry.designation for entry in entries}),
+                },
+            )
+        return Response({"imported": len(entries), "published": sum(entry.is_published for entry in entries)}, status=status.HTTP_201_CREATED)
 
 
 class StaffApplicationListView(APIView):

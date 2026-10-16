@@ -1,6 +1,11 @@
 from __future__ import annotations
 
+import csv
+import io
+from datetime import date
+
 from rest_framework import serializers
+from django.utils.dateparse import parse_date
 from apps.common.uploads import validate_upload
 
 from .models import MemberDirectoryEntry, MemberProfile, MembershipApplication, MembershipRenewal, MembershipStatusHistory, MembershipType
@@ -166,3 +171,98 @@ class MemberDirectoryBulkPublishSerializer(serializers.Serializer):
 
 class MemberDirectoryBulkDeleteSerializer(serializers.Serializer):
     ids = serializers.ListField(child=serializers.UUIDField(), allow_empty=False)
+
+
+class MemberDirectoryImportSerializer(serializers.Serializer):
+    csv_file = serializers.FileField(write_only=True)
+    default_as_of_date = serializers.DateField()
+    default_is_published = serializers.BooleanField(default=False)
+
+    required_columns = {"full_name", "designation"}
+    optional_columns = {"as_of_date", "is_published", "sort_order"}
+    max_file_size = 2 * 1024 * 1024
+    max_rows = 5000
+
+    def validate_csv_file(self, upload):
+        if upload.size > self.max_file_size:
+            raise serializers.ValidationError("Choose a CSV file smaller than 2 MB.")
+        if not upload.size:
+            raise serializers.ValidationError("Choose a CSV file with at least one directory entry.")
+        if upload.name and not upload.name.lower().endswith(".csv"):
+            raise serializers.ValidationError("Choose a CSV file.")
+        try:
+            upload.seek(0)
+            contents = upload.read(self.max_file_size + 1)
+            text = contents.decode("utf-8-sig")
+        except UnicodeDecodeError as error:
+            raise serializers.ValidationError("The CSV must use UTF-8 text encoding.") from error
+        finally:
+            upload.seek(0)
+        if len(contents) > self.max_file_size:
+            raise serializers.ValidationError("Choose a CSV file smaller than 2 MB.")
+        try:
+            reader = csv.DictReader(io.StringIO(text))
+        except csv.Error as error:
+            raise serializers.ValidationError("The CSV could not be read.") from error
+        columns = {column.strip() for column in reader.fieldnames or [] if column and column.strip()}
+        expected = self.required_columns | self.optional_columns
+        missing = self.required_columns - columns
+        unknown = columns - expected
+        if missing:
+            raise serializers.ValidationError(f"Missing required CSV column: {', '.join(sorted(missing))}.")
+        if unknown:
+            raise serializers.ValidationError(f"Unrecognised CSV column: {', '.join(sorted(unknown))}.")
+        try:
+            rows = list(reader)
+        except csv.Error as error:
+            raise serializers.ValidationError("The CSV could not be read.") from error
+        if not rows:
+            raise serializers.ValidationError("The CSV has no directory entries.")
+        if len(rows) > self.max_rows:
+            raise serializers.ValidationError(f"The CSV can contain up to {self.max_rows} entries.")
+        return upload
+
+    def validate(self, attrs):
+        upload = attrs["csv_file"]
+        upload.seek(0)
+        reader = csv.DictReader(io.StringIO(upload.read().decode("utf-8-sig")))
+        permitted_designations = {value.casefold(): value for value in MemberDirectoryEntry.Designation.values}
+        truth_values = {"true": True, "yes": True, "1": True, "false": False, "no": False, "0": False}
+        entries = []
+        seen = set()
+
+        for row_number, row in enumerate(reader, start=2):
+            if not any((value or "").strip() for value in row.values()):
+                continue
+            name = (row.get("full_name") or "").strip()
+            designation = permitted_designations.get((row.get("designation") or "").strip().casefold())
+            if not name:
+                raise serializers.ValidationError({"csv_file": f"Row {row_number}: full_name is required."})
+            if len(name) > 255:
+                raise serializers.ValidationError({"csv_file": f"Row {row_number}: full_name is longer than 255 characters."})
+            if not designation:
+                raise serializers.ValidationError({"csv_file": f"Row {row_number}: designation must be HFIoD, FIoD, MIoD, or AIoD."})
+            date_text = (row.get("as_of_date") or "").strip()
+            as_of_date = parse_date(date_text) if date_text else attrs["default_as_of_date"]
+            if not isinstance(as_of_date, date):
+                raise serializers.ValidationError({"csv_file": f"Row {row_number}: as_of_date must use YYYY-MM-DD."})
+            publish_text = (row.get("is_published") or "").strip().casefold()
+            if publish_text and publish_text not in truth_values:
+                raise serializers.ValidationError({"csv_file": f"Row {row_number}: is_published must be true or false."})
+            is_published = truth_values[publish_text] if publish_text else attrs["default_is_published"]
+            sort_text = (row.get("sort_order") or "").strip()
+            try:
+                sort_order = int(sort_text) if sort_text else len(entries)
+            except ValueError as error:
+                raise serializers.ValidationError({"csv_file": f"Row {row_number}: sort_order must be a whole number."}) from error
+            if sort_order < 0:
+                raise serializers.ValidationError({"csv_file": f"Row {row_number}: sort_order cannot be negative."})
+            key = (name.casefold(), designation, as_of_date)
+            if key in seen:
+                raise serializers.ValidationError({"csv_file": f"Row {row_number}: this member is duplicated in the CSV."})
+            seen.add(key)
+            entries.append(MemberDirectoryEntry(full_name=name, designation=designation, as_of_date=as_of_date, is_published=is_published, sort_order=sort_order))
+        if not entries:
+            raise serializers.ValidationError({"csv_file": "The CSV has no directory entries."})
+        attrs["entries"] = entries
+        return attrs

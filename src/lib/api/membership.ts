@@ -44,6 +44,13 @@ export const createDirectoryEntry = (data: Omit<DirectoryEntry, "id">) => apiReq
 export const updateDirectoryEntry = (id: string, data: Partial<Omit<DirectoryEntry, "id">>) => apiRequest<DirectoryEntry>(`/membership/staff/directory/${id}/`, { method: "PATCH", body: JSON.stringify(data) });
 export const deleteDirectoryEntry = (id: string) => apiRequest<void>(`/membership/staff/directory/${id}/`, { method: "DELETE" });
 export const deleteDirectoryEntries = (ids: string[]) => apiRequest<{ deleted: number }>("/membership/staff/directory/bulk-delete/", { method: "POST", body: JSON.stringify({ ids }) });
+export const importDirectoryEntries = (file: File, data: { defaultAsOfDate: string; publish: boolean }) => {
+  const form = new FormData();
+  form.append("csv_file", file);
+  form.append("default_as_of_date", data.defaultAsOfDate);
+  form.append("default_is_published", String(data.publish));
+  return apiRequest<{ imported: number; published: number }>("/membership/staff/directory/import/", { method: "POST", body: form });
+};
 export const updateDirectoryPublication = (data: { is_published: boolean; designation?: DirectoryEntry["designation"]; current_state?: boolean }) => apiRequest<{ updated: number }>("/membership/staff/directory/bulk-publication/", { method: "PATCH", body: JSON.stringify(data) });
 export const reviewApplication = (reference: string, internal_notes: string) => apiRequest<MembershipApplication>(`/membership/staff/applications/${encodeURIComponent(reference)}/review/`, { method: "POST", body: JSON.stringify({ internal_notes }) });
 export const resendApplicationReceipt = (reference: string) => apiRequest<void>(`/membership/staff/applications/${encodeURIComponent(reference)}/receipt-email/`, { method: "POST" });

@@ -3,9 +3,10 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
 import { ApiError, apiErrorMessage } from "@/lib/api/client";
-import { createDirectoryEntry, deleteDirectoryEntry, deleteDirectoryEntries, DIRECTORY_DESIGNATIONS, DirectoryEntry, getStaffDirectory, updateDirectoryEntry, updateDirectoryPublication } from "@/lib/api/membership";
+import { createDirectoryEntry, deleteDirectoryEntry, deleteDirectoryEntries, DIRECTORY_DESIGNATIONS, DirectoryEntry, getStaffDirectory, importDirectoryEntries, updateDirectoryEntry, updateDirectoryPublication } from "@/lib/api/membership";
 
 const categories: Array<DirectoryEntry["designation"] | "all"> = ["all", ...DIRECTORY_DESIGNATIONS];
+const csvTemplate = "data:text/csv;charset=utf-8,full_name%2Cdesignation%2Cas_of_date%2Cis_published%2Csort_order%0AAma%20Mensah%2CMIoD%2C2026-10-16%2Ctrue%2C0%0AKojo%20Owusu%2CFIoD%2C2026-10-16%2Ctrue%2C1%0A";
 
 export function DirectoryAdmin() {
   const [entries, setEntries] = useState<DirectoryEntry[]>([]);
@@ -17,6 +18,10 @@ export function DirectoryAdmin() {
   const [category, setCategory] = useState<DirectoryEntry["designation"] | "all">("all");
   const [sort, setSort] = useState<"name" | "category">("name");
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importAsOfDate, setImportAsOfDate] = useState(new Date().toISOString().slice(0, 10));
+  const [importPublished, setImportPublished] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [deleteTargets, setDeleteTargets] = useState<DirectoryEntry[]>([]);
   const [deleteError, setDeleteError] = useState("");
@@ -97,6 +102,27 @@ export function DirectoryAdmin() {
     }
   };
 
+  const importCsv = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!importFile || importing) return;
+    setImporting(true);
+    setError("");
+    setNotice("");
+    try {
+      const result = await importDirectoryEntries(importFile, { defaultAsOfDate: importAsOfDate, publish: importPublished });
+      await load();
+      setImportFile(null);
+      event.currentTarget.reset();
+      const count = result.imported;
+      const publication = result.published ? (result.published === count ? " and published" : " with " + result.published + " published") : " as drafts";
+      setNotice(count + " directory " + (count === 1 ? "entry was" : "entries were") + " imported" + publication + ".");
+    } catch (reason) {
+      setError(apiErrorMessage(reason, "We couldn't import this CSV. Please check the file and try again."));
+    } finally {
+      setImporting(false);
+    }
+  };
+
   const openDeleteDialog = (targets: DirectoryEntry[]) => {
     if (!targets.length || deleting) return;
     setDeleteTargets(targets);
@@ -138,6 +164,20 @@ export function DirectoryAdmin() {
     </div>
     {error && <p role="alert" className="mt-5 border-l-2 border-[var(--color-error)] bg-red-50 p-4 text-sm">{error}</p>}
     {notice && <p role="status" className="mt-5 border-l-2 border-emerald-600 bg-emerald-50 p-4 text-sm text-emerald-900">{notice}</p>}
+    <details className="mt-6 border border-[var(--color-line)] bg-white">
+      <summary className="cursor-pointer px-5 py-4 text-sm font-bold marker:text-[var(--color-accent-dark)]">Import directory from CSV</summary>
+      <div className="border-t border-[var(--color-line)] p-5">
+        <p className="max-w-3xl text-sm leading-6 text-[var(--color-slate)]">Upload a CSV to add members in one go. Required columns are <code>full_name</code> and <code>designation</code>. You can optionally include <code>as_of_date</code>, <code>is_published</code>, and <code>sort_order</code>. Every row is checked before the import is saved, and existing duplicate listings are rejected.</p>
+        <a href={csvTemplate} download="iod-member-directory-template.csv" className="mt-3 inline-block text-sm font-bold text-[var(--color-accent-dark)] underline underline-offset-4">Download CSV template</a>
+        <form onSubmit={(event) => void importCsv(event)} className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_160px_180px_auto] lg:items-end">
+          <label className="text-sm font-bold">Directory CSV<input required type="file" accept=".csv,text/csv" onChange={(event) => setImportFile(event.target.files?.[0] || null)} className="mt-2 block w-full border border-[var(--color-line)] bg-white p-2 text-sm font-normal" /></label>
+          <label className="text-sm font-bold">Default as of<input required type="date" value={importAsOfDate} onChange={(event) => setImportAsOfDate(event.target.value)} className="mt-2 h-11 w-full border border-[var(--color-line)] px-3 text-sm font-normal" /></label>
+          <label className="flex min-h-11 items-center gap-2 border border-[var(--color-line)] px-3 text-sm"><input type="checkbox" checked={importPublished} onChange={(event) => setImportPublished(event.target.checked)} /> Publish rows by default</label>
+          <button disabled={!importFile || importing} className="min-h-11 bg-[var(--color-ink)] px-5 text-sm font-bold text-white disabled:opacity-50">{importing ? "Importing…" : "Import CSV"}</button>
+        </form>
+        <p className="mt-4 text-xs leading-5 text-[var(--color-slate)]">This adds directory listings only. It does not create member login accounts or change membership applications.</p>
+      </div>
+    </details>
     <form className="mt-6 grid gap-3 border border-[var(--color-line)] bg-white p-5 sm:grid-cols-[1fr_130px_160px_auto]" onSubmit={add}>
       <input required value={draft.full_name} onChange={(event) => setDraft({ ...draft, full_name: event.target.value })} placeholder="Surname, First name" className="h-11 border border-[var(--color-line)] px-3 text-sm" />
       <select value={draft.designation} onChange={(event) => setDraft({ ...draft, designation: event.target.value as DirectoryEntry["designation"] })} className="h-11 border border-[var(--color-line)] bg-white px-3 text-sm">{categories.slice(1).map((value) => <option key={value}>{value}</option>)}</select>

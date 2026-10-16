@@ -99,6 +99,73 @@ class MembershipApiTests(TestCase):
         fellow.refresh_from_db()
         self.assertTrue(fellow.is_published)
 
+    def directory_csv(self, rows, headers="full_name,designation,as_of_date,is_published,sort_order"):
+        return SimpleUploadedFile(
+            "member-directory.csv",
+            (headers + "\n" + "\n".join(rows) + "\n").encode("utf-8"),
+            content_type="text/csv",
+        )
+
+    def test_directory_manager_can_import_valid_csv_entries(self):
+        response = self.csrf_client(self.officer).post(
+            "/api/v1/membership/staff/directory/import/",
+            data={
+                "csv_file": self.directory_csv([
+                    "Ama Mensah,MIoD,2026-10-01,true,5",
+                    "Kojo Owusu,fiod,,,",
+                ]),
+                "default_as_of_date": "2026-10-16",
+                "default_is_published": "false",
+            },
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json(), {"imported": 2, "published": 1})
+        ama = MemberDirectoryEntry.objects.get(full_name="Ama Mensah")
+        kojo = MemberDirectoryEntry.objects.get(full_name="Kojo Owusu")
+        self.assertEqual(ama.designation, "MIoD")
+        self.assertTrue(ama.is_published)
+        self.assertEqual(ama.sort_order, 5)
+        self.assertEqual(kojo.designation, "FIoD")
+        self.assertFalse(kojo.is_published)
+        self.assertEqual(kojo.as_of_date, date(2026, 10, 16))
+        self.assertEqual(self.client.get("/api/v1/membership/directory/").json()[0]["full_name"], "Ama Mensah")
+        audit = AuditLog.objects.get(action="membership.directory_entries_imported")
+        self.assertEqual(audit.actor, self.officer)
+        self.assertEqual(audit.metadata["imported"], 2)
+        self.assertEqual(audit.metadata["published"], 1)
+
+    def test_directory_import_rejects_invalid_or_duplicate_rows_without_writing(self):
+        existing = MemberDirectoryEntry.objects.create(full_name="Ama Mensah", designation="MIoD", as_of_date=date(2026, 10, 1))
+        client = self.csrf_client(self.officer)
+        payloads = [
+            self.directory_csv(["Kofi Addo,UNKNOWN,2026-10-01,true,0"]),
+            self.directory_csv(["Kofi Addo,MIoD,not-a-date,true,0"]),
+            self.directory_csv(["Kofi Addo,MIoD,2026-10-01,maybe,0"]),
+            self.directory_csv(["Kofi Addo,MIoD,2026-10-01,true,0", "KOFI ADDO,MIoD,2026-10-01,true,1"]),
+            self.directory_csv(["Ama Mensah,MIoD,2026-10-01,true,0"]),
+            self.directory_csv(["Kofi Addo,MIoD,2026-10-01,true,0"], headers="full_name,designation,unexpected"),
+        ]
+        for csv_file in payloads:
+            with self.subTest(csv_file=csv_file.name):
+                response = client.post(
+                    "/api/v1/membership/staff/directory/import/",
+                    data={"csv_file": csv_file, "default_as_of_date": "2026-10-16", "default_is_published": "true"},
+                )
+                self.assertEqual(response.status_code, 400)
+                self.assertEqual(MemberDirectoryEntry.objects.count(), 1)
+                self.assertTrue(MemberDirectoryEntry.objects.filter(pk=existing.pk).exists())
+        self.assertFalse(AuditLog.objects.filter(action="membership.directory_entries_imported").exists())
+
+    def test_directory_import_requires_directory_manager_and_csrf(self):
+        csv_file = self.directory_csv(["Ama Mensah,MIoD,2026-10-01,true,0"])
+        ordinary = User.objects.create_user("ordinary@example.com", "Secure-pass-123!", email_verified_at=timezone.now())
+        no_csrf = Client(enforce_csrf_checks=True)
+        no_csrf.force_login(self.officer)
+        payload = {"csv_file": csv_file, "default_as_of_date": "2026-10-16", "default_is_published": "true"}
+        self.assertIn(self.csrf_client(ordinary).post("/api/v1/membership/staff/directory/import/", data=payload).status_code, (401, 403))
+        self.assertIn(no_csrf.post("/api/v1/membership/staff/directory/import/", data=payload).status_code, (401, 403))
+        self.assertEqual(MemberDirectoryEntry.objects.count(), 0)
+
     def test_directory_bulk_delete_removes_only_selected_entries_across_pages(self):
         selected = [
             MemberDirectoryEntry.objects.create(
