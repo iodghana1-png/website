@@ -1,5 +1,7 @@
 "use client";
 
+import { brandText } from "@/components/ui/BrandText";
+
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
@@ -86,8 +88,8 @@ export function HeroCarousel({ slides = fallbackSlides }: { slides?: HeroSlide[]
   const next = () => setCurrent((currentIndex + 1) % slides.length);
   const titleWithLeadPhrase = (title: string) => {
     const leadPhrase = "to lead.";
-    if (!title.endsWith(leadPhrase)) return title;
-    return <>{title.slice(0, -leadPhrase.length)}<span className="whitespace-nowrap">{leadPhrase}</span></>;
+    if (!title.endsWith(leadPhrase)) return brandText(title);
+    return <>{brandText(title.slice(0, -leadPhrase.length))}<span className="whitespace-nowrap">{leadPhrase}</span></>;
   };
 
   return (
@@ -115,15 +117,15 @@ export function HeroCarousel({ slides = fallbackSlides }: { slides?: HeroSlide[]
           <div className="relative min-h-[270px] w-full sm:min-h-[290px]">
             {slides.map((slide, index) => (
               <div key={slide.id} className={`absolute inset-0 max-w-2xl transition-[opacity,transform] duration-700 ease-out motion-reduce:transition-none ${index === currentIndex ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0"}`} aria-hidden={index !== currentIndex}>
-                <p className="eyebrow text-[var(--color-accent-light)]">{slide.eyebrow}</p>
+                <p className="eyebrow text-[var(--color-accent-light)]">{brandText(slide.eyebrow)}</p>
                 <h1 className="mt-5 max-w-[15ch] font-serif text-[clamp(2.7rem,4.6vw,4.9rem)] font-semibold leading-[0.98] tracking-[-0.052em] text-white">{titleWithLeadPhrase(slide.title)}</h1>
-                <p className="mt-5 max-w-md text-base leading-7 text-[var(--color-mist)] sm:text-[1.0625rem]">{slide.description}</p>
+                <p className="mt-5 max-w-md text-base leading-7 text-[var(--color-mist)] sm:text-[1.0625rem]">{brandText(slide.description)}</p>
                 <div className="mt-7 flex flex-wrap items-center gap-6">
                   <Link href={slide.primaryHref} tabIndex={index === currentIndex ? 0 : -1} style={{ color: "#271B54" }} className="inline-flex min-h-11 items-center justify-center bg-white px-5 text-sm font-bold transition-[background-color,color] duration-200 hover:bg-[var(--color-accent-light)]">
-                    {slide.primaryLabel} <Icon name="arrow-right" className="ml-2 h-4 w-4" />
+                    {brandText(slide.primaryLabel)} <Icon name="arrow-right" className="ml-2 h-4 w-4" />
                   </Link>
                   <Link href={slide.secondaryHref} tabIndex={index === currentIndex ? 0 : -1} className="inline-flex border-b border-white/60 pb-1 text-sm font-bold text-white transition-colors duration-200 hover:border-[var(--color-accent-light)] hover:text-[var(--color-accent-light)]">
-                    {slide.secondaryLabel} <Icon name="arrow-right" className="ml-2 h-4 w-4" />
+                    {brandText(slide.secondaryLabel)} <Icon name="arrow-right" className="ml-2 h-4 w-4" />
                   </Link>
                 </div>
               </div>

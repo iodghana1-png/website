@@ -2,6 +2,7 @@
 
 import { useContext, useEffect, useState } from "react";
 import { CmsPageContext } from "@/components/cms/PageContext";
+import { brandText } from "@/components/ui/BrandText";
 
 import { ContentItem, ContentPage, ContentSection, getPublishedContentItems, getPublishedContentPage } from "@/lib/api/content";
 import { CmsPublicArticle, getPublishedCmsArticles, getPublishedCmsPage } from "@/lib/api/cms";
@@ -98,5 +99,5 @@ export function cmsHref(value: string, fallback = "/") {
 
 export function CmsPageText({ slug, field, fallback }: { slug: string; field: "eyebrow" | "title" | "summary"; fallback: string }) {
   const page = useCmsPage(slug, { eyebrow: "", title: "", summary: "", body: "", blocks: [], [field]: fallback });
-  return page[field];
+  return brandText(page[field]);
 }

@@ -1,5 +1,7 @@
 "use client";
 
+import { brandText } from "@/components/ui/BrandText";
+
 import { BuiltInSection } from "@/components/cms/BuiltInSection";
 
 
@@ -44,7 +46,7 @@ export default function NewsPage() {
       <article className="overflow-hidden bg-[var(--color-ink)] text-white">
         <Link href={cmsHref(featured.href)} className="group grid focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-gold)] lg:grid-cols-2">
           {featured.image_url ? <div role="img" aria-label={cmsMeta(featured, "alt_text", featured.title)} className="min-h-80 h-full w-full bg-cover bg-center" style={{ backgroundImage: `url("${featured.image_url}")` }} /> : <div className="grid min-h-80 place-items-center bg-[var(--color-paper)] text-xs font-bold tracking-[0.12em] text-[var(--color-slate)]">IoD-Gh NEWS</div>}
-          <div className="p-8 sm:p-12"><p className="eyebrow text-[var(--color-gold-light)]">{cmsMeta(featured, "display_meta")}</p><h2 className="mt-6 font-serif text-4xl leading-tight group-hover:underline"><EditableCopy label="Heading" fallback={String(featured.title ?? "")} /></h2><p className="mt-5 leading-7 text-[var(--color-mist)]"><EditableCopy label="Text" fallback={String(featured.summary ?? "")} /></p><span className="mt-8 inline-flex border-b border-[var(--color-gold)] pb-2 text-sm font-bold">Read story <Icon name="arrow-right" className="h-4 w-4" /></span></div>
+          <div className="p-8 sm:p-12"><p className="eyebrow text-[var(--color-gold-light)]">{brandText(cmsMeta(featured, "display_meta"))}</p><h2 className="mt-6 font-serif text-4xl leading-tight group-hover:underline"><EditableCopy label="Heading" fallback={String(featured.title ?? "")} /></h2><p className="mt-5 leading-7 text-[var(--color-mist)]"><EditableCopy label="Text" fallback={String(featured.summary ?? "")} /></p><span className="mt-8 inline-flex border-b border-[var(--color-gold)] pb-2 text-sm font-bold">Read story <Icon name="arrow-right" className="h-4 w-4" /></span></div>
         </Link>
       </article>
       <div className="mt-12 grid gap-5 lg:grid-cols-3">{rest.map((item) => <NewsCard item={item} key={item.id} />)}</div>

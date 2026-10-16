@@ -1,5 +1,7 @@
 "use client";
 
+import { brandText } from "@/components/ui/BrandText";
+
 import { BuiltInSection } from "@/components/cms/BuiltInSection";
 
 
@@ -31,7 +33,7 @@ function documentFromPage(key: CategoryKey, page: Awaited<ReturnType<typeof getP
 }
 
 function AllInsightCard({ item }: { item: InsightCard }) {
-  return <article className="group grid h-full grid-cols-[4.5rem_minmax(0,1fr)] overflow-hidden border border-[var(--color-line)] bg-white transition-colors hover:border-[var(--color-gold)]"><div className="relative min-h-32 bg-[var(--color-paper)]">{item.coverImageUrl ? <Image src={item.coverImageUrl} alt={`Cover for ${item.title}`} fill sizes="72px" unoptimized className="object-contain p-2" /> : <div className="grid h-full place-items-center break-all p-2 text-[0.6rem] font-bold tracking-[0.06em] text-[var(--color-slate)]">{item.category.toUpperCase()}</div>}</div><div className="flex min-w-0 flex-col p-4"><p className="text-xs font-bold tracking-[0.12em] text-[var(--color-accent-dark)]">{item.category.toUpperCase()}</p><h3 className="mt-2 break-words font-serif text-xl leading-tight tracking-[-0.03em]">{item.title}</h3>{item.description && <p className="mt-2 line-clamp-3 text-sm leading-6 text-[var(--color-slate)]" title={item.description}>{item.description}</p>}<a href={item.href} className="link-arrow mt-auto min-h-11 pt-3 text-sm">Explore {item.category.toLowerCase()} <Icon name="arrow-right" className="h-4 w-4" /></a></div></article>;
+  return <article className="group grid h-full grid-cols-[4.5rem_minmax(0,1fr)] overflow-hidden border border-[var(--color-line)] bg-white transition-colors hover:border-[var(--color-gold)]"><div className="relative min-h-32 bg-[var(--color-paper)]">{item.coverImageUrl ? <Image src={item.coverImageUrl} alt={`Cover for ${item.title}`} fill sizes="72px" unoptimized className="object-contain p-2" /> : <div className="grid h-full place-items-center break-all p-2 text-[0.6rem] font-bold tracking-[0.06em] text-[var(--color-slate)]">{brandText(item.category.toUpperCase())}</div>}</div><div className="flex min-w-0 flex-col p-4"><p className="text-xs font-bold tracking-[0.12em] text-[var(--color-accent-dark)]">{brandText(item.category.toUpperCase())}</p><h3 className="mt-2 break-words font-serif text-xl leading-tight tracking-[-0.03em]">{brandText(item.title)}</h3>{item.description && <p className="mt-2 line-clamp-3 text-sm leading-6 text-[var(--color-slate)]" title={item.description}>{brandText(item.description)}</p>}<a href={item.href} className="link-arrow mt-auto min-h-11 pt-3 text-sm">Explore {brandText(item.category.toLowerCase())} <Icon name="arrow-right" className="h-4 w-4" /></a></div></article>;
 }
 
 export default function KnowledgePage() {

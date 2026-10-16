@@ -1,5 +1,7 @@
 "use client";
 
+import { brandText } from "@/components/ui/BrandText";
+
 import { BuiltInSection } from "@/components/cms/BuiltInSection";
 
 import { EditableCopy } from "@/components/cms/EditableCopy";
@@ -77,7 +79,7 @@ export default function ContactPage() {
         <p className="pointer-events-none absolute -bottom-12 -right-5 font-serif text-[clamp(8rem,23vw,24rem)] leading-none tracking-[-0.1em] text-white/[0.045]"><EditableCopy label="Text" fallback={"HELLO"} /></p>
         <div className="site-container relative py-12 sm:py-16 lg:py-20">
           <nav aria-label="Breadcrumb" className="text-xs font-bold tracking-[0.1em] text-[var(--color-accent-light)]"><ol className="flex flex-wrap gap-2"><li><Link href="/" className="hover:text-white"><EditableCopy label="Link text" fallback={"HOME"} /></Link></li><li className="flex gap-2"><span aria-hidden="true">/</span><span className="text-white">CONTACT</span></li></ol></nav>
-          <div className="mt-12 grid gap-10 lg:grid-cols-12 lg:items-end"><div className="lg:col-span-8"><p className="eyebrow text-[var(--color-accent-light)]">{page.eyebrow}</p><h1 className="mt-6 max-w-4xl font-serif text-[clamp(3.2rem,6.4vw,6.2rem)] leading-[0.94] tracking-[-0.06em]">{page.title}</h1></div><div className="lg:col-span-4"><p className="max-w-md text-lg leading-8 text-[var(--color-mist)]">{page.summary}</p><p className="mt-8 border-t border-[var(--color-accent)] pt-4 text-sm font-bold tracking-[0.06em] text-white">ACCRA, GHANA &middot; MONDAY-FRIDAY</p></div></div>
+          <div className="mt-12 grid gap-10 lg:grid-cols-12 lg:items-end"><div className="lg:col-span-8"><p className="eyebrow text-[var(--color-accent-light)]">{brandText(page.eyebrow)}</p><h1 className="mt-6 max-w-4xl font-serif text-[clamp(3.2rem,6.4vw,6.2rem)] leading-[0.94] tracking-[-0.06em]">{brandText(page.title)}</h1></div><div className="lg:col-span-4"><p className="max-w-md text-lg leading-8 text-[var(--color-mist)]">{brandText(page.summary)}</p><p className="mt-8 border-t border-[var(--color-accent)] pt-4 text-sm font-bold tracking-[0.06em] text-white">ACCRA, GHANA &middot; MONDAY-FRIDAY</p></div></div>
         </div>
       </BuiltInSection>
 

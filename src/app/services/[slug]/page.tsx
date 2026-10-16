@@ -1,3 +1,5 @@
+import { brandText } from "@/components/ui/BrandText";
+
 import { BuiltInSection } from "@/components/cms/BuiltInSection";
 
 
@@ -76,7 +78,7 @@ export default async function ServiceDetail({
               </li>
               <li className="flex gap-2">
                 <span aria-hidden="true">/</span>
-                <span className="text-white">{item.title.toUpperCase()}</span>
+                <span className="text-white">{brandText(item.title.toUpperCase())}</span>
               </li>
             </ol>
           </nav>

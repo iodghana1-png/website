@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { CmsPageContext } from "./PageContext";
 import { linkUrl } from "./ContentRenderer";
+import { brandText } from "@/components/ui/BrandText";
 
 // Stable content keys keep the layout and its styling in source control.
 // Staff see the field label and its text, never this key.
@@ -20,7 +21,7 @@ export function EditableCopy({ fallback, label = "Text" }: { fallback: string; l
   const section = context?.revision.sections.find((section) => section.slot === "page_copy");
   const fields = section?.data.fields as Array<{ key: string; value: string }> | undefined;
   const field = fields?.find((field) => field.key === key);
-  return <span data-cms-copy={key} data-cms-label={label}>{field?.value ?? fallback}</span>;
+  return <span data-cms-copy={key} data-cms-label={label}>{brandText(field?.value ?? fallback)}</span>;
 }
 
 export function EditableImage(props: ComponentProps<typeof Image>) {

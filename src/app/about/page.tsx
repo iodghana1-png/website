@@ -1,5 +1,7 @@
 "use client";
 
+import { brandText } from "@/components/ui/BrandText";
+
 import { BuiltInSection } from "@/components/cms/BuiltInSection";
 
 import { EditableCopy } from "@/components/cms/EditableCopy";
@@ -36,10 +38,10 @@ export default function AboutPage() {
         <div className="site-container relative flex min-h-[390px] items-end py-12 sm:min-h-[465px] sm:py-16 lg:py-20">
           <div className="grid w-full gap-7 lg:grid-cols-12 lg:items-end">
             <div className="lg:col-span-8">
-              <p className="eyebrow text-[var(--color-accent-light)]">{page.eyebrow}</p>
-              <h1 className="mt-5 max-w-4xl font-serif text-[clamp(3rem,6vw,5.8rem)] leading-[0.96] tracking-[-0.055em]">{page.title}</h1>
+              <p className="eyebrow text-[var(--color-accent-light)]">{brandText(page.eyebrow)}</p>
+              <h1 className="mt-5 max-w-4xl font-serif text-[clamp(3rem,6vw,5.8rem)] leading-[0.96] tracking-[-0.055em]">{brandText(page.title)}</h1>
             </div>
-            <p className="max-w-md text-lg leading-8 text-[var(--color-mist)] lg:col-span-4">{page.summary}</p>
+            <p className="max-w-md text-lg leading-8 text-[var(--color-mist)] lg:col-span-4">{brandText(page.summary)}</p>
           </div>
         </div>
       </BuiltInSection>

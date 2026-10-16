@@ -1,5 +1,7 @@
 "use client";
 
+import { brandText } from "@/components/ui/BrandText";
+
 import { BuiltInSection } from "@/components/cms/BuiltInSection";
 import Image from "next/image";
 import { useState } from "react";
@@ -47,7 +49,7 @@ export default function EventGalleryPage() {
         <div className="site-container">
           <div className="grid gap-8 lg:grid-cols-12 lg:items-end">
             <div className="lg:col-span-7">
-              <p className="eyebrow">{heading}</p>
+              <p className="eyebrow">{brandText(heading)}</p>
               <h2 className="mt-5 max-w-3xl font-serif text-[clamp(2.5rem,4vw,4.25rem)] leading-[1.02] tracking-[-0.05em]">Moments that bring the director community together.</h2>
             </div>
             <p className="max-w-md leading-7 text-[var(--color-slate)] lg:col-span-4 lg:col-start-9">{introduction}</p>

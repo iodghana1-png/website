@@ -1,5 +1,7 @@
 "use client";
 
+import { brandText } from "@/components/ui/BrandText";
+
 import { BuiltInSection } from "@/components/cms/BuiltInSection";
 
 
@@ -61,14 +63,14 @@ export function MediaHero({
         <div className="mt-10 grid gap-8 lg:grid-cols-12 lg:items-end">
           <div className="lg:col-span-8">
             <p className="eyebrow text-[var(--color-accent-light)]">
-              {page.eyebrow}
+              {brandText(page.eyebrow)}
             </p>
             <h1 className="mt-5 max-w-4xl font-serif text-[clamp(3rem,5.5vw,5.4rem)] leading-[0.94] tracking-[-0.06em]">
-              {page.title}
+              {brandText(page.title)}
             </h1>
           </div>
           <p className="max-w-md text-lg leading-8 text-[var(--color-mist)] lg:col-span-4">
-            {page.summary}
+            {brandText(page.summary)}
           </p>
         </div>
         <div className="mt-10 flex flex-wrap gap-x-6 gap-y-3 border-t border-white/20 pt-5">
