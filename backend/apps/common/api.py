@@ -10,6 +10,22 @@ from rest_framework.views import exception_handler as drf_exception_handler
 logger = logging.getLogger(__name__)
 
 
+def validation_message(detail) -> str | None:
+    if isinstance(detail, dict):
+        for value in detail.values():
+            message = validation_message(value)
+            if message:
+                return message
+    if isinstance(detail, (list, tuple)):
+        for value in detail:
+            message = validation_message(value)
+            if message:
+                return message
+    if isinstance(detail, str) and detail:
+        return detail
+    return None
+
+
 def exception_handler(exc, context):
     response = drf_exception_handler(exc, context)
     if response is None:
@@ -24,6 +40,8 @@ def exception_handler(exc, context):
     message = "Request could not be completed."
     if isinstance(detail, dict) and "detail" in detail:
         message = str(detail["detail"])
+    elif code == "invalid":
+        message = validation_message(detail) or message
 
     response.data = {
         "error": {

@@ -41,6 +41,7 @@ class ApiErrorFormatTests(TestCase):
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data["error"]["code"], "invalid")
+        self.assertEqual(response.data["error"]["message"], "Enter a valid email address.")
         self.assertIn("email", response.data["error"]["details"])
 
 
