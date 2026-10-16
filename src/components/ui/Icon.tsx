@@ -1,6 +1,16 @@
 import type { SVGProps } from "react";
 
 export type IconName =
+  | "dashboard"
+  | "file"
+  | "users"
+  | "image"
+  | "settings"
+  | "chart"
+  | "edit"
+  | "check"
+  | "refresh"
+  | "search"
   | "arrow-down"
   | "arrow-left"
   | "arrow-right"
@@ -37,6 +47,19 @@ const strokeProps = {
 };
 
 /** A small, dependency-free icon set used across the public site and CMS. */
+const workspacePaths: Partial<Record<IconName, string>> = {
+  dashboard: "M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z",
+  file: "M14 3H5v18h14V8z M14 3v5h5 M8 12h8 M8 16h6",
+  users: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M9 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8 M17 4a4 4 0 0 1 0 8 M22 21v-2a4 4 0 0 0-3-3.87",
+  image: "M3 3h18v18H3z M3 16l5-5 4 4 3-3 6 6 M16 7h.01",
+  settings: "M4 7h16 M4 17h16 M8 4v6 M16 14v6",
+  chart: "M3 3v18h18 M8 16v-4 M13 16V8 M18 16V5",
+  edit: "m15 5 4 4 M4 20l4-1L20 7a2.83 2.83 0 0 0-4-4L4 15z",
+  check: "m5 12 4 4L19 6",
+  refresh: "M20 7v5h-5 M4 17v-5h5 M6 6a8 8 0 0 1 13 2l1 4 M18 18a8 8 0 0 1-13-2l-1-4",
+  search: "M10 3a7 7 0 1 0 0 14 7 7 0 0 0 0-14 m5 12 6 6",
+};
+
 export function Icon({ name, title, className = "h-5 w-5", ...props }: IconProps) {
   const labelled = Boolean(title);
   const svgProps = {
@@ -49,6 +72,7 @@ export function Icon({ name, title, className = "h-5 w-5", ...props }: IconProps
     ...props,
   };
 
+  if (workspacePaths[name]) return <svg {...svgProps} {...strokeProps}>{title && <title>{title}</title>}<path d={workspacePaths[name]} /></svg>;
   if (name === "arrow-right") return <svg {...svgProps} {...strokeProps}>{title && <title>{title}</title>}<path d="M5 12h14M13 6l6 6-6 6" /></svg>;
   if (name === "arrow-left") return <svg {...svgProps} {...strokeProps}>{title && <title>{title}</title>}<path d="M19 12H5m6 6-6-6 6-6" /></svg>;
   if (name === "arrow-up") return <svg {...svgProps} {...strokeProps}>{title && <title>{title}</title>}<path d="M12 19V5m-6 6 6-6 6 6" /></svg>;

@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/Badge";
 import { ApiError } from "@/lib/api/client";
 import { ApprovalData, approveApplication, createMemberRenewal, getMemberRenewals, getMemberStatusHistory, getMembershipTypes, getStaffApplications, getStaffMembers, MembershipApplication, MemberProfile, MembershipRenewal, MembershipStatusHistory, MembershipType, rejectApplication, resendApplicationReceipt, reviewApplication, updateMemberStatus } from "@/lib/api/membership";
 
-type Props = { section: string; title: string };
+type Props = { section: string; title: string; initialReference?: string };
 type BusyAction = "review" | "receipt" | "approve" | "reject" | "status" | "renewal" | null;
 
 const dateFormatter = new Intl.DateTimeFormat("en-GH", { day: "numeric", month: "short", year: "numeric" });
@@ -17,7 +17,7 @@ const label = (value: string) => value.replaceAll("_", " ").replace(/\b\w/g, (le
 const today = new Date().toISOString().slice(0, 10);
 const messageFor = (reason: unknown) => reason instanceof ApiError || reason instanceof Error ? reason.message : "We couldn't complete that action. Please try again.";
 
-export function MembershipAdmin({ section, title }: Props) {
+export function MembershipAdmin({ section, title, initialReference }: Props) {
   const [applications, setApplications] = useState<MembershipApplication[]>([]);
   const [members, setMembers] = useState<MemberProfile[]>([]);
   const [types, setTypes] = useState<MembershipType[]>([]);
@@ -43,7 +43,7 @@ export function MembershipAdmin({ section, title }: Props) {
   if (error) return <section className="mt-10 border-l-2 border-[var(--color-error)] bg-red-50 p-6" role="alert"><h2 className="font-serif text-2xl">We couldn&apos;t load membership administration.</h2><p className="mt-3">{error}</p><button type="button" onClick={() => void load()} className="mt-5 border border-[var(--color-ink)] px-5 py-3 text-sm font-bold">Try again</button></section>;
   const refresh = async (success: string) => { await load(); setNotice(success); };
   if (!["overview", "members", "applications"].includes(section)) return <section className="mt-10 border border-[var(--color-line)] bg-white p-7 sm:p-10"><p className="eyebrow">Staged module</p><h2 className="mt-4 font-serif text-3xl tracking-[-0.04em]">{title} is not available yet.</h2><p className="mt-4 max-w-2xl leading-7 text-[var(--color-slate)]">Membership administration is ready now. Events, training, content, staff and audit management will be connected as their platform modules are delivered.</p></section>;
-  return <>{notice && <p role="status" className="mt-8 border-l-2 border-[var(--color-accent)] bg-[var(--color-paper)] px-4 py-3 text-sm">{notice}</p>}{section === "overview" ? <Overview applications={applications} members={members} /> : section === "applications" ? <Applications applications={applications} types={types} onRefresh={refresh} /> : <Members members={members} onRefresh={refresh} />}</>;
+  return <>{notice && <p role="status" className="mt-8 border-l-2 border-[var(--color-accent)] bg-[var(--color-paper)] px-4 py-3 text-sm">{notice}</p>}{section === "overview" ? <Overview applications={applications} members={members} /> : section === "applications" ? <Applications applications={applications} types={types} onRefresh={refresh} initialReference={initialReference} /> : <Members members={members} onRefresh={refresh} />}</>;
 }
 
 function Overview({ applications, members }: { applications: MembershipApplication[]; members: MemberProfile[] }) {
@@ -53,10 +53,10 @@ function Overview({ applications, members }: { applications: MembershipApplicati
   return <><section className="mt-10 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">{cards.map(([name, value, detail]) => <article className="border border-[var(--color-line)] bg-white p-6" key={name}><p className="text-xs font-bold tracking-[0.1em] text-[var(--color-slate)]">{name.toUpperCase()}</p><p className="mt-5 font-serif text-4xl">{value}</p><p className="mt-3 text-sm text-[var(--color-slate)]">{detail}</p></article>)}</section><section className="mt-10 overflow-hidden border border-[var(--color-line)] bg-white"><div className="border-b border-[var(--color-line)] p-6"><p className="eyebrow">Recent activity</p><h2 className="mt-3 font-serif text-3xl tracking-[-0.04em]">Latest applications.</h2></div><ApplicationTable applications={applications.slice(0, 5)} selectedReference="" onSelect={() => undefined} /></section></>;
 }
 
-function Applications({ applications, types, onRefresh }: { applications: MembershipApplication[]; types: MembershipType[]; onRefresh: (success: string) => Promise<void> }) {
+function Applications({ applications, types, onRefresh, initialReference }: { applications: MembershipApplication[]; types: MembershipType[]; onRefresh: (success: string) => Promise<void>; initialReference?: string }) {
   const [query, setQuery] = useState("");
-  const [status, setStatus] = useState("open");
-  const [selectedReference, setSelectedReference] = useState(applications[0]?.reference || "");
+  const [status, setStatus] = useState(initialReference ? "all" : "open");
+  const [selectedReference, setSelectedReference] = useState(initialReference || applications[0]?.reference || "");
   const filtered = useMemo(() => applications.filter((application) => (status === "all" || (status === "open" ? ["submitted", "under_review"].includes(application.status) : application.status === status)) && `${application.applicant_name} ${application.reference} ${application.email}`.toLowerCase().includes(query.toLowerCase())), [applications, query, status]);
   const selected = filtered.find((application) => application.reference === selectedReference) || filtered[0];
   return <section className="mt-10 grid gap-6 xl:grid-cols-[minmax(0,1fr)_430px]"><div className="overflow-hidden border border-[var(--color-line)] bg-white"><FilterBar query={query} onQuery={setQuery} placeholder="Search name, email, or reference" status={status} onStatus={setStatus} statuses={["open", "all", "submitted", "under_review", "approved", "rejected"]} /><ApplicationTable applications={filtered} selectedReference={selected?.reference || ""} onSelect={setSelectedReference} /></div>{selected ? <ApplicationDetail key={selected.reference} application={selected} types={types} onRefresh={onRefresh} /> : <EmptyDetail title="No applications found" copy="Adjust the search or status filter to view another application." />}</section>;
