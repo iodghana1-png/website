@@ -63,7 +63,7 @@ input[type="file"]:hover::file-selector-button { background: var(--color-ink); }
 
 .site-container { width: min(100% - 3rem, 1280px); margin-inline: auto; }
 .display, .font-serif { font-family: var(--font-inter), Arial, Helvetica, sans-serif; }
-.eyebrow { color: var(--color-slate); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.14em; line-height: 1.4; text-transform: uppercase; }
+.eyebrow { color: var(--color-slate); font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.14em; line-height: 1.4; text-transform: uppercase; }
 .member-designation { text-transform: none; }
 .link-arrow { display: inline-flex; align-items: center; gap: 0.625rem; border-bottom: 1px solid var(--color-gold); padding-bottom: 0.5rem; color: var(--color-ink); font-size: 0.875rem; font-weight: 700; transition: color 160ms ease; }
 .link-arrow:hover { color: var(--color-gold-dark); }
