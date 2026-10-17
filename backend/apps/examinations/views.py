@@ -16,11 +16,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.models import User
+from apps.audit.services import record_event
 from apps.common.throttling import ScopedRateThrottle
 from apps.membership.models import MemberProfile
 from .authentication import CANDIDATE_SESSION_COOKIE, CandidateExamAuthentication
 from .admin_security import VerifiedExamAdmin, access_status, send_code, verify_code
-from .models import Exam, Question, ExamAttempt, ExamAnswer, ExamEligibility, ExamCandidateSession, ExamResult, ExamAuditLog
+from .models import Exam, ExamQuestion, ExamVersion, Question, ExamAttempt, ExamAnswer, ExamEligibility, ExamCandidateSession, ExamResult, ExamAuditLog
 from .serializers import ExamInput, QuestionInput, AnswerInput, AssignmentInput, CandidateAccessInput, QuestionViewedInput, AttemptFilters, ExportFilters
 from .services import audit, available, candidate_access, issue_candidate_code, issue_cohort_code, normalize_candidate_name, open_candidate_session, start_attempt, save_question, retire_question, save_exam, public_attempt, public_questions, synchronize, finalize, release_result
 
@@ -346,6 +347,33 @@ class StaffExamDetail(StaffView):
     def put(self, request, exam_id):
         get_object_or_404(Exam, pk=exam_id)
         return Response(staff_exam(save_exam(validated(ExamInput, request), request.user, request, exam_id)))
+
+    @transaction.atomic
+    def delete(self, request, exam_id):
+        exam = get_object_or_404(Exam.objects.select_for_update(), pk=exam_id)
+        if ExamAttempt.objects.filter(exam=exam).exists():
+            raise ValidationError("This examination has candidate attempts and cannot be deleted. Deactivate it to prevent any future starts while preserving official records.")
+        if ExamEligibility.objects.filter(exam=exam).exists():
+            raise ValidationError("Remove all candidates from this examination before deleting it.")
+
+        # A never-used examination has no official candidate history. Its
+        # version snapshots and creation audit entries can be removed safely.
+        version_count = exam.versions.count()
+        exam.current_version = None
+        exam.save(update_fields=["current_version"])
+        ExamAuditLog.objects.filter(exam=exam).delete()
+        ExamQuestion.objects.filter(version__exam=exam).delete()
+        ExamVersion.objects.filter(exam=exam).delete()
+        exam.delete()
+        record_event(
+            action="examination.exam_deleted",
+            target_type="exam",
+            target_id=exam_id,
+            actor=request.user,
+            request=request,
+            metadata={"versions_removed": version_count},
+        )
+        return Response(status=204)
 
 
 def staff_eligibility(grant):

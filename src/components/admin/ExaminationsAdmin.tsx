@@ -239,6 +239,20 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
     try {
       const item = kind === "exam" ? exam : question;
       if (!item) return;
+      if (kind === "exam") {
+        if (!exam?.question_ids.length) {
+          setError("Select at least one question from the Question pool before saving the examination.");
+          return;
+        }
+        if (exam.question_count > exam.question_ids.length) {
+          setError("Question count cannot be higher than the number of questions selected in the pool.");
+          return;
+        }
+        if (!exam.select_from_bank && exam.question_count !== exam.question_ids.length) {
+          setError("When random selection is off, Question count must match the number of selected questions.");
+          return;
+        }
+      }
       const result = await apiRequest<Exam & Question>(
         `/exams/staff/${kind === "exam" ? "exams" : "questions"}/${item.id ? `${item.id}/` : ""}`,
         { method: item.id ? "PUT" : "POST", body: JSON.stringify(item) },
@@ -339,6 +353,23 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
       setNotice(
         "Question removed from the future question bank. Historical examination records were retained.",
       );
+    } catch (reason) {
+      fail(reason);
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function deleteExam(item: Exam) {
+    if (!item.id || !window.confirm(`Permanently delete “${item.title}”? This is available only before candidates have been assigned or started the examination.`)) return;
+    setBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      await apiRequest(`/exams/staff/exams/${item.id}/`, { method: "DELETE" });
+      setExams((old) => old.filter((exam) => exam.id !== item.id));
+      if (exam?.id === item.id) setExam(null);
+      if (selectedExam === item.id) selectCandidateExam("");
+      setNotice("Examination deleted. Its unused question snapshots were removed too.");
     } catch (reason) {
       fail(reason);
     } finally {
@@ -678,6 +709,14 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
                   >
                     Manage candidates
                   </button>
+                  <button
+                    type="button"
+                    className={buttonClass + " border-red-300 text-red-700 hover:bg-red-50"}
+                    disabled={busy}
+                    onClick={() => void deleteExam(item)}
+                  >
+                    Delete
+                  </button>
                 </div>
               </article>
             ))}
@@ -952,6 +991,9 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
                     <p className="text-sm">
                       Question text and answer keys are frozen into this version
                       when saved.
+                    </p>
+                    <p className="mt-1 text-sm text-[var(--color-slate)]">
+                      Select at least {exam.question_count} question{exam.question_count === 1 ? "" : "s"}. If random selection is off, select exactly that number.
                     </p>
                     <div className="mt-3 max-h-80 space-y-2 overflow-auto border p-3">
                       {questions

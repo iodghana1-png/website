@@ -16,7 +16,7 @@ from django.utils.crypto import salted_hmac
 from apps.accounts.models import User
 from apps.common.models import RateLimitBucket
 from .authentication import CANDIDATE_SESSION_COOKIE
-from .models import ExamAdminVerification, ExamAttempt, ExamAnswer, ExamEligibility, ExamResult, ExamAuditLog, Question
+from .models import Exam, ExamAdminVerification, ExamAttempt, ExamAnswer, ExamEligibility, ExamResult, ExamAuditLog, ExamVersion, Question
 from .services import issue_candidate_code, open_candidate_session, save_question, save_exam, start_attempt
 
 
@@ -319,6 +319,20 @@ class ExaminationSecurityTests(ExamFixtures, TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertTrue(response.json()["candidate_code"])
         self.assertTrue(ExamEligibility.objects.filter(student=self.other, is_active=True).exists())
+
+    def test_staff_can_delete_an_unused_exam_but_not_an_exam_with_candidates(self):
+        staff = self.client_for(self.staff)
+        unused = save_exam({**self.config, "title": "Unused examination"}, self.staff, None)
+
+        deleted = self.delete(f"exams/staff/exams/{unused.pk}/", staff)
+
+        self.assertEqual(deleted.status_code, 204)
+        self.assertFalse(Exam.objects.filter(pk=unused.pk).exists())
+        self.assertFalse(ExamVersion.objects.filter(exam_id=unused.pk).exists())
+        self.assertFalse(ExamAuditLog.objects.filter(exam_id=unused.pk).exists())
+        blocked = self.delete(f"exams/staff/exams/{self.exam.pk}/", staff)
+        self.assertEqual(blocked.status_code, 400)
+        self.assertTrue(Exam.objects.filter(pk=self.exam.pk).exists())
 
     def test_cohort_code_is_shared_by_named_students_and_result_uses_portal_email(self):
         staff = self.client_for(self.staff)
