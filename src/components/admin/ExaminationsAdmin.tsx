@@ -158,7 +158,9 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
   const [status, setStatus] = useState("");
   const [review, setReview] = useState<Review | null>(null);
   const questionEditorRef = useRef<HTMLFormElement>(null);
+  const reviewPanelRef = useRef<HTMLDivElement>(null);
   const questionEditorId = question ? question.id ?? "new" : null;
+  const reviewOpen = Boolean(review);
 
   const fail = useCallback((reason: unknown) => {
     if (reason instanceof ApiError && reason.status === 403) onAccessExpired();
@@ -236,6 +238,10 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
     if (tab !== "questions" || !questionEditorId) return;
     questionEditorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [tab, questionEditorId]);
+  useEffect(() => {
+    if (tab !== "results" || !reviewOpen) return;
+    reviewPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [tab, reviewOpen]);
 
   async function save(event: FormEvent, kind: "exam" | "question") {
     event.preventDefault();
@@ -1351,6 +1357,46 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
               Refresh
             </button>
           </div>
+          {review && (
+            <div ref={reviewPanelRef} className="scroll-mt-6">
+              <Panel title={`Attempt review â€” ${review.student_email}`} open>
+                <button className={buttonClass} onClick={() => setReview(null)}>
+                  Close review
+                </button>
+                {review.questions.map((item, index) => (
+                  <article className="border-b py-4" key={item.id}>
+                    <h3 className="font-semibold">
+                      {index + 1}. {item.text}
+                    </h3>
+                    <p className="mt-2 text-sm">
+                      Selected:{" "}
+                      {item.options.find(
+                        (option) => option.id === item.selected_option,
+                      )?.text || "Unanswered"}
+                    </p>
+                    {item.correct_option && (
+                      <p className="text-sm">
+                        Correct:{" "}
+                        {
+                          item.options.find(
+                            (option) => option.id === item.correct_option,
+                          )?.text
+                        }
+                      </p>
+                    )}
+                  </article>
+                ))}
+                <h3 className="mt-5 font-semibold">Audit trail</h3>
+                <ol className="max-h-64 overflow-auto text-xs">
+                  {review.events.map((event, index) => (
+                    <li className="py-1" key={index}>
+                      {dateText(event.timestamp)} · {event.event}
+                    </li>
+                  ))}
+                </ol>
+              </Panel>
+            </div>
+          )}
           <div className="overflow-x-auto rounded border bg-white">
             <table className="w-full text-left text-sm">
               <thead>
@@ -1461,44 +1507,6 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
             </button>
           </div>
         </>
-      )}
-      {review && (
-        <Panel title={`Attempt review — ${review.student_email}`} open>
-          <button className={buttonClass} onClick={() => setReview(null)}>
-            Close review
-          </button>
-          {review.questions.map((item, index) => (
-            <article className="border-b py-4" key={item.id}>
-              <h3 className="font-semibold">
-                {index + 1}. {item.text}
-              </h3>
-              <p className="mt-2 text-sm">
-                Selected:{" "}
-                {item.options.find(
-                  (option) => option.id === item.selected_option,
-                )?.text || "Unanswered"}
-              </p>
-              {item.correct_option && (
-                <p className="text-sm">
-                  Correct:{" "}
-                  {
-                    item.options.find(
-                      (option) => option.id === item.correct_option,
-                    )?.text
-                  }
-                </p>
-              )}
-            </article>
-          ))}
-          <h3 className="mt-5 font-semibold">Audit trail</h3>
-          <ol className="max-h-64 overflow-auto text-xs">
-            {review.events.map((event, index) => (
-              <li className="py-1" key={index}>
-                {dateText(event.timestamp)} · {event.event}
-              </li>
-            ))}
-          </ol>
-        </Panel>
       )}
       {candidatePendingDeletion && (
         <div
