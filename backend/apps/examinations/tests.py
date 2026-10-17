@@ -462,6 +462,79 @@ class ExaminationSecurityTests(ExamFixtures, TestCase):
         self.assertEqual(attempt.email, "kofi@example.com")
         self.assertEqual(candidate.get("/api/v1/exams/available/").status_code, 403)
 
+    def test_staff_can_delete_a_complete_shared_code_cohort_and_preserve_attempts(self):
+        staff = self.client_for(self.staff)
+        created = self.post(
+            f"exams/staff/exams/{self.exam.pk}/eligibility/",
+            {"full_name": "Ama Mensah"},
+            staff,
+        )
+        self.assertEqual(created.status_code, 201, created.content)
+        code = created.json()["candidate_code"]
+        self.assertEqual(
+            self.post(
+                f"exams/staff/exams/{self.exam.pk}/eligibility/",
+                {"full_name": "Kofi Owusu"},
+                staff,
+            ).status_code,
+            201,
+        )
+
+        candidate = Client(enforce_csrf_checks=True)
+        csrf = candidate.get("/api/v1/auth/csrf/").json()["csrfToken"]
+        candidate.defaults["HTTP_X_CSRFTOKEN"] = csrf
+        self.assertEqual(
+            self.post(
+                "exams/candidate/access/",
+                {
+                    "full_name": "Ama Mensah",
+                    "email": "ama@example.com",
+                    "access_code": code,
+                },
+                candidate,
+            ).status_code,
+            200,
+        )
+        attempt_id = self.post(f"exams/{self.exam.pk}/start/", client=candidate).json()["id"]
+
+        deleted = self.delete(
+            f"exams/staff/exams/{self.exam.pk}/eligibility/",
+            staff,
+        )
+        self.assertEqual(deleted.status_code, 200, deleted.content)
+        self.assertEqual(
+            deleted.json(),
+            {"candidates_removed": 3, "preserved_attempts": 1},
+        )
+        self.assertFalse(ExamEligibility.objects.filter(exam=self.exam).exists())
+        self.assertIsNone(ExamAttempt.objects.get(pk=attempt_id).eligibility_id)
+        self.assertEqual(candidate.get("/api/v1/exams/available/").status_code, 403)
+        replacement = self.post(
+            f"exams/staff/exams/{self.exam.pk}/eligibility/",
+            {"full_name": "Abena Mensah"},
+            staff,
+        )
+        self.assertEqual(replacement.status_code, 201)
+        self.assertIn("candidate_code", replacement.json())
+        replacement_candidate = Client(enforce_csrf_checks=True)
+        csrf = replacement_candidate.get("/api/v1/auth/csrf/").json()["csrfToken"]
+        replacement_candidate.defaults["HTTP_X_CSRFTOKEN"] = csrf
+        self.assertEqual(
+            self.post(
+                "exams/candidate/access/",
+                {
+                    "full_name": "Abena Mensah",
+                    "email": "abena@example.com",
+                    "access_code": code,
+                },
+                replacement_candidate,
+            ).status_code,
+            403,
+        )
+        self.assertTrue(
+            ExamAuditLog.objects.filter(event="COHORT_DELETED", actor=self.staff).exists()
+        )
+
     def test_answers_can_only_be_reviewed_by_an_authorized_exam_manager(self):
         attempt = self.start()
         self.save(attempt)

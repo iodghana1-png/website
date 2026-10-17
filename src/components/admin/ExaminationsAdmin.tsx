@@ -153,6 +153,7 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
   const [candidateCode, setCandidateCode] = useState("");
   const [candidatePendingDeletion, setCandidatePendingDeletion] =
     useState<Assignment | null>(null);
+  const [cohortPendingDeletion, setCohortPendingDeletion] = useState(false);
   const [assignmentPage, setAssignmentPage] = useState(1);
   const [moreAssignments, setMoreAssignments] = useState(false);
   const [assignmentTotal, setAssignmentTotal] = useState(0);
@@ -421,6 +422,29 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
       setCandidatePendingDeletion(null);
       await loadAssignments(selectedExam);
       setNotice(`${entry.name} was removed from this examination cohort.`);
+    } catch (reason) {
+      fail(reason);
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function deleteCohort() {
+    if (!resultExam) return;
+    setBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      const result = await apiRequest<{
+        candidates_removed: number;
+        preserved_attempts: number;
+      }>(`/exams/staff/exams/${resultExam}/eligibility/`, {
+        method: "DELETE",
+      });
+      setCohortPendingDeletion(false);
+      await loadAttempts(1);
+      setNotice(
+        `${result.candidates_removed} candidate${result.candidates_removed === 1 ? "" : "s"} removed from this cohort. ${result.preserved_attempts ? `${result.preserved_attempts} official attempt${result.preserved_attempts === 1 ? "" : "s"} remain available in Results.` : "No examination attempts were recorded."}`,
+      );
     } catch (reason) {
       fail(reason);
     } finally {
@@ -1439,6 +1463,19 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
             >
               Refresh
             </button>
+            {resultExam && (
+              <button
+                type="button"
+                className={
+                  buttonClass +
+                  " border-red-300 text-red-800 hover:border-red-500 hover:bg-red-50"
+                }
+                disabled={busy}
+                onClick={() => setCohortPendingDeletion(true)}
+              >
+                Remove this cohort&apos;s candidates
+              </button>
+            )}
           </div>
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--color-line)] bg-[var(--color-paper)] px-4 py-3 text-sm">
             <p>
@@ -1659,6 +1696,50 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
                 onClick={() => void deleteCandidate(candidatePendingDeletion)}
               >
                 {busy ? "Deleting…" : "Delete student"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {cohortPendingDeletion && resultExam && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-cohort-title"
+        >
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+            <h2 id="delete-cohort-title" className="text-xl font-semibold">
+              Remove this cohort&apos;s candidates?
+            </h2>
+            <p className="mt-3 text-sm text-[var(--color-slate)]">
+              This removes every candidate assigned to the selected examination
+              and invalidates the shared cohort code. They will be signed out
+              of the portal and cannot return with that code.
+            </p>
+            <p className="mt-2 text-sm text-[var(--color-slate)]">
+              Official answers, results and audit history are retained. This
+              cannot be undone; create a new cohort code when you are ready to
+              add candidates again.
+            </p>
+            <div className="mt-6 flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                className={buttonClass}
+                disabled={busy}
+                onClick={() => setCohortPendingDeletion(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className={
+                  primaryClass + " !bg-red-700 hover:!bg-red-800 focus:!ring-red-500"
+                }
+                disabled={busy}
+                onClick={() => void deleteCohort()}
+              >
+                {busy ? "Removing..." : "Remove all cohort candidates"}
               </button>
             </div>
           </div>

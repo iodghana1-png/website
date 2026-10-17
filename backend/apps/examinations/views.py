@@ -442,6 +442,52 @@ class StaffEligibility(StaffView):
             response["candidate_code"] = code
         return Response(response, status=201 if created else 200)
 
+    @transaction.atomic
+    def delete(self, request, exam_id):
+        """Remove a shared-code cohort without erasing official attempts."""
+        exam = get_object_or_404(Exam.objects.select_for_update(), pk=exam_id)
+        grants = list(
+            ExamEligibility.objects.select_for_update().filter(exam=exam)
+        )
+        grant_ids = [grant.pk for grant in grants]
+        candidate_names = [grant.full_name for grant in grants]
+
+        # An attempt is an official record, so it is retained with its
+        # immutable candidate name/email snapshot after the cohort entry is
+        # removed. Removing sessions also immediately invalidates portal
+        # access for every candidate who used this shared code.
+        attempts = ExamAttempt.objects.select_for_update().filter(
+            eligibility_id__in=grant_ids
+        )
+        preserved_attempts = attempts.count()
+        attempts.update(eligibility=None)
+        ExamCandidateSession.objects.filter(eligibility_id__in=grant_ids).delete()
+        ExamEligibility.objects.filter(pk__in=grant_ids).delete()
+        # Retire the group credential as well. The first candidate added to a
+        # later cohort will receive a new shared code instead of reusing one
+        # known by the removed group.
+        exam.cohort_code_hash = ""
+        exam.cohort_code_issued_at = None
+        exam.save(update_fields=["cohort_code_hash", "cohort_code_issued_at"])
+        audit(
+            "COHORT_DELETED",
+            user=request.user,
+            exam=exam,
+            request=request,
+            metadata={
+                "candidates_removed": len(grant_ids),
+                "preserved_attempts": preserved_attempts,
+                "candidates": candidate_names,
+                "cohort_code_invalidated": True,
+            },
+        )
+        return Response(
+            {
+                "candidates_removed": len(grant_ids),
+                "preserved_attempts": preserved_attempts,
+            }
+        )
+
 
 class StaffEligibilityDetail(StaffView):
     """Remove a candidate's cohort access without deleting exam history."""
