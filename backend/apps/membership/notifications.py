@@ -77,6 +77,7 @@ def send_application_submitted_to_staff_email(application: MembershipApplication
             ("Applicant", application.applicant_name),
             ("Email address", application.email),
             ("Phone number", application.phone_number or "Not provided"),
+            ("Additional phone number", application.secondary_phone_number or "Not provided"),
             ("Organisation", application.organisation or "Not provided"),
             ("Current role", application.current_role or "Not provided"),
             ("Recommending agent", application.recommending_agent or "Not provided"),

@@ -6,7 +6,7 @@ export type MemberProfile = {
   id: string; membership_number: string; membership_type: MembershipType;
   status: "pending" | "active" | "suspended" | "expired" | "resigned";
   full_name: string; first_name: string; last_name: string; email: string;
-  phone_number: string; organisation: string; current_role: string;
+  phone_number: string; secondary_phone_number: string; organisation: string; current_role: string;
   joined_date: string; membership_start_date: string; membership_end_date: string | null;
   is_publicly_listed: boolean;
 };
@@ -16,7 +16,7 @@ export type MembershipApplicationResult = { reference: string; tracking_token: s
 export type MembershipApplication = {
   reference: string; application_kind: "new_membership" | "upgrade"; current_membership_number: string;
   assigned_membership_type: MembershipType | null; applicant_name: string;
-  first_name: string; last_name: string; email: string; phone_number: string; organisation: string;
+  first_name: string; last_name: string; email: string; phone_number: string; secondary_phone_number: string; organisation: string;
   current_role: string; recommending_agent: string; status: "submitted" | "under_review" | "approved" | "rejected" | "withdrawn";
   internal_notes: string; decision_reason: string; reviewer_email: string | null; reviewed_at: string | null;
   submitted_at: string; updated_at: string;
@@ -32,7 +32,7 @@ export type PublicMemberVerification = Pick<DirectoryEntry, "full_name" | "desig
 
 export const getMyMemberProfile = () => apiRequest<MemberProfile>("/membership/members/me/");
 export const getMyRenewals = () => apiRequest<MembershipRenewal[]>("/membership/members/me/renewals/");
-export const updateMyMemberProfile = (data: Pick<MemberProfile, "phone_number" | "organisation" | "current_role">) => apiRequest<MemberProfile>("/membership/members/me/", { method: "PATCH", body: JSON.stringify(data) });
+export const updateMyMemberProfile = (data: Pick<MemberProfile, "phone_number" | "secondary_phone_number" | "organisation" | "current_role">) => apiRequest<MemberProfile>("/membership/members/me/", { method: "PATCH", body: JSON.stringify(data) });
 export const submitMembershipApplication = (data: FormData) => apiRequest<MembershipApplicationResult>("/membership/applications/", { method: "POST", body: data });
 export const getMembershipTypes = () => apiRequest<MembershipType[]>("/membership/types/");
 export const getStaffApplications = () => apiRequest<MembershipApplication[]>("/membership/staff/applications/");

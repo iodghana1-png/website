@@ -46,6 +46,7 @@ def approve_application(*, application: MembershipApplication, reviewer, members
             last_name=application.last_name,
             email=application.email,
             phone_number=application.phone_number,
+            secondary_phone_number=application.secondary_phone_number,
             organisation=application.organisation,
             current_role=application.current_role,
             joined_date=today,

@@ -277,7 +277,7 @@ class MembershipApiTests(TestCase):
         self.assertNotIn("Application reference", receipt.body)
 
     def test_membership_officer_can_approve_and_manage_a_member_renewal(self):
-        application = self.submit_application()
+        application = self.submit_application(secondary_phone_number="+233241234567")
         client = self.csrf_client(self.officer)
 
         reviewed = client.post(
@@ -297,6 +297,7 @@ class MembershipApiTests(TestCase):
         member = MemberProfile.objects.get(membership_number=member_number)
         self.assertEqual(member.status, MemberProfile.Status.ACTIVE)
         self.assertTrue(member.is_publicly_listed)
+        self.assertEqual(member.secondary_phone_number, "+233241234567")
         self.assertEqual(mail.outbox[-1].subject, "Your IoD-Gh membership application has been approved")
         self.assertIn(member_number, mail.outbox[-1].body)
 

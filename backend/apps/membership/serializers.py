@@ -23,7 +23,7 @@ class MembershipApplicationSubmitSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MembershipApplication
-        fields = ("application_kind", "current_membership_number", "first_name", "last_name", "email", "phone_number", "organisation", "current_role", "recommending_agent", "cv")
+        fields = ("application_kind", "current_membership_number", "first_name", "last_name", "email", "phone_number", "secondary_phone_number", "organisation", "current_role", "recommending_agent", "cv")
 
     def validate_cv(self, value):
         # CVs are delivered directly to the membership team's inbox and never
@@ -65,7 +65,7 @@ class MembershipApplicationStaffSerializer(serializers.ModelSerializer):
     class Meta:
         model = MembershipApplication
         fields = (
-            "reference", "application_kind", "current_membership_number", "assigned_membership_type", "applicant_name", "first_name", "last_name", "email", "phone_number",
+            "reference", "application_kind", "current_membership_number", "assigned_membership_type", "applicant_name", "first_name", "last_name", "email", "phone_number", "secondary_phone_number",
             "organisation", "current_role", "recommending_agent", "status", "internal_notes", "decision_reason", "reviewer_email",
             "reviewed_at", "submitted_at", "updated_at",
         )
@@ -102,7 +102,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
         model = MemberProfile
         fields = (
             "id", "membership_number", "membership_type", "status", "full_name", "first_name", "last_name", "email",
-            "phone_number", "organisation", "current_role", "joined_date", "membership_start_date", "membership_end_date",
+            "phone_number", "secondary_phone_number", "organisation", "current_role", "joined_date", "membership_start_date", "membership_end_date",
             "is_publicly_listed", "created_at", "updated_at",
         )
         read_only_fields = ("id", "membership_number", "membership_type", "status", "full_name", "first_name", "last_name", "email", "joined_date", "membership_start_date", "membership_end_date", "created_at", "updated_at")
@@ -111,7 +111,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
 class MemberProfileUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = MemberProfile
-        fields = ("phone_number", "organisation", "current_role")
+        fields = ("phone_number", "secondary_phone_number", "organisation", "current_role")
 
 
 class MemberStatusUpdateSerializer(serializers.Serializer):
