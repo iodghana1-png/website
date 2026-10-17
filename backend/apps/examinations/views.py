@@ -3,7 +3,7 @@ import io
 
 from django.conf import settings
 from django.db import transaction
-from django.db.models import OuterRef, Subquery
+from django.db.models import OuterRef, Q, Subquery
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -110,9 +110,9 @@ def validated(serializer_class, request):
     return serializer.validated_data
 
 
-def page_response(request, queryset, renderer):
+def page_response(request, queryset, renderer, page_size=50):
     paginator = PageNumberPagination()
-    paginator.page_size = 50
+    paginator.page_size = page_size
     page = paginator.paginate_queryset(queryset, request)
     return paginator.get_paginated_response([renderer(item) for item in page])
 
@@ -393,7 +393,7 @@ class StaffEligibility(StaffView):
     def get(self, request, exam_id):
         exam = get_object_or_404(Exam, pk=exam_id)
         grants = ExamEligibility.objects.filter(exam=exam).select_related("student", "exam").order_by("candidate_name", "student__email")
-        return page_response(request, grants, staff_eligibility)
+        return page_response(request, grants, staff_eligibility, page_size=25)
 
     @transaction.atomic
     def post(self, request, exam_id):
@@ -489,8 +489,15 @@ class StaffAttempts(StaffView):
             attempts = attempts.filter(exam_id=filters.validated_data["exam"])
         if "status" in filters.validated_data:
             attempts = attempts.filter(status=filters.validated_data["status"])
+        if search := filters.validated_data.get("search", "").strip():
+            attempts = attempts.filter(
+                Q(candidate_name__icontains=search)
+                | Q(candidate_email__icontains=search)
+                | Q(student__email__icontains=search)
+                | Q(exam__title__icontains=search)
+            )
         audit("RESULTS_VIEWED", user=request.user, request=request)
-        return page_response(request, attempts, lambda attempt: {**result_data(attempt, staff=True), "student_email": attempt.email, "student_name": attempt.full_name, "attempt_number": attempt.attempt_number, "submitted_at": attempt.submitted_at})
+        return page_response(request, attempts, lambda attempt: {**result_data(attempt, staff=True), "student_email": attempt.email, "student_name": attempt.full_name, "attempt_number": attempt.attempt_number, "submitted_at": attempt.submitted_at}, page_size=25)
 
 
 class StaffAttemptReview(StaffView):
@@ -529,13 +536,20 @@ class StaffExport(StaffView):
             results = results.filter(attempt__exam=exam)
         if status := filters.validated_data.get("status"):
             results = results.filter(attempt__status=status)
+        if search := filters.validated_data.get("search", "").strip():
+            results = results.filter(
+                Q(attempt__candidate_name__icontains=search)
+                | Q(attempt__candidate_email__icontains=search)
+                | Q(attempt__student__email__icontains=search)
+                | Q(attempt__exam__title__icontains=search)
+            )
         rows = io.StringIO()
         writer = csv.writer(rows)
         writer.writerow(["Examination", "Student email", "Attempt", "Status", "Score", "Total", "Percentage", "Grade", "Passed", "Released at"])
         for result in results.iterator():
             values = [result.attempt.exam_version.configuration["title"], result.attempt.email, result.attempt.attempt_number, result.attempt.status, result.score, result.total_marks, result.percentage, result.grade, result.passed, result.released_at or ""]
             writer.writerow(["'" + str(value) if str(value).lstrip().startswith(("=", "+", "-", "@")) else value for value in values])
-        audit("RESULTS_EXPORTED", user=request.user, exam=exam, request=request, metadata={"all_examinations": exam is None, "status": filters.validated_data.get("status")})
+        audit("RESULTS_EXPORTED", user=request.user, exam=exam, request=request, metadata={"all_examinations": exam is None, "status": filters.validated_data.get("status"), "search": filters.validated_data.get("search", "")})
         response = HttpResponse(rows.getvalue(), content_type="text/csv")
         response["Content-Disposition"] = 'attachment; filename="exam-results.csv"'
         return response

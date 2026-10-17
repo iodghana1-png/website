@@ -102,9 +102,11 @@ class QuestionViewedInput(serializers.Serializer):
 class AttemptFilters(serializers.Serializer):
     exam = serializers.UUIDField(required=False)
     status = serializers.ChoiceField(choices=["IN_PROGRESS", "SUBMITTED", "EXPIRED", "CANCELLED"], required=False)
+    search = serializers.CharField(required=False, allow_blank=True, max_length=300)
 
 
 class ExportFilters(serializers.Serializer):
     # A blank exam selection means export all results the administrator can see.
     exam = serializers.UUIDField(required=False)
     status = serializers.ChoiceField(choices=["IN_PROGRESS", "SUBMITTED", "EXPIRED", "CANCELLED"], required=False)
+    search = serializers.CharField(required=False, allow_blank=True, max_length=300)

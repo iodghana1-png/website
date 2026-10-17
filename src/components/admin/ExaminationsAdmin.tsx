@@ -51,6 +51,7 @@ type AttemptRow = {
     expires_at: string;
   };
   student_email: string;
+  student_name: string;
   attempt_number: number;
   submitted_at: string | null;
   released: boolean;
@@ -142,6 +143,8 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
   const [search, setSearch] = useState("");
   const [examPage, setExamPage] = useState(1);
   const [moreExams, setMoreExams] = useState(false);
+  const [examFilter, setExamFilter] = useState("");
+  const [examActivity, setExamActivity] = useState<"" | "active" | "inactive">("");
   const [exam, setExam] = useState<Exam | null>(null);
   const [question, setQuestion] = useState<Question | null>(null);
   const [selectedExam, setSelectedExam] = useState("");
@@ -152,15 +155,24 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
     useState<Assignment | null>(null);
   const [assignmentPage, setAssignmentPage] = useState(1);
   const [moreAssignments, setMoreAssignments] = useState(false);
+  const [assignmentTotal, setAssignmentTotal] = useState(0);
   const [attempts, setAttempts] = useState<AttemptRow[]>([]);
   const [attemptPage, setAttemptPage] = useState(1);
   const [moreAttempts, setMoreAttempts] = useState(false);
+  const [attemptTotal, setAttemptTotal] = useState(0);
+  const [resultExam, setResultExam] = useState("");
+  const [resultSearch, setResultSearch] = useState("");
   const [status, setStatus] = useState("");
   const [review, setReview] = useState<Review | null>(null);
   const questionEditorRef = useRef<HTMLFormElement>(null);
   const reviewPanelRef = useRef<HTMLDivElement>(null);
   const questionEditorId = question ? question.id ?? "new" : null;
   const reviewOpen = Boolean(review);
+  const displayedExams = exams.filter((item) => {
+    const matchesTitle = item.title.toLocaleLowerCase().includes(examFilter.trim().toLocaleLowerCase());
+    const matchesActivity = !examActivity || (examActivity === "active" ? item.is_active : !item.is_active);
+    return matchesTitle && matchesActivity;
+  });
 
   const fail = useCallback((reason: unknown) => {
     if (reason instanceof ApiError && reason.status === 403) onAccessExpired();
@@ -197,17 +209,24 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
     setAssignments(data.results);
     setAssignmentPage(page);
     setMoreAssignments(!!data.next);
+    setAssignmentTotal(data.count);
   }, []);
   const loadAttempts = useCallback(
     async (page = 1) => {
       const data = await apiRequest<Page<AttemptRow>>(
-        `/exams/staff/attempts/?page=${page}${selectedExam ? `&exam=${selectedExam}` : ""}${status ? `&status=${status}` : ""}`,
+        `/exams/staff/attempts/?${new URLSearchParams({
+          page: String(page),
+          ...(resultExam ? { exam: resultExam } : {}),
+          ...(status ? { status } : {}),
+          ...(resultSearch.trim() ? { search: resultSearch.trim() } : {}),
+        })}`,
       );
       setAttempts(data.results);
       setAttemptPage(page);
       setMoreAttempts(!!data.next);
+      setAttemptTotal(data.count);
     },
-    [selectedExam, status],
+    [resultExam, resultSearch, status],
   );
   useEffect(() => {
     let live = true;
@@ -332,6 +351,7 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
       setAssignments([]);
       setAssignmentPage(1);
       setMoreAssignments(false);
+      setAssignmentTotal(0);
       return;
     }
     void loadAssignments(id).catch(fail);
@@ -411,8 +431,9 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
     setBusy(true);
     try {
       const query = new URLSearchParams();
-      if (selectedExam) query.set("exam", selectedExam);
+      if (resultExam) query.set("exam", resultExam);
       if (status) query.set("status", status);
+      if (resultSearch.trim()) query.set("search", resultSearch.trim());
       const response = await fetch(
         `${apiBaseUrl}/api/v1/exams/staff/results/export/${query.size ? `?${query}` : ""}`,
         { credentials: "include", cache: "no-store" },
@@ -596,7 +617,12 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
               </ol>
               {selectedExam && (
                 <section className="mt-6 border-t border-[var(--color-line)] pt-5">
-                  <h3 className="font-semibold">Assigned candidates</h3>
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <h3 className="font-semibold">Assigned candidates</h3>
+                    <span className="rounded-full bg-[var(--color-paper)] px-3 py-1 text-xs font-semibold text-[var(--color-slate)]">
+                      {assignmentTotal} total
+                    </span>
+                  </div>
                   <p className="mt-1 text-sm text-[var(--color-slate)]">
                     Revoke a student to stop future starts, or delete them from
                     this cohort at any time. Their completed or in-progress
@@ -682,6 +708,11 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
                     >
                       Next
                     </button>
+                    {assignmentTotal > 0 && (
+                      <p className="self-center text-xs text-[var(--color-slate)]">
+                        Page {assignmentPage}
+                      </p>
+                    )}
                   </div>
                 </section>
               )}
@@ -694,8 +725,45 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
           >
             Create examination
           </button>
+          <section className="rounded-lg border border-[var(--color-line)] bg-[var(--color-paper)] p-4">
+            <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_12rem_auto] sm:items-end">
+              <Field
+                label="Find an examination"
+                value={examFilter}
+                onChange={setExamFilter}
+                placeholder="Search by title"
+              />
+              <label className="block text-sm font-semibold">
+                Status
+                <select
+                  className={inputClass}
+                  value={examActivity}
+                  onChange={(event) =>
+                    setExamActivity(event.target.value as "" | "active" | "inactive")
+                  }
+                >
+                  <option value="">All statuses</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </label>
+              <button
+                type="button"
+                className={buttonClass}
+                onClick={() => {
+                  setExamFilter("");
+                  setExamActivity("");
+                }}
+              >
+                Clear filters
+              </button>
+            </div>
+            <p className="mt-3 text-xs text-[var(--color-slate)]">
+              Showing {displayedExams.length} examination{displayedExams.length === 1 ? "" : "s"}.
+            </p>
+          </section>
           <div className="space-y-3">
-            {exams.map((item) => (
+            {displayedExams.map((item) => (
               <article
                 className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-[var(--color-line)] bg-white p-5"
                 key={item.id}
@@ -735,6 +803,11 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
                 </div>
               </article>
             ))}
+            {!displayedExams.length && (
+              <p className="rounded-lg border border-dashed border-[var(--color-line)] bg-white p-6 text-sm text-[var(--color-slate)]">
+                No examinations match these filters.
+              </p>
+            )}
           </div>
           {moreExams && (
             <button
@@ -1323,8 +1396,8 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
             <select
               aria-label="Filter by examination"
               className={inputClass + " !mt-0 !w-auto"}
-              value={selectedExam}
-              onChange={(event) => setSelectedExam(event.target.value)}
+              value={resultExam}
+              onChange={(event) => setResultExam(event.target.value)}
             >
               <option value="">All examinations</option>
               {exams.map((item) => (
@@ -1346,6 +1419,13 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
                 ),
               )}
             </select>
+            <Field
+              label="Search candidates"
+              type="search"
+              value={resultSearch}
+              onChange={setResultSearch}
+              placeholder="Name, email or examination"
+            />
             <button
               className={buttonClass}
               disabled={busy}
@@ -1359,6 +1439,24 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
             >
               Refresh
             </button>
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--color-line)] bg-[var(--color-paper)] px-4 py-3 text-sm">
+            <p>
+              <strong>{attemptTotal}</strong> candidate attempt{attemptTotal === 1 ? "" : "s"} found
+            </p>
+            {(resultExam || status || resultSearch) && (
+              <button
+                type="button"
+                className={buttonClass + " !py-1.5"}
+                onClick={() => {
+                  setResultExam("");
+                  setStatus("");
+                  setResultSearch("");
+                }}
+              >
+                Clear result filters
+              </button>
+            )}
           </div>
           {review && (
             <div ref={reviewPanelRef} className="scroll-mt-6">
@@ -1400,9 +1498,9 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
               </Panel>
             </div>
           )}
-          <div className="overflow-x-auto rounded border bg-white">
-            <table className="w-full text-left text-sm">
-              <thead>
+          <div className="max-h-[65vh] overflow-auto rounded-xl border border-[var(--color-line)] bg-white">
+            <table className="w-full min-w-[56rem] text-left text-sm">
+              <thead className="sticky top-0 z-10 bg-[var(--color-paper)] shadow-sm">
                 <tr className="border-b">
                   <th className="p-3">Candidate / exam</th>
                   <th className="p-3">Status / time (Ghana)</th>
@@ -1412,16 +1510,22 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
               </thead>
               <tbody>
                 {attempts.map((item) => (
-                  <tr className="border-b" key={item.attempt.id}>
+                  <tr className="border-b border-[var(--color-line)] transition-colors hover:bg-[var(--color-paper)]" key={item.attempt.id}>
                     <td className="p-3">
-                      {item.student_email}
-                      <br />
-                      {item.attempt.title}
-                      <br />
-                      Attempt {item.attempt_number}
-                      <br />
+                      <div className="flex items-start gap-3">
+                        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--color-ink)] text-xs font-bold text-white">
+                          {(item.student_name || item.student_email || "?").slice(0, 1).toUpperCase()}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="font-semibold">{item.student_name || "Candidate"}</p>
+                          <p className="truncate text-xs text-[var(--color-slate)]">{item.student_email}</p>
+                          <p className="mt-1 text-xs text-[var(--color-slate)]">
+                            {item.attempt.title} · Attempt {item.attempt_number}
+                          </p>
+                        </div>
+                      </div>
                       <button
-                        className="mt-2 underline"
+                        className={buttonClass + " mt-3 !px-3 !py-1.5 text-xs"}
                         onClick={() =>
                           void apiRequest<Review>(
                             `/exams/staff/attempts/${item.attempt.id}/`,
@@ -1434,13 +1538,14 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
                       </button>
                     </td>
                     <td className="p-3">
-                      {item.attempt.status}
-                      <br />
-                      Started: {dateText(item.attempt.started_at)}
-                      <br />
-                      Expires: {dateText(item.attempt.expires_at)}
-                      <br />
-                      Submitted: {dateText(item.submitted_at)}
+                      <span className="inline-flex rounded-full bg-[var(--color-paper)] px-2.5 py-1 text-xs font-semibold">
+                        {item.attempt.status.replaceAll("_", " ")}
+                      </span>
+                      <p className="mt-2 text-xs leading-5 text-[var(--color-slate)]">
+                        Started: {dateText(item.attempt.started_at)}<br />
+                        Expires: {dateText(item.attempt.expires_at)}<br />
+                        Submitted: {dateText(item.submitted_at)}
+                      </p>
                     </td>
                     <td className="p-3">
                       {item.score !== undefined ? (
@@ -1508,6 +1613,11 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
             >
               Next
             </button>
+            {attemptTotal > 0 && (
+              <p className="self-center text-xs text-[var(--color-slate)]">
+                Page {attemptPage}
+              </p>
+            )}
           </div>
         </>
       )}

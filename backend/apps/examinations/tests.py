@@ -479,7 +479,9 @@ class ExaminationSecurityTests(ExamFixtures, TestCase):
             with self.subTest(path=path):
                 self.assertEqual(staff.get("/api/v1/exams/staff/" + path).status_code, 400)
         self.assertEqual(staff.get(f"/api/v1/exams/staff/attempts/?exam={self.exam.pk}&status=IN_PROGRESS").status_code, 200)
+        self.assertEqual(staff.get("/api/v1/exams/staff/attempts/?search=Candidate").status_code, 200)
         self.assertEqual(staff.get(f"/api/v1/exams/staff/results/export/?exam={self.exam.pk}").status_code, 200)
+        self.assertEqual(staff.get("/api/v1/exams/staff/results/export/?search=Candidate").status_code, 200)
         all_results = staff.get("/api/v1/exams/staff/results/export/")
         self.assertEqual(all_results.status_code, 200)
         self.assertIn("Examination,Student email", all_results.content.decode())
