@@ -852,7 +852,7 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
                       />
                     ))}
                   </div>
-                  <div className="rounded-lg bg-[var(--color-surface)] p-4 text-sm">
+                  <div className="rounded-lg bg-[var(--color-paper)] p-4 text-sm">
                     <button type="button" className={buttonClass} onClick={() => setExam({ ...exam, duration_minutes: 10080 })}>
                       Allow 7 days
                     </button>
