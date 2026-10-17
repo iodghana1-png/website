@@ -410,8 +410,11 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
   async function exportResults() {
     setBusy(true);
     try {
+      const query = new URLSearchParams();
+      if (selectedExam) query.set("exam", selectedExam);
+      if (status) query.set("status", status);
       const response = await fetch(
-        `${apiBaseUrl}/api/v1/exams/staff/results/export/?exam=${selectedExam}`,
+        `${apiBaseUrl}/api/v1/exams/staff/results/export/${query.size ? `?${query}` : ""}`,
         { credentials: "include", cache: "no-store" },
       );
       if (!response.ok) throw new ApiError("Could not export results.", undefined, response.status);
@@ -1345,10 +1348,10 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
             </select>
             <button
               className={buttonClass}
-              disabled={!selectedExam || busy}
+              disabled={busy}
               onClick={() => void exportResults()}
             >
-              Export exam results (CSV)
+              Export displayed results (CSV)
             </button>
             <button
               className={buttonClass}

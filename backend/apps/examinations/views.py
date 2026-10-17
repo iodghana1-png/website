@@ -522,14 +522,20 @@ class StaffExport(StaffView):
     def get(self, request):
         filters = ExportFilters(data=request.query_params)
         filters.is_valid(raise_exception=True)
-        exam = get_object_or_404(Exam, pk=filters.validated_data["exam"])
+        exam = None
+        results = ExamResult.objects.select_related("attempt__student", "attempt__eligibility", "attempt__exam_version")
+        if exam_id := filters.validated_data.get("exam"):
+            exam = get_object_or_404(Exam, pk=exam_id)
+            results = results.filter(attempt__exam=exam)
+        if status := filters.validated_data.get("status"):
+            results = results.filter(attempt__status=status)
         rows = io.StringIO()
         writer = csv.writer(rows)
         writer.writerow(["Examination", "Student email", "Attempt", "Status", "Score", "Total", "Percentage", "Grade", "Passed", "Released at"])
-        for result in ExamResult.objects.filter(attempt__exam=exam).select_related("attempt__student", "attempt__eligibility", "attempt__exam_version").iterator():
+        for result in results.iterator():
             values = [result.attempt.exam_version.configuration["title"], result.attempt.email, result.attempt.attempt_number, result.attempt.status, result.score, result.total_marks, result.percentage, result.grade, result.passed, result.released_at or ""]
             writer.writerow(["'" + str(value) if str(value).lstrip().startswith(("=", "+", "-", "@")) else value for value in values])
-        audit("RESULTS_EXPORTED", user=request.user, exam=exam, request=request)
+        audit("RESULTS_EXPORTED", user=request.user, exam=exam, request=request, metadata={"all_examinations": exam is None, "status": filters.validated_data.get("status")})
         response = HttpResponse(rows.getvalue(), content_type="text/csv")
         response["Content-Disposition"] = 'attachment; filename="exam-results.csv"'
         return response

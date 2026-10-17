@@ -475,11 +475,14 @@ class ExaminationSecurityTests(ExamFixtures, TestCase):
 
     def test_staff_filters_reject_invalid_input_without_server_errors(self):
         staff = self.client_for(self.staff)
-        for path in ["attempts/?exam=invalid", "attempts/?status=invalid", "results/export/?exam=invalid", "results/export/"]:
+        for path in ["attempts/?exam=invalid", "attempts/?status=invalid", "results/export/?exam=invalid", "results/export/?status=invalid"]:
             with self.subTest(path=path):
                 self.assertEqual(staff.get("/api/v1/exams/staff/" + path).status_code, 400)
         self.assertEqual(staff.get(f"/api/v1/exams/staff/attempts/?exam={self.exam.pk}&status=IN_PROGRESS").status_code, 200)
         self.assertEqual(staff.get(f"/api/v1/exams/staff/results/export/?exam={self.exam.pk}").status_code, 200)
+        all_results = staff.get("/api/v1/exams/staff/results/export/")
+        self.assertEqual(all_results.status_code, 200)
+        self.assertIn("Examination,Student email", all_results.content.decode())
 
     def test_cms_public_api_omits_retired_practice_assessment_keys(self):
         from apps.content.cms_serializers import CMSPublicPageSerializer
