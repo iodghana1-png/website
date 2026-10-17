@@ -1460,7 +1460,7 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
           </div>
           {review && (
             <div ref={reviewPanelRef} className="scroll-mt-6">
-              <Panel title={`Attempt review â€” ${review.student_email}`} open>
+              <Panel title={`Attempt review - ${review.student_email}`} open>
                 <button className={buttonClass} onClick={() => setReview(null)}>
                   Close review
                 </button>
