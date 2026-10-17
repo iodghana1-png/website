@@ -18,7 +18,7 @@ export async function api<T>(path: string, body?: unknown): Promise<T> {
   return data as T;
 }
 export type Account = { first_name: string; last_name: string; email: string };
-export type Attempt = { id: string; exam_id: string; title: string; instructions: string; status: "IN_PROGRESS" | "SUBMITTED" | "EXPIRED" | "CANCELLED"; started_at: string; expires_at: string; server_time: string; question_count: number };
+export type Attempt = { id: string; exam_id: string; candidate_name?: string; title: string; instructions: string; status: "IN_PROGRESS" | "SUBMITTED" | "EXPIRED" | "CANCELLED"; started_at: string; expires_at: string; server_time: string; question_count: number };
 export type Exam = { id: string; title: string; instructions: string; duration_minutes: number; question_count: number };
 export type Question = { id: string; text: string; marks: string; options: { id: string; text: string }[]; selected_option: string | null; answer_revision: number };
 export type ExamResult = { attempt: Attempt; released: boolean; score?: string; total_marks?: string; percentage?: string; grade?: string; passed?: boolean };

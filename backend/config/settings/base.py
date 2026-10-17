@@ -148,6 +148,8 @@ REST_FRAMEWORK = {
         "exam_start": "10/min",
         "exam_access": "10/min",
         "exam_admin": "120/min",
+        "exam_admin_code_send": "10/hour",
+        "exam_admin_code_verify": "30/hour",
     },
 }
 

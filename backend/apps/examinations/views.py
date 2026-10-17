@@ -19,6 +19,7 @@ from apps.accounts.models import User
 from apps.common.throttling import ScopedRateThrottle
 from apps.membership.models import MemberProfile
 from .authentication import CANDIDATE_SESSION_COOKIE, CandidateExamAuthentication
+from .admin_security import VerifiedExamAdmin, access_status, send_code, verify_code
 from .models import Exam, Question, ExamAttempt, ExamAnswer, ExamEligibility, ExamCandidateSession, ExamResult, ExamAuditLog
 from .serializers import ExamInput, QuestionInput, AnswerInput, AssignmentInput, CandidateAccessInput, QuestionViewedInput, AttemptFilters, ExportFilters
 from .services import audit, available, candidate_access, issue_candidate_code, issue_cohort_code, normalize_candidate_name, open_candidate_session, start_attempt, save_question, retire_question, save_exam, public_attempt, public_questions, synchronize, finalize, release_result
@@ -55,8 +56,30 @@ class PrivateView(APIView):
 
 
 class StaffView(PrivateView):
+    permission_classes = [ExamManager, VerifiedExamAdmin]
+    throttle_scope = "exam_admin"
+
+
+class StaffAccess(PrivateView):
     permission_classes = [ExamManager]
     throttle_scope = "exam_admin"
+
+    def get(self, request):
+        return access_status(request)
+
+
+class StaffAccessSend(StaffAccess):
+    throttle_scope = "exam_admin_code_send"
+
+    def post(self, request):
+        return send_code(request)
+
+
+class StaffAccessVerify(StaffAccess):
+    throttle_scope = "exam_admin_code_verify"
+
+    def post(self, request):
+        return verify_code(request)
 
 
 class CandidateAccessPermission(BasePermission):
@@ -134,6 +157,7 @@ class CandidateSignOut(CandidateView):
     throttle_scope = "exam_write"
 
     def post(self, request):
+        request.auth.delete()
         response = Response(status=204)
         response.delete_cookie(
             CANDIDATE_SESSION_COOKIE,

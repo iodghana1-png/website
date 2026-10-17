@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { api, ApiError, Attempt, Exam, ExamResult } from "../lib/api";
 import { ArrowRightIcon } from "./Icon";
+import { deadlineLabel, durationLabel } from "../lib/time";
 
 export function SignIn() {
   const router = useRouter();
@@ -190,8 +191,8 @@ export function Available({ examId }: { examId?: string }) {
           <span className="badge">In progress</span>
           <h2>{attempt.title}</h2>
           <p>
-            Your saved answers are safe. The examination timer continues while
-            you are away.
+            Your saved answers are safe. Resume any time before {deadlineLabel(attempt.expires_at)}.
+            The examination timer continues while you are away.
           </p>
           <Link className="primary" href={`/attempt/${attempt.id}`}>
             Resume examination
@@ -204,7 +205,7 @@ export function Available({ examId }: { examId?: string }) {
           <h2>{exam.title}</h2>
           <p className="instructions">{exam.instructions}</p>
           <div className="facts">
-            <span>{exam.duration_minutes} minutes maximum</span>
+            <span>{durationLabel(exam.duration_minutes)} maximum</span>
             <span>{exam.question_count} questions</span>
           </div>
           <p className="small">
@@ -264,7 +265,7 @@ export function Available({ examId }: { examId?: string }) {
             <dl className="start-summary">
               <div>
                 <dt>Time allowed</dt>
-                <dd>{selectedExam.duration_minutes} minutes</dd>
+                <dd>{durationLabel(selectedExam.duration_minutes)}</dd>
               </div>
               <div>
                 <dt>Questions</dt>
@@ -272,12 +273,13 @@ export function Available({ examId }: { examId?: string }) {
               </div>
             </dl>
             <ul className="start-checklist">
-              <li>Your answers save automatically while you work.</li>
+              <li>Your answers save automatically while you work. Wait for “All answers saved” before leaving.</li>
               <li>
                 You can leave and return with the same name and code, but the
                 timer keeps running.
               </li>
               <li>This will use one of your available exam attempts.</li>
+              <li>Questions are confidential. Do not copy, photograph or share them.</li>
             </ul>
             <div className="question-actions start-actions">
               <button

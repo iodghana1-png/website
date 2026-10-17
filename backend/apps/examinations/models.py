@@ -110,6 +110,17 @@ class ExamEligibility(models.Model):
         return True
 
 
+class ExamAdminVerification(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    session_hash = models.CharField(max_length=64, unique=True)
+    email = models.EmailField()
+    code_hash = models.CharField(max_length=64, blank=True)
+    expires_at = models.DateTimeField(null=True)
+    sent_at = models.DateTimeField(null=True)
+    failed_attempts = models.PositiveSmallIntegerField(default=0)
+    verified_until = models.DateTimeField(null=True)
+
+
 class ExamCandidateSession(models.Model):
     """An exam-only browser session, intentionally separate from member login."""
 

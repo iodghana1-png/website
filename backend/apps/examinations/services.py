@@ -313,7 +313,7 @@ def synchronize(attempt, request=None):
 
 def public_attempt(attempt):
     config = attempt.exam_version.configuration
-    return {"id": str(attempt.id), "exam_id": str(attempt.exam_id), "title": config["title"], "instructions": config["instructions"], "status": attempt.status, "started_at": attempt.started_at, "expires_at": attempt.expires_at, "server_time": timezone.now(), "question_count": len(attempt.question_order)}
+    return {"id": str(attempt.id), "exam_id": str(attempt.exam_id), "candidate_name": attempt.full_name, "title": config["title"], "instructions": config["instructions"], "status": attempt.status, "started_at": attempt.started_at, "expires_at": attempt.expires_at, "server_time": timezone.now(), "question_count": len(attempt.question_order)}
 
 
 def public_questions(attempt):

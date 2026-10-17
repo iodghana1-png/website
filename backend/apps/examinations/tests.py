@@ -11,11 +11,12 @@ from django.core.management import call_command
 from django.db import close_old_connections, connection, transaction
 from django.test import Client, TestCase, TransactionTestCase, override_settings
 from django.utils import timezone
+from django.utils.crypto import salted_hmac
 
 from apps.accounts.models import User
 from apps.common.models import RateLimitBucket
 from .authentication import CANDIDATE_SESSION_COOKIE
-from .models import ExamAttempt, ExamAnswer, ExamEligibility, ExamResult, ExamAuditLog, Question
+from .models import ExamAdminVerification, ExamAttempt, ExamAnswer, ExamEligibility, ExamResult, ExamAuditLog, Question
 from .services import issue_candidate_code, open_candidate_session, save_question, save_exam, start_attempt
 
 
@@ -31,10 +32,18 @@ class ExamFixtures:
         ExamEligibility.objects.create(exam=self.exam, student=self.student, assigned_by=self.staff)
         self.client = self.client_for(self.student)
 
-    def client_for(self, user):
+    def client_for(self, user, verified=True):
         client = Client(enforce_csrf_checks=True)
         if user and (user.is_staff or user.is_superuser):
             client.force_login(user)
+            if verified:
+                # Existing management tests start after the email challenge.
+                # Challenge behavior is exercised separately in test_access.py.
+                ExamAdminVerification.objects.create(
+                    user=user, email=user.email,
+                    session_hash=salted_hmac("exam-admin-session", client.session.session_key, algorithm="sha256").hexdigest(),
+                    verified_until=timezone.now() + timedelta(hours=8),
+                )
         elif user:
             # Candidate endpoints intentionally reject member/CMS sessions.
             # This helper installs an exam-only cookie, including an inactive

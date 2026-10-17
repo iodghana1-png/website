@@ -3,6 +3,7 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { apiBaseUrl, apiRequest, ApiError } from "@/lib/api/client";
 import { getCurrentUser } from "@/lib/api/auth";
+import { ExamAdminAccess } from "./ExamAdminAccess";
 import {
   Area,
   buttonClass,
@@ -125,6 +126,10 @@ const dateText = (date: string | null) =>
     : "—";
 
 export function ExaminationsAdmin() {
+  return <ExamAdminAccess>{(expired) => <ExaminationsWorkspace onAccessExpired={expired} />}</ExamAdminAccess>;
+}
+
+function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => void }) {
   const [allowed, setAllowed] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -153,7 +158,8 @@ export function ExaminationsAdmin() {
   const [status, setStatus] = useState("");
   const [review, setReview] = useState<Review | null>(null);
 
-  const fail = (reason: unknown) => {
+  const fail = useCallback((reason: unknown) => {
+    if (reason instanceof ApiError && reason.status === 403) onAccessExpired();
     setError(
       reason instanceof ApiError && reason.details
         ? Object.values(reason.details).flat().join(" ")
@@ -161,7 +167,7 @@ export function ExaminationsAdmin() {
           ? reason.message
           : "The request failed.",
     );
-  };
+  }, [onAccessExpired]);
   const loadExams = useCallback(async (page = 1) => {
     const data = await apiRequest<Page<Exam>>(
       `/exams/staff/exams/?page=${page}`,
@@ -218,12 +224,12 @@ export function ExaminationsAdmin() {
     return () => {
       live = false;
     };
-  }, [loadExams, loadQuestions]);
+  }, [fail, loadExams, loadQuestions]);
   useEffect(() => {
     if (!allowed || tab !== "results") return;
     const timer = window.setTimeout(() => void loadAttempts().catch(fail), 0);
     return () => window.clearTimeout(timer);
-  }, [allowed, tab, loadAttempts]);
+  }, [allowed, tab, loadAttempts, fail]);
 
   async function save(event: FormEvent, kind: "exam" | "question") {
     event.preventDefault();
@@ -365,7 +371,7 @@ export function ExaminationsAdmin() {
         `${apiBaseUrl}/api/v1/exams/staff/results/export/?exam=${selectedExam}`,
         { credentials: "include", cache: "no-store" },
       );
-      if (!response.ok) throw new Error("Could not export results.");
+      if (!response.ok) throw new ApiError("Could not export results.", undefined, response.status);
       const url = URL.createObjectURL(await response.blob());
       const anchor = document.createElement("a");
       anchor.href = url;
@@ -825,7 +831,7 @@ export function ExaminationsAdmin() {
                   <div className="grid gap-4 sm:grid-cols-3">
                     {(
                       [
-                        ["duration_minutes", "Duration (minutes)"],
+                        ["duration_minutes", "Time allowed (minutes)"],
                         ["pass_mark", "Pass mark (%)"],
                         ["maximum_attempts", "Maximum attempts"],
                         ["question_count", "Question count"],
@@ -845,6 +851,13 @@ export function ExaminationsAdmin() {
                         }
                       />
                     ))}
+                  </div>
+                  <div className="rounded-lg bg-[var(--color-surface)] p-4 text-sm">
+                    <button type="button" className={buttonClass} onClick={() => setExam({ ...exam, duration_minutes: 10080 })}>
+                      Allow 7 days
+                    </button>
+                    <p className="mt-2">Up to 10,080 minutes (7 days). Candidates can leave and resume their saved answers until their deadline. The scheduled end time below is always the final cutoff, even when they start late.</p>
+                    <p className="mt-2 text-xs">Changes apply to new attempts only; an attempt already started keeps its original deadline.</p>
                   </div>
                   <p className="text-xs">
                     Enter availability times in your browser&apos;s local

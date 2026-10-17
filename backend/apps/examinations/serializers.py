@@ -26,7 +26,7 @@ class QuestionInput(serializers.Serializer):
 class ExamInput(serializers.Serializer):
     title = serializers.CharField(max_length=255)
     instructions = serializers.CharField(max_length=20000, allow_blank=True)
-    duration_minutes = serializers.IntegerField(min_value=1, max_value=480)
+    duration_minutes = serializers.IntegerField(min_value=1, max_value=10080)
     starts_at = serializers.DateTimeField()
     ends_at = serializers.DateTimeField()
     pass_mark = serializers.DecimalField(max_digits=5, decimal_places=2, min_value=0, max_value=100)
