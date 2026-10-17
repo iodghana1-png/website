@@ -85,17 +85,6 @@ export function AdminDashboard() {
       </Link>)}
     </section>
 
-    <section className="relative overflow-hidden rounded-2xl bg-[var(--color-ink)] p-6 text-white sm:p-7">
-      <div aria-hidden="true" className="pointer-events-none absolute -right-10 -top-24 h-72 w-72 rounded-full border-[40px] border-white/5" />
-      <div className="relative flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
-        <div><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-accent-light)]">Your publishing workspace</p><h2 className="mt-3 text-2xl tracking-tight">Keep IoD-Gh up to date.</h2><p className="mt-2 max-w-lg text-sm leading-6 text-[var(--color-mist)]">Manage your website content, review applications and keep the member directory current.</p></div>
-        <div className="flex flex-wrap gap-3">
-          <Link href="/admin/content" className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-white px-4 text-sm font-semibold text-[var(--color-ink)] hover:bg-[var(--color-accent-light)]">Manage pages<Icon name="arrow-right" className="h-4 w-4" /></Link>
-          <Link href="/admin/news" className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-white/30 px-4 text-sm font-semibold hover:bg-white/10">Manage news</Link>
-        </div>
-      </div>
-    </section>
-
     <section aria-labelledby="dashboard-quick-actions">
       <h2 id="dashboard-quick-actions" className="mb-3 text-sm">Quick access</h2>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{shortcuts.map((item) => <Link key={item.href} href={item.href} className={`${panel} group flex items-start gap-3 p-4 transition-colors hover:border-[var(--color-accent)] hover:bg-[var(--color-paper)]`}><Icon name={item.icon} className="mt-0.5 h-5 w-5 text-[var(--color-accent-dark)]" /><div className="min-w-0"><p className="text-sm font-semibold">{item.label}</p><p className="mt-1 text-xs leading-5 text-[var(--color-slate)]">{item.description}</p></div></Link>)}</div>
