@@ -174,6 +174,14 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
     const matchesActivity = !examActivity || (examActivity === "active" ? item.is_active : !item.is_active);
     return matchesTitle && matchesActivity;
   });
+  const activeQuestions = questions.filter(
+    (item): item is Question & { id: string } => item.is_active && Boolean(item.id),
+  );
+  const activeQuestionIds = activeQuestions.map((item) => item.id);
+  const allActiveQuestionsSelected =
+    !moreQuestions &&
+    activeQuestionIds.length > 0 &&
+    activeQuestionIds.every((id) => Boolean(exam?.question_ids.includes(id)));
 
   const fail = useCallback((reason: unknown) => {
     if (reason instanceof ApiError && reason.status === 403) onAccessExpired();
@@ -445,6 +453,35 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
       setNotice(
         `${result.candidates_removed} candidate${result.candidates_removed === 1 ? "" : "s"} removed from this cohort. ${result.preserved_attempts ? `${result.preserved_attempts} official attempt${result.preserved_attempts === 1 ? "" : "s"} remain available in Results.` : "No examination attempts were recorded."}`,
       );
+    } catch (reason) {
+      fail(reason);
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function selectAllPoolQuestions() {
+    if (!exam) return;
+    setBusy(true);
+    setError("");
+    try {
+      const allQuestions: Question[] = [];
+      let page = 1;
+      let next = true;
+      while (next) {
+        const data = await apiRequest<Page<Question>>(
+          `/exams/staff/questions/?page=${page}&search=`,
+        );
+        allQuestions.push(...data.results);
+        next = Boolean(data.next);
+        page += 1;
+      }
+      const ids = allQuestions
+        .filter((item): item is Question & { id: string } => item.is_active && Boolean(item.id))
+        .map((item) => item.id);
+      setQuestions(allQuestions);
+      setQuestionPage(Math.max(1, page - 1));
+      setMoreQuestions(false);
+      setExam({ ...exam, question_ids: ids });
     } catch (reason) {
       fail(reason);
     } finally {
@@ -985,7 +1022,6 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
                         ["duration_minutes", "Time allowed (minutes)"],
                         ["pass_mark", "Pass mark (%)"],
                         ["maximum_attempts", "Maximum attempts"],
-                        ["question_count", "Question count"],
                       ] as const
                     ).map(([key, label]) => (
                       <Field
@@ -1111,27 +1147,67 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
                     </label>
                   ))}
                   <div>
-                    <div className="flex flex-wrap items-baseline justify-between gap-2">
-                      <h3 className="font-semibold">
-                        Question pool ({exam.question_ids.length} selected)
-                      </h3>
-                      <span className="text-sm font-semibold text-[var(--color-accent)]">
-                        Each candidate receives {exam.question_count}
-                      </span>
+                    <div className="flex flex-wrap items-end justify-between gap-4">
+                      <div>
+                        <h3 className="font-semibold">
+                          Question pool ({exam.question_ids.length} selected)
+                        </h3>
+                        <p className="mt-1 text-sm">
+                          Question text and answer keys are frozen into this version
+                          when saved.
+                        </p>
+                      </div>
+                      <label className="block text-sm font-semibold">
+                        Questions each candidate receives
+                        <input
+                          className={inputClass + " !mt-1 w-36"}
+                          type="number"
+                          min="1"
+                          max={Math.max(1, exam.question_ids.length)}
+                          required
+                          value={exam.question_count}
+                          onChange={(event) =>
+                            setExam({
+                              ...exam,
+                              question_count: Math.max(
+                                1,
+                                Number(event.target.value) || 1,
+                              ),
+                            })
+                          }
+                        />
+                      </label>
                     </div>
-                    <p className="text-sm">
-                      Question text and answer keys are frozen into this version
-                      when saved.
-                    </p>
                     <p className="mt-1 text-sm text-[var(--color-slate)]">
                       {exam.select_from_bank
                         ? `Add every question that may be used. Each candidate receives a random ${exam.question_count}-question set from this pool.`
                         : `Select exactly ${exam.question_count} question${exam.question_count === 1 ? "" : "s"}; every candidate will receive all of them in a different order.`}
                     </p>
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        className={buttonClass + " !py-2"}
+                        disabled={busy || !activeQuestionIds.length || allActiveQuestionsSelected}
+                        onClick={() => void selectAllPoolQuestions()}
+                      >
+                        {allActiveQuestionsSelected ? "All questions selected" : "Select all questions"}
+                      </button>
+                      <button
+                        type="button"
+                        className={buttonClass + " !py-2"}
+                        disabled={busy || !exam.question_ids.length}
+                        onClick={() => setExam({ ...exam, question_ids: [] })}
+                      >
+                        Clear selection
+                      </button>
+                      <span className="text-xs text-[var(--color-slate)]">
+                        {exam.select_from_bank
+                          ? "Select the pool, then choose how many each candidate should receive."
+                          : "Select exactly the number each candidate should receive."}
+                      </span>
+                    </div>
                     <div className="mt-3 max-h-80 space-y-2 overflow-auto border p-3">
-                      {questions
-                        .filter((q) => q.is_active)
-                        .map((q) => (
+                      {activeQuestions.map((q) => (
                           <label
                             className="flex items-start gap-3 text-sm"
                             key={q.id}
