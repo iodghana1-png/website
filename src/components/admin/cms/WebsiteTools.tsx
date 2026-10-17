@@ -4,6 +4,8 @@ import Image from "next/image";
 
 import { FormEvent, useEffect, useState } from "react";
 import { apiErrorMessage, apiRequestAt } from "@/lib/api/client";
+import { requestEmailChange } from "@/lib/api/auth";
+import { useCurrentUser } from "@/components/auth/PortalGuard";
 import { CmsMedia, CmsNavigationItem, CmsNavigationMenu, CmsPage, createCmsMenu, getCmsSettings, listCmsMedia, listCmsMenus, listCmsPages, publishCmsMenu, publishCmsSettings, saveCmsMenuDraft, saveCmsSettingsDraft, updateCmsMedia, uploadCmsMedia } from "@/lib/api/cms";
 import { CmsAccess } from "../CmsAdmin";
 import { Area, buttonClass, Field, inputClass, primaryClass, safeHref } from "./Fields";
@@ -136,6 +138,37 @@ function MembershipReceiptSettings({ data, onChange }: { data: Record<string, un
   </details>;
 }
 
+function AccountEmailSettings() {
+  const user = useCurrentUser();
+  const [newEmail, setNewEmail] = useState(user.email);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+
+  async function submit() {
+    if (!newEmail.trim() || !currentPassword) return setError("Enter your new email address and current password.");
+    setBusy(true); setError(""); setNotice("");
+    try {
+      await requestEmailChange(currentPassword, newEmail);
+      setCurrentPassword("");
+      setNotice("Confirmation sent. Open the link sent to your new address to complete the change.");
+    } catch (reason) {
+      setError(apiErrorMessage(reason, "We could not send the confirmation email. Please try again."));
+    } finally { setBusy(false); }
+  }
+
+  return <details className="rounded-xl border border-[var(--color-line)] bg-[var(--color-paper)]" open>
+    <summary className="cursor-pointer px-5 py-4 text-lg font-semibold">My administrator email</summary>
+    <div className="space-y-5 border-t p-5">
+      <p className="text-sm text-[var(--color-muted)]">Your current account email is <strong>{user.email}</strong>. Examination access codes are sent to this address. To change it, confirm the link sent to your new address.</p>
+      <div className="grid gap-5 sm:grid-cols-2"><Field label="New email address" type="email" value={newEmail} onChange={setNewEmail} /><Field label="Current password" type="password" value={currentPassword} onChange={setCurrentPassword} /></div>
+      <Feedback error={error} notice={notice} />
+      <button type="button" className={primaryClass} disabled={busy} onClick={() => void submit()}>{busy ? "Sending confirmation…" : "Send confirmation email"}</button>
+    </div>
+  </details>;
+}
+
 export function SettingsAdmin({ access }: { access: CmsAccess }) {
   const [data, setData] = useState<Record<string, unknown>>({});
   const [loading, setLoading] = useState(true);
@@ -149,6 +182,7 @@ export function SettingsAdmin({ access }: { access: CmsAccess }) {
   if (loading) return <p>Loading settings…</p>;
   return <form className="max-w-4xl" onSubmit={async (e) => { e.preventDefault(); setBusy(true); setError(""); setNotice(""); try { const settings = await saveCmsSettingsDraft({ data, change_summary: "" }); await publishCmsSettings(settings.current_draft_revision!.number); window.dispatchEvent(new Event("cms:settings-published")); setNotice("Settings saved successfully."); } catch { setError("Could not save settings. Please try again."); } finally { setBusy(false); } }}><Feedback error={error} notice={notice} /><fieldset disabled={busy || !access.manage || loadFailed} className="space-y-5 rounded-xl border bg-white p-5"><Field label="Website Name (navbar)" value={value("website_name")} onChange={(v) => change("website_name", v)} />
     <div className="grid gap-5 sm:grid-cols-2">{["logo", "favicon"].map((key) => <MediaPicker key={key} label={key === "logo" ? "Logo (navbar)" : "Favicon"} value={value(key + "_id")} fallback={value(key + "_url")} canUpload={access.manage} onChange={(id, url) => setData((d) => ({ ...d, [key + "_id"]: id, [key + "_url"]: url }))} />)}</div>
+    <AccountEmailSettings />
     <MembershipReceiptSettings data={data} onChange={(key, next) => change(key, next)} />
     <Field label="Contact Email" type="email" value={value("contact_email")} onChange={(v) => change("contact_email", v)} /><Area label="Address" value={value("address")} onChange={(v) => change("address", v)} /><div className="rounded-lg border border-[var(--color-line)] bg-[var(--color-paper)] p-4"><h2 className="text-lg font-semibold">Homepage contact button</h2><p className="mt-1 text-sm text-[var(--color-muted)]">Enter a WhatsApp number with its country code. On the homepage, the button opens call, email and WhatsApp options using these website contact settings.</p><label className="mt-4 flex items-center gap-2 text-sm font-semibold"><input type="checkbox" checked={data.show_homepage_contact_button !== false} onChange={(event) => setData((current) => ({ ...current, show_homepage_contact_button: event.target.checked }))} />Show homepage contact button</label><div className="mt-4 grid gap-5 sm:grid-cols-2"><Field label="WhatsApp number" type="tel" value={value("whatsapp_number")} onChange={(v) => change("whatsapp_number", v)} /><Field label="Opening message" value={value("whatsapp_message")} onChange={(v) => change("whatsapp_message", v)} /></div></div><h2 className="text-lg">Social Media</h2><div className="grid gap-5 sm:grid-cols-2">{["Facebook", "Instagram", "LinkedIn", "X", "YouTube"].map((label) => <Field key={label} label={label} type="url" value={value(label.toLowerCase())} onChange={(v) => change(label.toLowerCase(), v)} />)}</div><FooterSettings data={data} onChange={(footer) => setData((current) => ({ ...current, footer }))} onChangePhones={(phone_numbers) => setData((current) => ({ ...current, phone: phone_numbers[0] || "", phone_numbers }))} />{access.manage && <button className={primaryClass}>Save Settings</button>}</fieldset></form>;
 }

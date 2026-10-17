@@ -3,10 +3,12 @@ from django.core import mail
 from django.test import Client, TestCase
 from django.utils import timezone
 from rest_framework.test import APIClient
+from unittest.mock import patch
 
 from apps.audit.models import AuditLog
+from apps.examinations.models import ExamAdminVerification
 
-from .models import User
+from .models import EmailChangeRequest, User
 from .services import user_token_data
 
 
@@ -125,6 +127,45 @@ class AuthenticationApiTests(TestCase):
         self.assertEqual(response.status_code, 204)
         user.refresh_from_db()
         self.assertTrue(user.check_password("New-secure-pass-123!"))
+
+    @patch("apps.accounts.views.send_email_change_confirmation")
+    def test_user_confirms_new_email_before_it_changes(self, send_confirmation):
+        user = User.objects.create_user("admin@example.com", "Secure-pass-123!", is_staff=True, email_verified_at=timezone.now())
+        ExamAdminVerification.objects.create(user=user, session_hash="session", email=user.email, verified_until=timezone.now())
+        client = self.csrf_client()
+        client.force_login(user)
+
+        requested = client.post("/api/v1/auth/email-change/", data={"current_password": "Secure-pass-123!", "new_email": "new-admin@example.com"}, content_type="application/json")
+
+        self.assertEqual(requested.status_code, 202)
+        user.refresh_from_db()
+        self.assertEqual(user.email, "admin@example.com")
+        change = EmailChangeRequest.objects.get(user=user)
+        token = send_confirmation.call_args.kwargs["token"]
+        self.assertNotEqual(change.token_hash, token)
+        self.assertEqual(send_confirmation.call_args.kwargs["new_email"], "new-admin@example.com")
+
+        confirmed = client.post("/api/v1/auth/email-change/confirm/", data={"token": token}, content_type="application/json")
+
+        self.assertEqual(confirmed.status_code, 200)
+        user.refresh_from_db()
+        self.assertEqual(user.email, "new-admin@example.com")
+        self.assertIsNotNone(user.email_verified_at)
+        self.assertFalse(EmailChangeRequest.objects.filter(user=user).exists())
+        self.assertFalse(ExamAdminVerification.objects.filter(user=user).exists())
+        self.assertTrue(AuditLog.objects.filter(action="account.email_changed", target_id=user.id).exists())
+
+    @patch("apps.accounts.views.send_email_change_confirmation")
+    def test_email_change_needs_the_current_password(self, send_confirmation):
+        user = User.objects.create_user("admin@example.com", "Secure-pass-123!", is_staff=True, email_verified_at=timezone.now())
+        client = self.csrf_client()
+        client.force_login(user)
+
+        response = client.post("/api/v1/auth/email-change/", data={"current_password": "incorrect", "new_email": "new-admin@example.com"}, content_type="application/json")
+
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(EmailChangeRequest.objects.exists())
+        send_confirmation.assert_not_called()
 
     def test_role_groups_are_available_after_migration(self):
         expected = {"Super Admin", "Membership Officer", "Training Officer", "Finance", "Content Manager", "Read Only"}

@@ -139,6 +139,8 @@ REST_FRAMEWORK = {
         "registration": "3/hour",
         "password_reset": "5/hour",
         "email_verification": "5/hour",
+        "email_change": "5/hour",
+        "email_change_confirm": "10/hour",
         "membership_application": "5/hour",
         "membership_application_email_resend": "10/hour",
         "contact_enquiry": "5/hour",

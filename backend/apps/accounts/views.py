@@ -7,6 +7,7 @@ from django.middleware.csrf import get_token
 from django.utils.decorators import method_decorator
 from django.utils.encoding import force_str
 from django.utils.http import urlsafe_base64_decode
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from django.views.decorators.cache import never_cache
 from drf_spectacular.types import OpenApiTypes
@@ -21,9 +22,9 @@ from rest_framework.views import APIView
 
 from apps.audit.services import record_event
 
-from .models import User
-from .serializers import EmailTokenSerializer, LoginSerializer, PasswordChangeSerializer, PasswordResetConfirmSerializer, PasswordResetRequestSerializer, UserSerializer
-from .services import send_password_reset_email, send_verification_email
+from .models import EmailChangeRequest, User
+from .serializers import EmailChangeConfirmSerializer, EmailChangeRequestSerializer, EmailTokenSerializer, LoginSerializer, PasswordChangeSerializer, PasswordResetConfirmSerializer, PasswordResetRequestSerializer, UserSerializer
+from .services import email_change_request_data, email_change_token_hash, send_email_change_confirmation, send_password_reset_email, send_verification_email
 from .tokens import password_reset_token_generator, verification_token_generator
 from .throttling import LoginAccountThrottle
 
@@ -188,5 +189,78 @@ class PasswordChangeView(APIView):
         request.session.cycle_key()
         record_event(action="account.password_changed", target_type="user", target_id=request.user.id, actor=request.user, request=request)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@method_decorator(csrf_protect, name="dispatch")
+class EmailChangeRequestView(APIView):
+    """Start a two-step email change without ever accepting a new address silently."""
+
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "email_change"
+
+    @extend_schema(request=EmailChangeRequestSerializer, responses={202: dict})
+    @transaction.atomic
+    def post(self, request):
+        serializer = EmailChangeRequestSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        if not request.user.check_password(serializer.validated_data["current_password"]):
+            raise ValidationError({"current_password": ["Your current password is incorrect."]})
+
+        token, token_hash, expires_at = email_change_request_data()
+        EmailChangeRequest.objects.update_or_create(
+            user=request.user,
+            defaults={
+                "pending_email": serializer.validated_data["new_email"],
+                "token_hash": token_hash,
+                "expires_at": expires_at,
+            },
+        )
+        try:
+            send_email_change_confirmation(user=request.user, new_email=serializer.validated_data["new_email"], token=token)
+        except Exception:
+            # Do not leave a usable confirmation link behind if it could not be delivered.
+            EmailChangeRequest.objects.filter(user=request.user, token_hash=token_hash).delete()
+            return Response({"error": {"message": "We could not send the confirmation email. Please try again."}}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        record_event(
+            action="account.email_change_requested",
+            target_type="user",
+            target_id=request.user.id,
+            actor=request.user,
+            request=request,
+            metadata={"pending_email": serializer.validated_data["new_email"]},
+        )
+        return Response({"detail": "A confirmation link has been sent to your new email address."}, status=status.HTTP_202_ACCEPTED)
+
+
+@method_decorator(csrf_protect, name="dispatch")
+class EmailChangeConfirmView(APIView):
+    permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "email_change_confirm"
+
+    @extend_schema(request=EmailChangeConfirmSerializer, responses={200: UserSerializer})
+    @transaction.atomic
+    def post(self, request):
+        serializer = EmailChangeConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        token_hash = email_change_token_hash(serializer.validated_data["token"])
+        change = EmailChangeRequest.objects.select_for_update().select_related("user").filter(token_hash=token_hash).first()
+        if not change or change.expires_at <= timezone.now() or not change.user.is_active:
+            raise ValidationError({"token": ["The link is invalid or has expired."]})
+
+        user = User.objects.select_for_update().get(pk=change.user_id)
+        if User.objects.filter(email__iexact=change.pending_email).exclude(pk=user.pk).exists():
+            raise ValidationError({"token": ["This email address is already in use. Request another email change."]})
+        user.email = change.pending_email
+        user.email_verified_at = timezone.now()
+        user.save(update_fields=["email", "email_verified_at", "updated_at"])
+        # An examination-management verification is bound to the old address.
+        from apps.examinations.models import ExamAdminVerification
+
+        ExamAdminVerification.objects.filter(user=user).delete()
+        change.delete()
+        record_event(action="account.email_changed", target_type="user", target_id=user.id, actor=user, request=request)
+        return Response(UserSerializer(user).data)
 
 # Create your views here.

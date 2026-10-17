@@ -58,3 +58,11 @@ export function confirmPasswordReset(uid: string, token: string, password: strin
 export function changePassword(currentPassword: string, newPassword: string) {
   return apiRequest<void>("/auth/password-change/", { method: "POST", body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }) });
 }
+
+export function requestEmailChange(currentPassword: string, newEmail: string) {
+  return apiRequest<void>("/auth/email-change/", { method: "POST", body: JSON.stringify({ current_password: currentPassword, new_email: newEmail }) });
+}
+
+export function confirmEmailChange(token: string) {
+  return apiRequest<CurrentUser>("/auth/email-change/confirm/", { method: "POST", body: JSON.stringify({ token }) });
+}

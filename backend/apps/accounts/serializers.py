@@ -72,6 +72,24 @@ class PasswordChangeSerializer(serializers.Serializer):
         return value
 
 
+class EmailChangeRequestSerializer(serializers.Serializer):
+    current_password = serializers.CharField(trim_whitespace=False, write_only=True)
+    new_email = serializers.EmailField()
+
+    def validate_new_email(self, value):
+        value = value.strip().lower()
+        user = self.context["request"].user
+        if value == user.email.lower():
+            raise serializers.ValidationError("This is already your account email address.")
+        if User.objects.filter(email__iexact=value).exclude(pk=user.pk).exists():
+            raise serializers.ValidationError("This email address is already in use.")
+        return value
+
+
+class EmailChangeConfirmSerializer(serializers.Serializer):
+    token = serializers.CharField(trim_whitespace=False, max_length=200)
+
+
 class EmailTokenSerializer(serializers.Serializer):
     uid = serializers.CharField()
     token = serializers.CharField()
