@@ -103,7 +103,8 @@ function PhoneNumbersEditor({ phones, onChange }: { phones: string[]; onChange: 
   return <div><h2 className="text-lg font-semibold">Footer phone numbers</h2><p className="mt-1 text-sm text-[var(--color-muted)]">Each number is shown as a tap-to-call link in the footer.</p><div className="mt-4 space-y-3">{phones.map((phone, index) => <div key={index} className="flex flex-wrap items-end gap-2"><div className="min-w-56 flex-1"><Field label={index === 0 ? "Primary phone number" : "Additional phone number"} value={phone} onChange={(value) => update(index, value)} /></div><button type="button" className={buttonClass} onClick={() => onChange(phones.filter((_, current) => current !== index))}>Remove</button></div>)}</div><button type="button" className={buttonClass + " mt-3"} onClick={() => onChange([...phones, ""])}>+ Add phone number</button></div>;
 }
 
-function FooterSettings({ data, onChange, onChangePhones }: { data: Record<string, unknown>; onChange: (footer: FooterConfig) => void; onChangePhones: (phones: string[]) => void }) {
+function FooterSettings({ data, onChange, onChangePhones, visible = false }: { data: Record<string, unknown>; onChange: (footer: FooterConfig) => void; onChangePhones: (phones: string[]) => void; visible?: boolean }) {
+  if (!visible) return null;
   const footer = footerConfig(data);
   const change = (patch: Partial<FooterConfig>) => onChange({ ...footer, ...patch });
   const changeColumn = (index: number, patch: Partial<FooterColumn>) => change({ columns: footer.columns.map((column, current) => current === index ? { ...column, ...patch } : column) });
@@ -167,6 +168,25 @@ function AccountEmailSettings() {
       <button type="button" className={primaryClass} disabled={busy} onClick={() => void submit()}>{busy ? "Sending confirmation…" : "Send confirmation email"}</button>
     </div>
   </details>;
+}
+
+export function FooterAdmin({ access }: { access: CmsAccess }) {
+  const [data, setData] = useState<Record<string, unknown>>({});
+  const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+
+  useEffect(() => { getCmsSettings().then((settings) => setData({ ...defaultSiteSettings, ...(settings.current_draft_revision || settings.published_revision)?.data })).catch(() => { setLoadFailed(true); setError("Could not load the footer. Refresh before editing."); }).finally(() => setLoading(false)); }, []);
+  if (loading) return <p>Loading footer…</p>;
+  return <form className="max-w-4xl" onSubmit={async (event) => { event.preventDefault(); setBusy(true); setError(""); setNotice(""); try { const settings = await saveCmsSettingsDraft({ data, change_summary: "" }); await publishCmsSettings(settings.current_draft_revision!.number); window.dispatchEvent(new Event("cms:settings-published")); setNotice("Footer saved successfully."); } catch { setError("Could not save the footer. Please try again."); } finally { setBusy(false); } }}>
+    <Feedback error={error} notice={notice} />
+    <fieldset disabled={busy || !access.manage || loadFailed} className="space-y-5 rounded-xl border bg-white p-5">
+      <FooterSettings visible data={data} onChange={(footer) => setData((current) => ({ ...current, footer }))} onChangePhones={(phone_numbers) => setData((current) => ({ ...current, phone: phone_numbers[0] || "", phone_numbers }))} />
+      {access.manage && <button className={primaryClass}>Save footer</button>}
+    </fieldset>
+  </form>;
 }
 
 export function SettingsAdmin({ access }: { access: CmsAccess }) {

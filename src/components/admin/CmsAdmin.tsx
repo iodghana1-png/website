@@ -6,7 +6,7 @@ import { CmsPage, listCmsPages } from "@/lib/api/cms";
 import { ApiError, apiRequestAt } from "@/lib/api/client";
 import { PageEditor } from "./cms/PageEditor";
 import { NewsAdmin } from "./cms/NewsAdmin";
-import { MediaAdmin, NavigationAdmin, SettingsAdmin } from "./cms/WebsiteTools";
+import { FooterAdmin, MediaAdmin, NavigationAdmin, SettingsAdmin } from "./cms/WebsiteTools";
 import { inputClass } from "./cms/Fields";
 import { Icon } from "@/components/ui/Icon";
 
@@ -34,7 +34,7 @@ export function CmsAdmin({ pageSlug, view = "pages" }: { pageSlug?: string; view
   if (error) return <div role="alert" className="mt-6 rounded-lg bg-red-50 p-5"><p>{error}</p><button type="button" className="mt-3 text-sm font-semibold underline" onClick={() => { setError(""); setAttempt((value) => value + 1); }}>Try again</button></div>;
   if (!access) return <p className="mt-6">Loading content…</p>;
   return <div className="mt-6">{access.read_only && <p className="mb-5 rounded-lg bg-amber-50 p-4 text-sm">You have view-only access.</p>}
-    {view === "pages" ? pageSlug === "footer" ? <SettingsAdmin access={access} /> : pageSlug ? <PageEditor key={pageSlug} slug={pageSlug} access={access} /> : <Pages /> : view === "news" ? <NewsAdmin access={access} /> : view === "media" ? <MediaAdmin access={access} /> : view === "navigation" ? <NavigationAdmin access={access} /> : <SettingsAdmin access={access} />}
+    {view === "pages" ? pageSlug === "footer" ? <FooterAdmin access={access} /> : pageSlug ? <PageEditor key={pageSlug} slug={pageSlug} access={access} /> : <Pages /> : view === "news" ? <NewsAdmin access={access} /> : view === "media" ? <MediaAdmin access={access} /> : view === "navigation" ? <NavigationAdmin access={access} /> : <SettingsAdmin access={access} />}
   </div>;
 }
 function Pages() {
