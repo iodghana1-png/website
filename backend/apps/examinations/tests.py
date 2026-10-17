@@ -182,6 +182,40 @@ class ExaminationSecurityTests(ExamFixtures, TestCase):
         self.exam = save_exam({**self.config, "randomize_questions": False}, self.staff, None, self.exam.pk)
         self.assertTrue(self.exam.current_version.configuration["randomize_questions"])
 
+    def test_exam_can_draw_the_admin_selected_count_from_a_larger_question_pool(self):
+        extra_questions = [
+            save_question(
+                {**self.question_data, "text": f"Additional question {number}"},
+                self.staff,
+                None,
+            )
+            for number in range(1, 4)
+        ]
+        pool_ids = [self.question.id, *(question.id for question in extra_questions)]
+        self.exam = save_exam(
+            {
+                **self.config,
+                "question_count": 2,
+                "select_from_bank": True,
+                "question_ids": pool_ids,
+            },
+            self.staff,
+            None,
+            self.exam.pk,
+        )
+
+        attempt_id = self.start()
+        received_texts = {
+            item["text"] for item in self.questions(attempt_id).json()["questions"]
+        }
+
+        self.assertEqual(len(received_texts), 2)
+        self.assertTrue(
+            received_texts.issubset(
+                {self.question.text, *(question.text for question in extra_questions)}
+            )
+        )
+
     def test_answer_save_update_and_stale_write_protection(self):
         attempt = self.start()
         self.assertEqual(self.save(attempt).status_code, 200)

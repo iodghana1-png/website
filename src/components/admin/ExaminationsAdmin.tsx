@@ -107,7 +107,7 @@ const emptyExam = (): Exam => ({
   maximum_attempts: 1,
   question_count: 1,
   randomize_options: true,
-  select_from_bank: false,
+  select_from_bank: true,
   result_release: "MANUAL_REVIEW",
   release_at: null,
   is_active: false,
@@ -954,9 +954,27 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
                       }
                     />
                   )}
-                  <p className="rounded border border-[var(--color-line)] bg-[var(--color-paper)] p-3 text-sm text-[var(--color-slate)]">
-                    Question order is randomized separately for every candidate.
-                  </p>
+                  <div className="rounded-lg border border-[var(--color-line)] bg-[var(--color-paper)] p-4">
+                    <label className="flex items-start gap-3 text-sm font-semibold">
+                      <input
+                        className="mt-1"
+                        type="checkbox"
+                        checked={exam.select_from_bank}
+                        onChange={(event) =>
+                          setExam({ ...exam, select_from_bank: event.target.checked })
+                        }
+                      />
+                      <span>
+                        Give each candidate a random set from this question pool
+                        <span className="mt-1 block text-xs font-normal text-[var(--color-slate)]">
+                          You set the exact number of questions each candidate receives. The system randomly draws that many questions from the pool below when they begin.
+                        </span>
+                      </span>
+                    </label>
+                    <p className="mt-3 text-xs text-[var(--color-slate)]">
+                      Question order is randomized separately for every candidate{exam.select_from_bank ? "; the questions themselves are also selected randomly." : "."}
+                    </p>
+                  </div>
                   {(
                     [
                       [
@@ -964,10 +982,6 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
                         "Active (eligible accounts can start during the availability window)",
                       ],
                       ["randomize_options", "Randomize option order"],
-                      [
-                        "select_from_bank",
-                        "Randomly select question count from the selected question pool",
-                      ],
                     ] as const
                   ).map(([key, label]) => (
                     <label
@@ -985,15 +999,22 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
                     </label>
                   ))}
                   <div>
-                    <h3 className="font-semibold">
-                      Question pool ({exam.question_ids.length} selected)
-                    </h3>
+                    <div className="flex flex-wrap items-baseline justify-between gap-2">
+                      <h3 className="font-semibold">
+                        Question pool ({exam.question_ids.length} selected)
+                      </h3>
+                      <span className="text-sm font-semibold text-[var(--color-accent)]">
+                        Each candidate receives {exam.question_count}
+                      </span>
+                    </div>
                     <p className="text-sm">
                       Question text and answer keys are frozen into this version
                       when saved.
                     </p>
                     <p className="mt-1 text-sm text-[var(--color-slate)]">
-                      Select at least {exam.question_count} question{exam.question_count === 1 ? "" : "s"}. If random selection is off, select exactly that number.
+                      {exam.select_from_bank
+                        ? `Add every question that may be used. Each candidate receives a random ${exam.question_count}-question set from this pool.`
+                        : `Select exactly ${exam.question_count} question${exam.question_count === 1 ? "" : "s"}; every candidate will receive all of them in a different order.`}
                     </p>
                     <div className="mt-3 max-h-80 space-y-2 overflow-auto border p-3">
                       {questions

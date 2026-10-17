@@ -34,7 +34,7 @@ class ExamInput(serializers.Serializer):
     question_count = serializers.IntegerField(min_value=1, max_value=300)
     randomize_questions = serializers.BooleanField(default=True)
     randomize_options = serializers.BooleanField(default=True)
-    select_from_bank = serializers.BooleanField(default=False)
+    select_from_bank = serializers.BooleanField(default=True)
     result_release = serializers.ChoiceField(choices=["IMMEDIATE", "MANUAL_REVIEW", "SCHEDULED"])
     release_at = serializers.DateTimeField(allow_null=True, default=None)
     is_active = serializers.BooleanField(default=False)
