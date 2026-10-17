@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { apiBaseUrl, apiRequest, ApiError } from "@/lib/api/client";
 import { getCurrentUser } from "@/lib/api/auth";
 import { ExamAdminAccess } from "./ExamAdminAccess";
@@ -157,6 +157,8 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
   const [moreAttempts, setMoreAttempts] = useState(false);
   const [status, setStatus] = useState("");
   const [review, setReview] = useState<Review | null>(null);
+  const questionEditorRef = useRef<HTMLFormElement>(null);
+  const questionEditorId = question ? question.id ?? "new" : null;
 
   const fail = useCallback((reason: unknown) => {
     if (reason instanceof ApiError && reason.status === 403) onAccessExpired();
@@ -230,6 +232,10 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
     const timer = window.setTimeout(() => void loadAttempts().catch(fail), 0);
     return () => window.clearTimeout(timer);
   }, [allowed, tab, loadAttempts, fail]);
+  useEffect(() => {
+    if (tab !== "questions" || !questionEditorId) return;
+    questionEditorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [tab, questionEditorId]);
 
   async function save(event: FormEvent, kind: "exam" | "question") {
     event.preventDefault();
@@ -1080,8 +1086,8 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
         </>
       )}
       {tab === "questions" && (
-        <>
-          <div className="flex flex-wrap items-end gap-3">
+        <div className="flex flex-col gap-4">
+          <div className="order-2 flex flex-wrap items-end gap-3">
             <button
               className={primaryClass}
               onClick={() => setQuestion(emptyQuestion())}
@@ -1103,7 +1109,7 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
               <button className={buttonClass}>Search</button>
             </form>
           </div>
-          <div className="divide-y rounded border bg-white">
+          <div className="order-3 divide-y rounded border bg-white">
             {questions.map((item) => (
               <article
                 className="flex items-center justify-between gap-4 p-5"
@@ -1139,7 +1145,7 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
           </div>
           {moreQuestions && (
             <button
-              className={buttonClass}
+              className={buttonClass + " order-4 self-start"}
               onClick={() =>
                 void loadQuestions(questionPage + 1, search).catch(fail)
               }
@@ -1148,7 +1154,11 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
             </button>
           )}
           {question && (
-            <form onSubmit={(event) => void save(event, "question")}>
+            <form
+              ref={questionEditorRef}
+              className="order-1 scroll-mt-6"
+              onSubmit={(event) => void save(event, "question")}
+            >
               <Panel
                 title={question.id ? "New question revision" : "New question"}
                 open
@@ -1296,7 +1306,7 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
               </Panel>
             </form>
           )}
-        </>
+        </div>
       )}
       {tab === "results" && (
         <>
