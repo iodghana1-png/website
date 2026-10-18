@@ -16,7 +16,7 @@ export function RichContent({ value }: { value: string }) {
   const hydrated = useSyncExternalStore(subscribeToHydration, () => true, () => false);
   if (!/<\/?[a-z][\s\S]*>/i.test(value)) return <div className="cms-rich-text whitespace-pre-line">{brandText(value)}</div>;
   if (!hydrated) return <div className="cms-rich-text whitespace-pre-line">{brandText(value.replace(/<[^>]*>/g, " "))}</div>;
-  const fragment = DOMPurify.sanitize(value, { ALLOWED_TAGS: ["p", "br", "strong", "b", "em", "i", "u", "h2", "h3", "ul", "ol", "li", "a", "blockquote"], ALLOWED_ATTR: ["href", "rel"], RETURN_DOM_FRAGMENT: true });
+  const fragment = DOMPurify.sanitize(value, { ALLOWED_TAGS: ["p", "br", "strong", "b", "em", "i", "u", "h2", "h3", "ul", "ol", "li", "a", "blockquote"], ALLOWED_ATTR: ["href", "rel", "data-text-align"], RETURN_DOM_FRAGMENT: true });
   // Format text after sanitizing, leaving link destinations and HTML intact.
   const walker = document.createTreeWalker(fragment, NodeFilter.SHOW_TEXT);
   const nodes: Text[] = [];

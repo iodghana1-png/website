@@ -1,8 +1,38 @@
 "use client";
 
 import { ReactNode, useEffect, useId, useState } from "react";
+import { Extension } from "@tiptap/core";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+
+declare module "@tiptap/core" {
+  interface Commands<ReturnType> {
+    textAlign: {
+      setTextAlign: (alignment: "left" | "center" | "right") => ReturnType;
+    };
+  }
+}
+
+const TextAlign = Extension.create({
+  name: "textAlign",
+  addGlobalAttributes() {
+    return [{
+      types: ["heading", "paragraph"],
+      attributes: {
+        textAlign: {
+          default: null,
+          parseHTML: (element) => element.getAttribute("data-text-align"),
+          renderHTML: (attributes) => attributes.textAlign ? { "data-text-align": attributes.textAlign } : {},
+        },
+      },
+    }];
+  },
+  addCommands() {
+    return {
+      setTextAlign: (textAlign) => ({ commands }) => ["paragraph", "heading"].some((type) => commands.updateAttributes(type, { textAlign })),
+    };
+  },
+});
 
 export const inputClass = "mt-2 w-full rounded-lg border border-[var(--color-line)] bg-white px-3 py-2.5 text-sm font-normal";
 export const buttonClass = "rounded-lg border border-[var(--color-line)] bg-white px-4 py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50";
@@ -27,7 +57,7 @@ export function RichText({ label, value, onChange }: { label: string; value: str
   const id = useId();
   const [link, setLink] = useState<string | null>(null);
   const editor = useEditor({
-    extensions: [StarterKit.configure({ heading: { levels: [2, 3] }, code: false, codeBlock: false, horizontalRule: false, link: { openOnClick: false } })],
+    extensions: [StarterKit.configure({ heading: { levels: [2, 3] }, code: false, codeBlock: false, horizontalRule: false, link: { openOnClick: false } }), TextAlign],
     content: plainHtml(value), immediatelyRender: false,
     editorProps: { attributes: { class: "cms-rich-text min-h-36 p-4 outline-none", role: "textbox", "aria-multiline": "true", "aria-labelledby": id } },
     onUpdate: ({ editor }) => onChange(editor.getHTML()),
@@ -40,6 +70,9 @@ export function RichText({ label, value, onChange }: { label: string; value: str
       ["Underline", () => editor?.chain().focus().toggleUnderline().run()],
       ["Heading", () => editor?.chain().focus().toggleHeading({ level: 2 }).run()],
       ["Paragraph", () => editor?.chain().focus().setParagraph().run()],
+      ["Align left", () => editor?.chain().focus().setTextAlign("left").run()],
+      ["Centre", () => editor?.chain().focus().setTextAlign("center").run()],
+      ["Align right", () => editor?.chain().focus().setTextAlign("right").run()],
       ["Bullets", () => editor?.chain().focus().toggleBulletList().run()],
       ["Numbered list", () => editor?.chain().focus().toggleOrderedList().run()],
       ["Link", () => setLink(editor?.getAttributes("link").href || "")],

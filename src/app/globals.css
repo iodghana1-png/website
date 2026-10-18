@@ -5,6 +5,9 @@
 .cms-rich-text h2 { font-size: 1.75rem; margin: 1em 0 .5em; text-align: start; }
 .cms-rich-text h3 { font-size: 1.35rem; margin: 1em 0 .5em; text-align: start; }
 .cms-rich-text :is(h1, h2, h3, h4, h5, h6) { text-align: start; }
+.cms-rich-text [data-text-align="left"] { text-align: left; }
+.cms-rich-text [data-text-align="center"] { text-align: center; }
+.cms-rich-text [data-text-align="right"] { text-align: right; }
 .cms-rich-text ul { list-style: disc; padding-left: 1.5em; }
 .cms-rich-text ol { list-style: decimal; padding-left: 1.5em; }
 .cms-rich-text a { text-decoration: underline; }
