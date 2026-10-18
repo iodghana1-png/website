@@ -17,8 +17,9 @@ export function eventCardHref(card: Pick<EventCard, "id" | "href" | "metadata">)
   return `/events/${encodeURIComponent(card.id)}`;
 }
 
-export function eventRegistrationHref(card: Pick<EventCard, "href">) {
-  return safeEventHref(card.href, "");
+export function eventRegistrationHref(card: Pick<EventCard, "href" | "metadata">) {
+  const value = card.metadata.link_type === "registration" ? card.href : card.metadata.registration_href;
+  return typeof value === "string" ? safeEventHref(value, "") : "";
 }
 
 function safeEventHref(value: string, fallback = "/events") {
