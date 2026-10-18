@@ -11,6 +11,9 @@ export const eventCardsSlot = "event_cards";
  */
 export function eventCardHref(card: Pick<EventCard, "id" | "href" | "metadata">) {
   if (card.metadata.link_type === "registration") return safeEventHref(card.href);
+  // Server-rendered fallback cards have static IDs before CMS data loads. Use
+  // their supplied public URL instead of creating a temporary 404 URL.
+  if (/^(?:fallback-)?event-\d+$/.test(card.id)) return safeEventHref(card.href);
   return `/events/${encodeURIComponent(card.id)}`;
 }
 

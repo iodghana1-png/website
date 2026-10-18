@@ -16,8 +16,10 @@ const inter = Inter({
 });
 
 const defaultMetadata: Metadata = {
-  title: "Institute of Directors–Ghana | Advancing Directors",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://iodghana.org"),
+  title: "Institute of Directors-Ghana | Advancing Directors",
   description: "IoD-Gh is Ghana's professional community for directors and governance leaders.",
+  applicationName: "IoD-Gh",
 };
 
 export async function generateMetadata(): Promise<Metadata> {
