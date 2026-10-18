@@ -47,6 +47,7 @@ h2 { font-size: 28px; margin: 16px 0; }
 p { color: var(--muted); }
 .container { margin-block: 64px; }
 .login-wrap { width: min(100% - 3rem, 448px); margin: 64px auto; }
+.login-back { margin: 0 0 32px; }
 .login-wrap h1 { font-size: clamp(36px, 5vw, 48px); }
 .intro { font-size: 16px; line-height: 1.75; margin-bottom: 32px; }
 .panel { background: white; border: 1px solid var(--line); border-top: 3px solid var(--ink); padding: 32px; margin-bottom: 24px; }

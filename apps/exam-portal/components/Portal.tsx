@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { api, ApiError, Attempt, Exam, ExamResult } from "../lib/api";
+import { api, ApiError, Attempt, Exam, ExamResult, mainSite } from "../lib/api";
 import { ArrowRightIcon } from "./Icon";
 import { deadlineLabel, durationLabel } from "../lib/time";
 
@@ -35,6 +35,9 @@ export function SignIn() {
   }
   return (
     <div className="login-wrap">
+      <Link className="secondary login-back" href={mainSite}>
+        ← Back to website
+      </Link>
       <div className="eyebrow">Secure candidate access</div>
       <h1>Ready to begin?</h1>
       <p className="intro">
