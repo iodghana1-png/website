@@ -289,27 +289,40 @@ export default async function MembershipDetail({
         <MembershipFees />
       ) : (
         <BuiltInSection sectionId="membership-details" className="bg-white py-20 sm:py-28">
-          <div className="site-container max-w-4xl">
+          <div className={`site-container ${categories ? "" : "max-w-4xl"}`}>
             {verify ? <MemberVerification /> : categories ? (
-              <div className="space-y-0">
-                {membershipCategories.map((category, index) => (
-                  <article
-                    key={category.title}
-                    className="grid gap-5 border-t border-[var(--color-line)] py-8 sm:grid-cols-[100px_1fr]"
-                  >
-                    <span className="font-serif text-3xl text-[var(--color-accent-dark)]">
-                      0{index + 1}
-                    </span>
-                    <div>
-                      <h2 className="font-serif text-3xl"><EditableCopy label="Heading" fallback={String(category.title ?? "")} /></h2>
-                      <p className="mt-4 max-w-2xl leading-8 text-[var(--color-slate)]">
-                        {category.longDescription ?? category.description}
-                      </p>
-                      <p className="mt-4 text-sm font-bold text-[var(--color-accent-dark)]"><EditableCopy label="Text" fallback={String(category.meta ?? "")} /></p>
-                    </div>
-                  </article>
-                ))}
-                <Button href="/membership/apply" className="mt-8"><EditableCopy label="Link text" fallback={"Begin your application"} /></Button>
+              <div>
+                <div className="mb-10 grid gap-6 border-b border-[var(--color-line)] pb-8 lg:grid-cols-12 lg:items-end">
+                  <div className="lg:col-span-7">
+                    <p className="eyebrow"><EditableCopy label="Text" fallback={"Find your pathway"} /></p>
+                    <h2 className="mt-4 max-w-3xl font-serif text-[clamp(2.35rem,4vw,4.1rem)] leading-[1.02] tracking-[-0.05em]"><EditableCopy label="Heading" fallback={"A category for every stage of your leadership journey."} /></h2>
+                  </div>
+                  <p className="max-w-md leading-7 text-[var(--color-slate)] lg:col-span-4 lg:col-start-9"><EditableCopy label="Text" fallback={"Explore the category that best reflects your experience, ambition and contribution to better governance."} /></p>
+                </div>
+                <div className="grid gap-5 md:grid-cols-2">
+                  {membershipCategories.map((category, index) => {
+                    const featured = index === 0;
+                    return <article
+                      key={category.title}
+                      className={`relative flex min-h-80 flex-col overflow-hidden border p-7 sm:p-9 ${featured ? "border-[var(--color-ink)] bg-[var(--color-ink)] text-white md:col-span-2" : "border-[var(--color-line)] bg-[var(--color-warm-white)] text-[var(--color-ink)]"}`}
+                    >
+                      <div className="flex items-start justify-between gap-5">
+                        <span className={`font-serif text-4xl tracking-[-0.06em] ${featured ? "text-[var(--color-accent-light)]" : "text-[var(--color-accent-dark)]"}`}>0{index + 1}</span>
+                        <span className={`border px-3 py-1.5 text-[0.6875rem] font-bold tracking-[0.12em] ${featured ? "border-white/30 text-white" : "border-[var(--color-line)] text-[var(--color-slate)]"}`}><EditableCopy label="Text" fallback={String(category.meta ?? "")} /></span>
+                      </div>
+                      <div className="mt-auto pt-12">
+                        <h3 className={`font-serif text-[clamp(2.2rem,3vw,3.35rem)] leading-none tracking-[-0.05em] ${featured ? "text-white" : "text-[var(--color-ink)]"}`}><EditableCopy label="Heading" fallback={String(category.title ?? "")} /></h3>
+                        <p className={`mt-5 max-w-2xl leading-7 ${featured ? "text-[var(--color-mist)]" : "text-[var(--color-slate)]"}`}>{category.longDescription ?? category.description}</p>
+                        <span className={`mt-7 inline-flex items-center gap-3 text-sm font-bold ${featured ? "text-white" : "text-[var(--color-ink)]"}`}>Membership pathway <Icon name="arrow-right" className="h-4 w-4" /></span>
+                      </div>
+                      {featured && <span aria-hidden="true" className="pointer-events-none absolute -bottom-20 -right-5 font-serif text-[15rem] leading-none tracking-[-0.13em] text-white/[0.04]">IoD</span>}
+                    </article>;
+                  })}
+                </div>
+                <div className="mt-10 flex flex-col justify-between gap-6 border-t border-[var(--color-line)] pt-8 sm:flex-row sm:items-center">
+                  <p className="max-w-xl text-sm leading-6 text-[var(--color-slate)]"><EditableCopy label="Text" fallback={"Not sure which category is right for you? Begin an application and our membership committee will assess the appropriate pathway."} /></p>
+                  <Button href="/membership/apply" className="shrink-0"><EditableCopy label="Link text" fallback={"Begin your application"} /></Button>
+                </div>
               </div>
             ) : (
               <div className="space-y-8">
