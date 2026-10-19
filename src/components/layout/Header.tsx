@@ -12,8 +12,15 @@ import { asHeaderLinks, type HeaderLink } from "@/lib/cms/navigation";
 import { Logo } from "./Logo";
 
 const homeLink: HeaderLink = { label: "Home", href: "/" };
+const documentRequestsLink = { label: "Document requests", href: "/document-requests", description: "Request an admission letter or attestation" };
 
 function withHomeLink(items: HeaderLink[]) { return [homeLink, ...items.filter((item) => item.href !== "/" && item.label.toLowerCase() !== "home")]; }
+function withDocumentRequestsLink(items: HeaderLink[]) {
+  return items.map((item) => {
+    if (item.href.replace(/\/$/, "") !== "/membership" || item.children?.some((child) => child.href.replace(/\/$/, "") === "/document-requests")) return item;
+    return { ...item, children: [...(item.children || []), documentRequestsLink] };
+  });
+}
 export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [desktopMenuDismissed, setDesktopMenuDismissed] = useState(false);
@@ -33,7 +40,7 @@ export function Header() {
     let cancelled = false;
     const refreshMenu = () => {
       getPublishedCmsMenu("header-primary").then((cmsMenu) => {
-        if (!cancelled && cmsMenu.published_revision) setMenu(asHeaderLinks(cmsMenu.published_revision.items));
+        if (!cancelled && cmsMenu.published_revision) setMenu(withDocumentRequestsLink(asHeaderLinks(cmsMenu.published_revision.items)));
       }).catch(() => undefined);
     };
     const timer = window.setTimeout(refreshMenu, 0);
