@@ -48,6 +48,10 @@ Browser clients first request `GET /api/v1/auth/csrf/`, retain the CSRF cookie, 
 - `POST /api/v1/auth/password-reset/confirm/`
 - `POST /api/v1/auth/password-change/`
 
+## Public document requests
+
+- `POST /api/v1/document-requests/` — public, CSRF-protected submission for an admission letter or attestation. The request is retained for staff follow-up and sends a receipt to the client plus a reply-ready notification to `DOCUMENT_REQUEST_RECIPIENTS` (falling back to `CONTACT_ENQUIRY_RECIPIENTS`).
+
 Without a configured SMTP host, development sends verification, password-reset, and membership messages to the console. Membership application receipt, approval, rejection, and renewal-created emails are sent by Django once SMTP is configured. This project is prepared for Resend: set `EMAIL_HOST=smtp.resend.com`, `EMAIL_PORT=587`, `EMAIL_HOST_USER=resend`, a Resend API key as `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS=true`, `EMAIL_USE_SSL=false`, and a verified IoD-Gh sender address in `backend/.env`. This repository does not contain provider credentials.
 
 ## Membership API

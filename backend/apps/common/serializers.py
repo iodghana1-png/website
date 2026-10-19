@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from urllib.parse import urlparse
 
-from .models import ContactEnquiry
+from .models import ContactEnquiry, DocumentRequest
 
 
 class ContactEnquiryCreateSerializer(serializers.ModelSerializer):
@@ -20,6 +20,29 @@ class ContactEnquiryResponseSerializer(serializers.ModelSerializer):
     class Meta:
         model = ContactEnquiry
         fields = ("id", "status", "created_at")
+        read_only_fields = fields
+
+
+class DocumentRequestCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DocumentRequest
+        fields = (
+            "request_type",
+            "first_name",
+            "last_name",
+            "email",
+            "phone_number",
+            "membership_number",
+            "programme",
+            "addressee",
+            "purpose",
+        )
+
+
+class DocumentRequestResponseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DocumentRequest
+        fields = ("id", "request_type", "status", "created_at")
         read_only_fields = fields
 
 

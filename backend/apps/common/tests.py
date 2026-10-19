@@ -10,7 +10,7 @@ from rest_framework.test import APIClient, APIRequestFactory
 
 from .api import exception_handler
 from .email import send_institutional_email
-from .models import AnalyticsDailyVisitor, AnalyticsPageView, ContactEnquiry
+from .models import AnalyticsDailyVisitor, AnalyticsPageView, ContactEnquiry, DocumentRequest
 
 
 class HealthEndpointTests(TestCase):
@@ -71,6 +71,37 @@ class ContactEnquiryTests(TestCase):
         self.assertEqual(mail.outbox[0].subject, "New IoD-Gh website enquiry — Training")
         self.assertEqual(mail.outbox[0].reply_to, ["ama@example.com"])
         self.assertEqual(mail.outbox[1].subject, "We received your IoD-Gh enquiry")
+
+
+class DocumentRequestTests(TestCase):
+    def test_document_request_is_stored_and_sends_staff_and_client_emails(self):
+        client = Client(enforce_csrf_checks=True)
+        client.get("/api/v1/auth/csrf/")
+        response = client.post(
+            "/api/v1/document-requests/",
+            data={
+                "request_type": "admission_letter",
+                "first_name": "Ama",
+                "last_name": "Boateng",
+                "email": "ama@example.com",
+                "phone_number": "+233 20 123 4567",
+                "membership_number": "IOD-12345",
+                "programme": "Corporate Governance for Directors",
+                "addressee": "Example Organisation",
+                "purpose": "For my employer's professional development records.",
+            },
+            content_type="application/json",
+            HTTP_X_CSRFTOKEN=client.cookies["csrftoken"].value,
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(DocumentRequest.objects.count(), 1)
+        self.assertEqual(DocumentRequest.objects.get().status, DocumentRequest.Status.NEW)
+        self.assertEqual(DocumentRequest.objects.get().request_type, DocumentRequest.RequestType.ADMISSION_LETTER)
+        self.assertEqual(len(mail.outbox), 2)
+        self.assertEqual(mail.outbox[0].subject, "New IoD-Gh admission letter request")
+        self.assertEqual(mail.outbox[0].reply_to, ["ama@example.com"])
+        self.assertEqual(mail.outbox[1].subject, "We received your IoD-Gh admission letter request")
 
 
 class ResendEmailTests(TestCase):

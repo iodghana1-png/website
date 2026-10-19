@@ -38,6 +38,42 @@ class ContactEnquiry(models.Model):
         return f"{self.first_name} {self.last_name}".strip()
 
 
+class DocumentRequest(models.Model):
+    """A public request for a letter or an attestation, fulfilled by IoD-Gh staff."""
+
+    class RequestType(models.TextChoices):
+        ADMISSION_LETTER = "admission_letter", "Admission letter"
+        ATTESTATION = "attestation", "Attestation"
+
+    class Status(models.TextChoices):
+        NEW = "new", "New"
+        IN_PROGRESS = "in_progress", "In progress"
+        COMPLETED = "completed", "Completed"
+        DECLINED = "declined", "Declined"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    request_type = models.CharField(max_length=30, choices=RequestType.choices)
+    first_name = models.CharField(max_length=150)
+    last_name = models.CharField(max_length=150)
+    email = models.EmailField()
+    phone_number = models.CharField(max_length=50)
+    membership_number = models.CharField(max_length=100, blank=True)
+    programme = models.CharField(max_length=250)
+    addressee = models.CharField(max_length=250, blank=True)
+    purpose = models.TextField(max_length=2000)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.NEW)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["status", "created_at"])]
+
+    @property
+    def full_name(self) -> str:
+        return f"{self.first_name} {self.last_name}".strip()
+
+
 class AnalyticsDailyVisitor(models.Model):
     """A non-reversible, daily-rotated visitor marker for aggregate counts."""
 

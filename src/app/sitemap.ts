@@ -17,6 +17,7 @@ const publicPaths: Array<{ path: string; changeFrequency: MetadataRoute.Sitemap[
   { path: "/membership/fees", changeFrequency: "monthly", priority: 0.7 },
   { path: "/membership/corporate", changeFrequency: "monthly", priority: 0.7 },
   { path: "/membership/members-in-good-standing", changeFrequency: "weekly", priority: 0.7 },
+  { path: "/document-requests", changeFrequency: "monthly", priority: 0.7 },
   { path: "/training", changeFrequency: "weekly", priority: 0.9 },
   { path: "/training/professional", changeFrequency: "monthly", priority: 0.8 },
   { path: "/training/cpd", changeFrequency: "weekly", priority: 0.8 },

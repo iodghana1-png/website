@@ -144,6 +144,7 @@ REST_FRAMEWORK = {
         "membership_application": "5/hour",
         "membership_application_email_resend": "10/hour",
         "contact_enquiry": "5/hour",
+        "document_request": "5/hour",
         "analytics_visit": "120/min",
         "exam_read": "180/min",
         "exam_write": "120/min",
@@ -194,6 +195,7 @@ EMAIL_USE_SSL = os.getenv("EMAIL_USE_SSL", "false").lower() == "true"
 RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
 MEMBERSHIP_APPLICATION_RECIPIENTS = env_list("MEMBERSHIP_APPLICATION_RECIPIENTS") or [DEFAULT_FROM_EMAIL]
 CONTACT_ENQUIRY_RECIPIENTS = env_list("CONTACT_ENQUIRY_RECIPIENTS") or [DEFAULT_FROM_EMAIL]
+DOCUMENT_REQUEST_RECIPIENTS = env_list("DOCUMENT_REQUEST_RECIPIENTS") or CONTACT_ENQUIRY_RECIPIENTS
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = os.getenv("SESSION_COOKIE_SAMESITE", "Lax")
 SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "false").lower() == "true"

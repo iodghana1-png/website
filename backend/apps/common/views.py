@@ -19,7 +19,7 @@ from drf_spectacular.utils import extend_schema
 
 from .email import send_institutional_email
 from .models import AnalyticsDailyVisitor, AnalyticsPageView
-from .serializers import AnalyticsVisitSerializer, ContactEnquiryCreateSerializer, ContactEnquiryResponseSerializer
+from .serializers import AnalyticsVisitSerializer, ContactEnquiryCreateSerializer, ContactEnquiryResponseSerializer, DocumentRequestCreateSerializer, DocumentRequestResponseSerializer
 
 
 class HealthResponseSerializer(Serializer):
@@ -77,6 +77,50 @@ class ContactEnquiryCreateView(APIView):
             closing="Thank you for your interest in the Institute of Directors-Ghana.",
         )
         return Response(ContactEnquiryResponseSerializer(enquiry).data, status=status.HTTP_201_CREATED)
+
+
+@method_decorator(csrf_protect, name="dispatch")
+class DocumentRequestCreateView(APIView):
+    permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "document_request"
+
+    @extend_schema(request=DocumentRequestCreateSerializer, responses={201: DocumentRequestResponseSerializer})
+    def post(self, request):
+        serializer = DocumentRequestCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        document_request = serializer.save()
+        request_label = document_request.get_request_type_display()
+
+        send_institutional_email(
+            subject=f"New IoD-Gh {request_label.lower()} request",
+            recipient=settings.DOCUMENT_REQUEST_RECIPIENTS,
+            recipient_name="IoD-Gh Team",
+            heading="A new document request has arrived.",
+            introduction="A client has requested a document through the IoD-Gh website.",
+            details=(
+                ("Request", request_label),
+                ("Name", document_request.full_name),
+                ("Email address", document_request.email),
+                ("Phone number", document_request.phone_number),
+                ("Membership number", document_request.membership_number or "Not provided"),
+                ("Programme, course or membership", document_request.programme),
+                ("Address the document to", document_request.addressee or "Not specified"),
+                ("Purpose or details", document_request.purpose),
+            ),
+            closing="You can reply directly to this email to follow up with the client.",
+            reply_to=(document_request.email,),
+        )
+        send_institutional_email(
+            subject=f"We received your IoD-Gh {request_label.lower()} request",
+            recipient=document_request.email,
+            recipient_name=document_request.full_name,
+            heading="Your request is with us.",
+            introduction=f"We have received your request for an IoD-Gh {request_label.lower()}.",
+            details=(("Request", request_label), ("Programme, course or membership", document_request.programme)),
+            closing="Our team will verify the details and contact you if anything further is needed.",
+        )
+        return Response(DocumentRequestResponseSerializer(document_request).data, status=status.HTTP_201_CREATED)
 
 
 def device_type(user_agent: str) -> str:
