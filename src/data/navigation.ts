@@ -15,7 +15,7 @@ export const navigation: NavigationItem[] = [
   ] },
     { label: "Membership", href: "/membership", children: [
     { label: "Membership categories", href: "/membership", description: "Find your place at IoD-Gh" }, { label: "Members in good standing", href: "/membership/members-in-good-standing" },
-    { label: "Membership benefits", href: "/membership/benefits" }, { label: "Membership fees", href: "/membership/fees" }, { label: "Corporate membership", href: "/membership/corporate" }, { label: "Document requests", href: "/document-requests", description: "Request an admission letter or attestation" },
+    { label: "Membership benefits", href: "/membership/benefits" }, { label: "Membership fees", href: "/membership/fees" }, { label: "Document requests", href: "/document-requests", description: "Request an admission letter or attestation" },
   ] },
   { label: "Training", href: "/training", children: [
     { label: "Professional training", href: "/training/professional", description: "Learning for the boardroom" },

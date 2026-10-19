@@ -17,8 +17,10 @@ const documentRequestsLink = { label: "Document requests", href: "/document-requ
 function withHomeLink(items: HeaderLink[]) { return [homeLink, ...items.filter((item) => item.href !== "/" && item.label.toLowerCase() !== "home")]; }
 function withDocumentRequestsLink(items: HeaderLink[]) {
   return items.map((item) => {
-    if (item.href.replace(/\/$/, "") !== "/membership" || item.children?.some((child) => child.href.replace(/\/$/, "") === "/document-requests")) return item;
-    return { ...item, children: [...(item.children || []), documentRequestsLink] };
+    if (item.href.replace(/\/$/, "") !== "/membership") return item;
+    const children = (item.children || []).filter((child) => child.href.replace(/\/$/, "") !== "/membership/corporate");
+    if (children.some((child) => child.href.replace(/\/$/, "") === "/document-requests")) return { ...item, children };
+    return { ...item, children: [...children, documentRequestsLink] };
   });
 }
 export function Header() {
