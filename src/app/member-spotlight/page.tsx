@@ -25,11 +25,12 @@ const imageUrl = (item: Spotlight) => {
 
 const initials = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "IoD";
 
-function Portrait({ spotlight, priority = false }: { spotlight: Spotlight; priority?: boolean }) {
+function Portrait({ spotlight, priority = false, compact = false }: { spotlight: Spotlight; priority?: boolean; compact?: boolean }) {
   const name = value(spotlight, "display_name") || spotlight.title || "IoD-Gh member";
   const src = imageUrl(spotlight);
-  if (!src) return <div aria-label={`${name} portrait placeholder`} role="img" className="grid aspect-[4/5] place-items-center bg-[var(--color-accent-dark)] font-serif text-5xl tracking-[-0.08em] text-white">{initials(name)}</div>;
-  return <div className="relative aspect-[4/5] overflow-hidden bg-[var(--color-paper)]"><Image src={src} alt={value(spotlight, "alt_text") || `Portrait of ${name}`} fill priority={priority} unoptimized className="object-cover" /></div>;
+  const aspect = compact ? "aspect-square" : "aspect-[4/5]";
+  if (!src) return <div aria-label={`${name} portrait placeholder`} role="img" className={`grid ${aspect} place-items-center bg-[var(--color-accent-dark)] font-serif ${compact ? "text-3xl" : "text-5xl"} tracking-[-0.08em] text-white`}>{initials(name)}</div>;
+  return <div className={`relative ${aspect} overflow-hidden bg-[var(--color-paper)]`}><Image src={src} alt={value(spotlight, "alt_text") || `Portrait of ${name}`} fill priority={priority} quality={95} sizes={compact ? "112px" : "(min-width: 1024px) 42vw, 100vw"} className="object-cover object-[center_18%]" /></div>;
 }
 
 export default function MemberSpotlightPage() {
@@ -75,7 +76,7 @@ export default function MemberSpotlightPage() {
             return <article key={spotlight.id || `${spotlight.title}-${index}`} className="border border-[var(--color-line)] bg-white">
               <details className="group">
                 <summary className="flex cursor-pointer list-none items-center gap-5 p-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-accent-dark)]">
-                  <div className="w-20 shrink-0 overflow-hidden"><Portrait spotlight={spotlight} /></div>
+                  <div className="w-28 shrink-0 overflow-hidden"><Portrait spotlight={spotlight} compact /></div>
                   <div className="min-w-0 flex-1"><p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--color-accent-dark)]">{value(spotlight, "feature_month") || "Member spotlight"}</p><h3 className="mt-2 font-serif text-2xl leading-none tracking-[-0.05em]">{name}</h3>{value(spotlight, "credentials") && <p className="mt-1 text-xs font-semibold text-[var(--color-accent-dark)]">{value(spotlight, "credentials")}</p>}{value(spotlight, "role") && <p className="mt-3 text-sm text-[var(--color-slate)]">{value(spotlight, "role")}</p>}</div>
                   <span className="shrink-0 text-sm font-bold underline underline-offset-4 group-open:hidden">Read</span><span className="hidden shrink-0 text-sm font-bold underline underline-offset-4 group-open:inline">Close</span>
                 </summary>
