@@ -22,7 +22,6 @@ const nextConfig: NextConfig = {
     dangerouslyAllowLocalIP: process.env.NODE_ENV !== "production",
     remotePatterns: [
       { protocol: "https", hostname: "i.ytimg.com", pathname: "/vi/**" },
-      { protocol: "https", hostname: "i0.wp.com", pathname: "/iodghana.org/wp-content/uploads/**" },
       { protocol: "https", hostname: "api-production-54a4a.up.railway.app", pathname: "/api/v2/cms/media/**" },
       {
         protocol: cmsApiUrl.protocol.slice(0, -1) as "http" | "https",

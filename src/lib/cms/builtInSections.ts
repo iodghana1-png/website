@@ -31,6 +31,7 @@ export function builtInSections(path: string, legacy = true): BuiltInSectionDefi
   else if (path.startsWith("/training/")) entries = [["programme-overview", "Programme overview and registration"]];
   else if (path === "/membership") entries = [["membership-pathways", "Membership pathways"], ["membership-register", "Membership register"]];
   else if (path === "/membership/fees") entries = [["membership-fees", "Membership fees"], ["membership-payment", "Payment information"]];
+  else if (path === "/membership/benefits") entries = [["benefits-introduction", "Why join IoD-Gh"], ["benefit-stories", "Membership benefit stories"], ["membership-documents", "Membership documents"]];
   else if (path === "/membership/members-in-good-standing") entries = [["member-directory", "Current member directory"], ["previous-register", "Previous year's register"]];
   else if (path.startsWith("/membership/") && path !== "/membership/apply") entries = [["membership-details", "Membership details / verification"]];
   else if (path === "/knowledge") entries = [["knowledge-insight", "Knowledge and insight listing"]];
