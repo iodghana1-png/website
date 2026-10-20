@@ -16,7 +16,6 @@ import Link from "next/link";
 
 const fallbackItems = membershipCategories.map((item, index) => ({ id: `membership-${index}`, title: item.title, summary: item.description, href: item.href, metadata: { display_meta: item.meta || "" }, image_url: "", sort_order: index + 1 }));
 const fallbackPage = { eyebrow: "Membership", title: "Find your place in Ghana's director community.", summary: "Membership is a commitment to professional growth, better governance and the confidence to lead with purpose.", body: "", blocks: [{ type: "cta", label: "Begin your application", href: "/membership/apply" }] };
-
 export default function MembershipPage() {
   const page = useCmsPage("membership-page", fallbackPage);
   const items = useCmsItems("membership", fallbackItems);
