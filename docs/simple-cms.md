@@ -18,6 +18,7 @@ Open **Content → Pages**, search for a page, and choose **Edit**. The editor o
 - Home’s **News** and **Knowledge** sections control their headings and buttons. Their cards come from **News** articles and the relevant **Knowledge** document pages, not separate homepage copies.
 - **Council → Council profiles** controls names, credentials, roles, biographies, photos and ordering. New and removed profiles appear in the preview and on the public page after publishing.
 - **Secretariat → Secretariat profiles** controls staff names, credentials, roles, short introductions, full biographies, photos and ordering. The initial profiles are editable drafts seeded from IoD-Gh information already published publicly; review them and publish any updates from this panel.
+- **Member spotlight** is available under **Content â†’ Pages**. Its **Member spotlight profiles** section is where staff add a featured member, their credentials, role, short story, full biography and optional portrait. Keep the newest profile first; it is displayed as the current feature and the remainder form the spotlight archive.
 - **CPD & Seminars** displays entries from every enabled seminar and recording section in saved order.
 - **Privacy** and **Terms** are editable under Pages, with the existing wording preserved. Their hero and policy-content sections can also be hidden.
 - Each page’s **Search-engine settings** controls its own browser/search title and description, including subpages.

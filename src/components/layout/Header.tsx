@@ -13,14 +13,16 @@ import { Logo } from "./Logo";
 
 const homeLink: HeaderLink = { label: "Home", href: "/" };
 const documentRequestsLink = { label: "Document requests", href: "/document-requests", description: "Request an admission letter or attestation" };
+const memberSpotlightLink = { label: "Member spotlight", href: "/member-spotlight", description: "Celebrating our members" };
 
 function withHomeLink(items: HeaderLink[]) { return [homeLink, ...items.filter((item) => item.href !== "/" && item.label.toLowerCase() !== "home")]; }
-function withDocumentRequestsLink(items: HeaderLink[]) {
+function withMembershipLinks(items: HeaderLink[]) {
   return items.map((item) => {
     if (item.href.replace(/\/$/, "") !== "/membership") return item;
     const children = (item.children || []).filter((child) => child.href.replace(/\/$/, "") !== "/membership/corporate");
-    if (children.some((child) => child.href.replace(/\/$/, "") === "/document-requests")) return { ...item, children };
-    return { ...item, children: [...children, documentRequestsLink] };
+    const withSpotlight = children.some((child) => child.href.replace(/\/$/, "") === "/member-spotlight") ? children : [...children, memberSpotlightLink];
+    const withDocuments = withSpotlight.some((child) => child.href.replace(/\/$/, "") === "/document-requests") ? withSpotlight : [...withSpotlight, documentRequestsLink];
+    return { ...item, children: withDocuments };
   });
 }
 export function Header() {
@@ -42,7 +44,7 @@ export function Header() {
     let cancelled = false;
     const refreshMenu = () => {
       getPublishedCmsMenu("header-primary").then((cmsMenu) => {
-        if (!cancelled && cmsMenu.published_revision) setMenu(withDocumentRequestsLink(asHeaderLinks(cmsMenu.published_revision.items)));
+        if (!cancelled && cmsMenu.published_revision) setMenu(withMembershipLinks(asHeaderLinks(cmsMenu.published_revision.items)));
       }).catch(() => undefined);
     };
     const timer = window.setTimeout(refreshMenu, 0);
