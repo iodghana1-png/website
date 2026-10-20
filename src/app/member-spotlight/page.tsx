@@ -37,8 +37,9 @@ export default function MemberSpotlightPage() {
   const context = useContext(CmsPageContext);
   const section = context?.revision.sections.find((entry) => entry.slot === "member_spotlights" && entry.is_enabled);
   const spotlights = Array.isArray(section?.data.items) ? section.data.items.filter((item): item is Spotlight => !!item && typeof item === "object") : [];
-  const currentSpotlights = spotlights.slice(0, 2);
-  const archive = spotlights.slice(2);
+  const currentCount = section?.data.current_spotlights === 2 ? 2 : 1;
+  const currentSpotlights = spotlights.slice(0, currentCount);
+  const archive = spotlights.slice(currentCount);
 
   return <main className="bg-white">
     <BuiltInSection sectionId="hero" className="relative isolate overflow-hidden bg-[var(--color-ink)] py-20 text-white sm:py-28">
@@ -59,17 +60,20 @@ export default function MemberSpotlightPage() {
         </div>
 
         {!currentSpotlights.length ? <div className="border-b border-[var(--color-line)] py-16"><p className="font-serif text-3xl tracking-[-0.04em]">Our first member story will be shared soon.</p><p className="mt-3 max-w-xl leading-7 text-[var(--color-slate)]">Check back for monthly profiles from the IoD-Gh community.</p></div> : <>
-          <div className={`mt-12 grid gap-5 ${currentSpotlights.length > 1 ? "xl:grid-cols-2" : ""}`}>{currentSpotlights.map((featured, index) => <article key={featured.id || `${featured.title}-${index}`} className={`grid overflow-hidden bg-[var(--color-ink)] text-white ${currentSpotlights.length > 1 ? "sm:grid-cols-2" : "lg:grid-cols-12"}`}>
-            <div className={currentSpotlights.length > 1 ? "sm:col-span-1" : "lg:col-span-5"}><Portrait spotlight={featured} priority={index === 0} /></div>
-            <div className={`flex flex-col justify-center p-8 sm:p-10 ${currentSpotlights.length > 1 ? "sm:col-span-1" : "lg:col-span-7 lg:p-16"}`}>
-              <p className="eyebrow text-[var(--color-accent-light)]">{value(featured, "feature_month") || "Current spotlight"}</p>
-              <h2 className={`mt-6 font-serif leading-[0.9] tracking-[-0.07em] ${currentSpotlights.length > 1 ? "text-[clamp(2.5rem,4vw,4.25rem)]" : "text-[clamp(3rem,5vw,5.5rem)]"}`}>{value(featured, "display_name") || featured.title || "IoD-Gh member"}</h2>
-              {value(featured, "credentials") && <p className="mt-3 text-sm font-semibold text-[var(--color-accent-light)]">{value(featured, "credentials")}</p>}
-              {value(featured, "role") && <p className="mt-5 text-lg text-[var(--color-mist)]">{value(featured, "role")}</p>}
-              <p className="mt-7 max-w-2xl leading-8 text-[var(--color-mist)]">{value(featured, "summary") || value(featured, "biography")}</p>
-              {value(featured, "biography") && value(featured, "biography") !== value(featured, "summary") && <p className="mt-5 max-w-2xl leading-7 text-white/80">{value(featured, "biography")}</p>}
-            </div>
-          </article>)}</div>
+          <div className={`mt-12 grid gap-5 ${currentSpotlights.length === 2 ? "md:grid-cols-2" : ""}`}>{currentSpotlights.map((featured, index) => {
+            const paired = currentSpotlights.length === 2;
+            return <article key={featured.id || `${featured.title}-${index}`} className={paired ? "overflow-hidden border border-[var(--color-line)] bg-[var(--color-paper)]" : "grid overflow-hidden bg-[var(--color-ink)] text-white lg:grid-cols-12"}>
+              <div className={paired ? "" : "lg:col-span-5"}><Portrait spotlight={featured} priority={index === 0} /></div>
+              <div className={`flex flex-col justify-center ${paired ? "p-7 sm:p-8" : "p-8 sm:p-12 lg:col-span-7 lg:p-16"}`}>
+                <p className={`eyebrow ${paired ? "text-[var(--color-accent-dark)]" : "text-[var(--color-accent-light)]"}`}>{value(featured, "feature_month") || "Current spotlight"}</p>
+                <h2 className={`mt-5 font-serif leading-[0.9] tracking-[-0.07em] ${paired ? "text-[clamp(2.5rem,4.5vw,4.25rem)]" : "text-[clamp(3rem,5vw,5.5rem)]"}`}>{value(featured, "display_name") || featured.title || "IoD-Gh member"}</h2>
+                {value(featured, "credentials") && <p className={`mt-3 text-sm font-semibold ${paired ? "text-[var(--color-accent-dark)]" : "text-[var(--color-accent-light)]"}`}>{value(featured, "credentials")}</p>}
+                {value(featured, "role") && <p className={`mt-5 text-lg ${paired ? "text-[var(--color-slate)]" : "text-[var(--color-mist)]"}`}>{value(featured, "role")}</p>}
+                <p className={`mt-7 max-w-2xl leading-8 ${paired ? "text-[var(--color-slate)]" : "text-[var(--color-mist)]"}`}>{value(featured, "summary") || value(featured, "biography")}</p>
+                {value(featured, "biography") && value(featured, "biography") !== value(featured, "summary") && <p className={`mt-5 max-w-2xl leading-7 ${paired ? "text-[var(--color-slate)]" : "text-white/80"}`}>{value(featured, "biography")}</p>}
+              </div>
+            </article>;
+          })}</div>
 
           {archive.length > 0 && <div className="mt-16"><p className="eyebrow">Previous spotlights</p><div className="mt-7 grid gap-4 lg:grid-cols-2">{archive.map((spotlight, index) => {
             const name = value(spotlight, "display_name") || spotlight.title || "IoD-Gh member";
