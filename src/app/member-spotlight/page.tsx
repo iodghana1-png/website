@@ -69,7 +69,20 @@ export default function MemberSpotlightPage() {
             </div>
           </article>
 
-          {archive.length > 0 && <div className="mt-16"><p className="eyebrow">Previous spotlights</p><div className="mt-7 grid gap-5 md:grid-cols-2 xl:grid-cols-3">{archive.map((spotlight, index) => <article key={spotlight.id || `${spotlight.title}-${index}`} className="overflow-hidden border border-[var(--color-line)] bg-white"><Portrait spotlight={spotlight} /><div className="p-6"><p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--color-accent-dark)]">{value(spotlight, "feature_month") || "Member spotlight"}</p><h3 className="mt-4 font-serif text-3xl leading-[0.95] tracking-[-0.05em]">{value(spotlight, "display_name") || spotlight.title || "IoD-Gh member"}</h3>{value(spotlight, "credentials") && <p className="mt-2 text-sm font-semibold text-[var(--color-accent-dark)]">{value(spotlight, "credentials")}</p>}{value(spotlight, "role") && <p className="mt-4 text-sm font-semibold text-[var(--color-slate)]">{value(spotlight, "role")}</p>}<p className="mt-4 leading-7 text-[var(--color-slate)]">{value(spotlight, "summary") || value(spotlight, "biography")}</p></div></article>)}</div></div>}
+          {archive.length > 0 && <div className="mt-16"><p className="eyebrow">Previous spotlights</p><div className="mt-7 grid gap-4 lg:grid-cols-2">{archive.map((spotlight, index) => {
+            const name = value(spotlight, "display_name") || spotlight.title || "IoD-Gh member";
+            const story = value(spotlight, "biography") || value(spotlight, "summary");
+            return <article key={spotlight.id || `${spotlight.title}-${index}`} className="border border-[var(--color-line)] bg-white">
+              <details className="group">
+                <summary className="flex cursor-pointer list-none items-center gap-5 p-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-accent-dark)]">
+                  <div className="w-20 shrink-0 overflow-hidden"><Portrait spotlight={spotlight} /></div>
+                  <div className="min-w-0 flex-1"><p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--color-accent-dark)]">{value(spotlight, "feature_month") || "Member spotlight"}</p><h3 className="mt-2 font-serif text-2xl leading-none tracking-[-0.05em]">{name}</h3>{value(spotlight, "credentials") && <p className="mt-1 text-xs font-semibold text-[var(--color-accent-dark)]">{value(spotlight, "credentials")}</p>}{value(spotlight, "role") && <p className="mt-3 text-sm text-[var(--color-slate)]">{value(spotlight, "role")}</p>}</div>
+                  <span className="shrink-0 text-sm font-bold underline underline-offset-4 group-open:hidden">Read</span><span className="hidden shrink-0 text-sm font-bold underline underline-offset-4 group-open:inline">Close</span>
+                </summary>
+                {story && <div className="border-t border-[var(--color-line)] px-5 py-5 text-sm leading-7 text-[var(--color-slate)]"><p>{value(spotlight, "summary") || story}</p>{value(spotlight, "biography") && value(spotlight, "biography") !== value(spotlight, "summary") && <p className="mt-4">{value(spotlight, "biography")}</p>}</div>}
+              </details>
+            </article>;
+          })}</div></div>}
         </>}
       </div>
     </BuiltInSection>
