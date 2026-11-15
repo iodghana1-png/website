@@ -2,7 +2,7 @@
 
 import { useContext } from "react";
 import type { ComponentProps } from "react";
-import Image from "next/image";
+import { CmsImage as Image } from "@/components/cms/CmsImage";
 import Link from "next/link";
 import { CmsPageContext } from "./PageContext";
 import { linkUrl } from "./ContentRenderer";
@@ -31,7 +31,7 @@ export function EditableImage(props: ComponentProps<typeof Image>) {
   const fields = context?.revision.sections.find((s) => s.slot === "page_copy")?.data.fields as Array<{ key: string; value: string }> | undefined;
   const field = fields?.find((f) => f.key === key);
   if (field && !field.value) return null;
-  return <Image {...props} alt={props.alt} src={field && linkUrl(field.value) ? field.value : props.src} unoptimized={!!field || props.unoptimized} data-cms-image={key} data-cms-src={fallback} />;
+  return <Image {...props} alt={props.alt} src={field && linkUrl(field.value) ? field.value : props.src} unoptimized={props.unoptimized} data-cms-image={key} data-cms-src={fallback} />;
 }
 
 export function EditableLink({ cmsKey, cmsLabel, ...props }: ComponentProps<typeof Link> & { cmsKey?: string; cmsLabel?: string }) {

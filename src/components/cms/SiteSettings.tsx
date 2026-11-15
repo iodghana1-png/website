@@ -6,8 +6,8 @@ import { linkUrl } from "./ContentRenderer";
 import { Icon, IconName } from "@/components/ui/Icon";
 
 const SettingsContext = createContext<Record<string, unknown>>({});
-export function SiteSettingsProvider({ children }: { children: ReactNode }) {
-  const [data, setData] = useState<Record<string, unknown>>({});
+export function SiteSettingsProvider({ children, initialSettings }: { children: ReactNode; initialSettings?: Record<string, unknown> }) {
+  const [data, setData] = useState<Record<string, unknown>>(initialSettings ?? {});
   useEffect(() => {
     let controller: AbortController;
     const refresh = () => {
@@ -16,11 +16,11 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
       const signal = controller.signal;
       fetch(apiBaseUrl + "/api/v2/cms/site/", { signal, cache: "no-store" }).then((r) => r.ok ? r.json() : null).then((result) => { if (result && !signal.aborted) setData(result.settings); }).catch(() => {});
     };
-    refresh();
+    if (!initialSettings) refresh();
     window.addEventListener("cms:settings-published", refresh);
     window.addEventListener("focus", refresh);
     return () => { controller?.abort(); window.removeEventListener("cms:settings-published", refresh); window.removeEventListener("focus", refresh); };
-  }, []);
+  }, [initialSettings]);
   return <SettingsContext.Provider value={data}>{children}</SettingsContext.Provider>;
 }
 export function useSiteSettings() { return useContext(SettingsContext); }

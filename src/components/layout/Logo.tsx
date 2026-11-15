@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { CmsImage as Image } from "@/components/cms/CmsImage";
 import Link from "next/link";
 import { useSiteSettings } from "@/components/cms/SiteSettings";
 import { cmsMediaUrl } from "@/lib/cms/media";
@@ -15,7 +15,7 @@ export function Logo({ inverse = false, showName = true, markClassName = "h-11 w
   if (!mark && !name) return null;
   return (
     <Link href="/" className="flex items-center gap-3" aria-label={name || "Home"}>
-      {mark && <Image src={mark} unoptimized alt="" width={96} height={96} priority className={`${markClassName} object-contain`} style={inverse ? undefined : { filter: "brightness(0) saturate(100%) invert(12%) sepia(26%) saturate(3710%) hue-rotate(223deg) brightness(84%) contrast(101%)" }} />}
+      {mark && <Image src={mark} alt="" width={96} height={96} sizes={showName ? "44px" : "192px"} preload className={`${markClassName} object-contain`} style={inverse ? undefined : { filter: "brightness(0) saturate(100%) invert(12%) sepia(26%) saturate(3710%) hue-rotate(223deg) brightness(84%) contrast(101%)" }} />}
       {showName && name && <span className={`leading-tight ${inverse ? "text-white" : "text-[var(--color-ink)]"}`}><span className="block text-sm font-bold">{name}</span></span>}
     </Link>
   );

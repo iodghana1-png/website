@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { connection } from "next/server";
+import { cache } from "react";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { CmsRouteSwitch } from "@/components/cms/CmsPublishedRoute";
@@ -22,21 +23,28 @@ const defaultMetadata: Metadata = {
   applicationName: "IoD-Gh",
 };
 
-export async function generateMetadata(): Promise<Metadata> {
+const getSiteSettings = cache(async (): Promise<Record<string, unknown> | undefined> => {
   try {
-    const response = await fetch(apiBaseUrl + "/api/v2/cms/site/", { cache: "no-store" });
+    const response = await fetch(apiBaseUrl + "/api/v2/cms/site/", { cache: "no-store", signal: AbortSignal.timeout(5000) });
+    if (!response.ok) return undefined;
     const { settings } = await response.json();
-    return { ...defaultMetadata, ...(settings.website_name ? { title: settings.website_name } : {}) };
-  } catch { return defaultMetadata; }
+    return settings && typeof settings === "object" && !Array.isArray(settings) ? settings : undefined;
+  } catch { return undefined; }
+});
+
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSiteSettings();
+  return { ...defaultMetadata, ...(typeof settings?.website_name === "string" && settings.website_name ? { title: settings.website_name } : {}) };
 }
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   // Each document must be rendered with its own CSP nonce, never a cached one.
   await connection();
+  const settings = await getSiteSettings();
   return (
     <html lang="en" className={inter.variable}>
       <body className="min-h-screen">
-        <SiteSettingsProvider>
+        <SiteSettingsProvider initialSettings={settings}>
         <Header />
         <CmsRouteSwitch>{children}</CmsRouteSwitch>
         <Footer />

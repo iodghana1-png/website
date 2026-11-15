@@ -2,7 +2,7 @@
 
 import { brandText } from "@/components/ui/BrandText";
 
-import Image from "next/image";
+import { CmsImage as Image } from "@/components/cms/CmsImage";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SiteContact, useSiteSettings } from "@/components/cms/SiteSettings";
@@ -34,7 +34,7 @@ export function FooterContent({ settings }: { settings: Record<string, unknown> 
   const grid = count >= 4 ? "xl:grid-cols-4" : count === 3 ? "xl:grid-cols-3" : "";
   return <footer id="contact" className="bg-[var(--color-ink)] pb-8 pt-16 text-white sm:pt-20"><div className="site-container">
     <div className={`grid gap-12 border-b border-white/20 pb-14 md:grid-cols-2 ${grid} xl:gap-8`}>
-      <div>{footer.show_logo && (logoUrl ? <Link href="/" aria-label="Home"><Image src={logoUrl} alt={typeof settings.website_name === "string" ? settings.website_name : "Institute of Directors Ghana"} width={240} height={96} unoptimized className="h-20 w-auto max-w-full object-contain" /></Link> : <Logo inverse />)}
+      <div>{footer.show_logo && (logoUrl ? <Link href="/" aria-label="Home"><Image src={logoUrl} alt={typeof settings.website_name === "string" ? settings.website_name : "Institute of Directors Ghana"} width={240} height={96} className="h-20 w-auto max-w-full object-contain" /></Link> : <Logo inverse />)}
         {footer.description && <p className="mt-7 max-w-xs whitespace-pre-line leading-7 text-[var(--color-mist)]">{brandText(footer.description)}</p>}
         <SiteContact settings={settings} showContact={footer.show_contact} showSocial={footer.show_social} inverse />
       </div>

@@ -1,6 +1,6 @@
 import { brandText } from "@/components/ui/BrandText";
 
-import Image from "next/image";
+import { CmsImage as Image } from "@/components/cms/CmsImage";
 import Link from "next/link";
 import type { CmsPublicArticle } from "@/lib/api/cms";
 import { RichContent } from "./ContentRenderer";
@@ -22,9 +22,9 @@ export function ArticlePage({ article }: { article: CmsPublicArticle }) {
       </div>}
     </div></header>
     <article className="site-container max-w-4xl py-10 sm:py-14">
-      {r.cover_media && <figure className="mb-10"><Image src={r.cover_media.file_url} alt={r.cover_media.alt_text || r.title} width={1200} height={750} unoptimized className="max-h-[560px] w-full object-contain" />{(r.cover_media.caption || r.cover_media.credit) && <figcaption className="mt-3 text-sm text-[var(--color-slate)]">{brandText([r.cover_media.caption, r.cover_media.credit].filter(Boolean).join(" · "))}</figcaption>}</figure>}
+      {r.cover_media && <figure className="mb-10"><Image src={r.cover_media.file_url} alt={r.cover_media.alt_text || r.title} width={1200} height={750} sizes="(max-width: 768px) 100vw, 1000px" className="max-h-[560px] w-full object-contain" />{(r.cover_media.caption || r.cover_media.credit) && <figcaption className="mt-3 text-sm text-[var(--color-slate)]">{brandText([r.cover_media.caption, r.cover_media.credit].filter(Boolean).join(" · "))}</figcaption>}</figure>}
       <div className="text-lg leading-8"><RichContent value={r.body} /></div>
-      {!!r.gallery_media?.length && <section className="mt-10 border-t border-[var(--color-line)] pt-8" aria-label="Article photo gallery"><h2 className="font-serif text-2xl">Photo gallery</h2><div className="mt-5 grid gap-4 sm:grid-cols-2">{r.gallery_media.map((media, index) => <figure key={media.id}><Image src={media.file_url} alt={media.alt_text || `${r.title} gallery image ${index + 1}`} width={1000} height={750} unoptimized className="aspect-[4/3] w-full rounded-lg bg-[var(--color-paper)] object-cover" />{(media.caption || media.credit) && <figcaption className="mt-2 text-sm text-[var(--color-slate)]">{brandText([media.caption, media.credit].filter(Boolean).join(" · "))}</figcaption>}</figure>)}</div></section>}
+      {!!r.gallery_media?.length && <section className="mt-10 border-t border-[var(--color-line)] pt-8" aria-label="Article photo gallery"><h2 className="font-serif text-2xl">Photo gallery</h2><div className="mt-5 grid gap-4 sm:grid-cols-2">{r.gallery_media.map((media, index) => <figure key={media.id}><Image src={media.file_url} alt={media.alt_text || `${r.title} gallery image ${index + 1}`} width={1000} height={750} sizes="(max-width: 640px) 100vw, 500px" className="aspect-[4/3] w-full rounded-lg bg-[var(--color-paper)] object-cover" />{(media.caption || media.credit) && <figcaption className="mt-2 text-sm text-[var(--color-slate)]">{brandText([media.caption, media.credit].filter(Boolean).join(" · "))}</figcaption>}</figure>)}</div></section>}
     </article>
   </main>;
 }

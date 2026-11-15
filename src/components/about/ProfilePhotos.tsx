@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { CmsImage as Image } from "@/components/cms/CmsImage";
 import { createContext, type ReactNode, useContext, useEffect, useState } from "react";
 import { CmsPageContext } from "@/components/cms/PageContext";
 import { getPublishedCmsPage } from "@/lib/api/cms";
@@ -49,7 +49,7 @@ export function ProfilePhoto({ profileKey, alt, className, children }: { profile
   const { byKey } = useContext(ProfilePhotosContext);
   const photo = (Array.isArray(profileKey) ? profileKey : [profileKey]).map((key) => byKey[key]).find(Boolean);
   if (!photo) return <>{children}</>;
-  return <Image src={photo.url} alt={photo.alt || alt} width={152} height={190} unoptimized className={className} />;
+  return <Image src={photo.url} alt={photo.alt || alt} width={152} height={190} className={className} />;
 }
 
 export function useProfileGalleryState() { return useContext(ProfilePhotosContext); }
