@@ -92,8 +92,8 @@ export default function ContactPage() {
               <p><strong className="mb-1 block text-[var(--color-ink)]">Contact</strong><a href="tel:+233302732269" className="block hover:text-[var(--color-ink)]">+233 30 273 2269</a><a href="tel:+233240714798" className="block hover:text-[var(--color-ink)]">+233 24 071 4798</a><a href="mailto:info@iodghana.org" className="block hover:text-[var(--color-ink)]">info@iodghana.org</a></p>
               <p><strong className="mb-1 block text-[var(--color-ink)]">Opening hours</strong>Monday-Friday<br />8:00am-5:00pm</p>
             </div>}
-            <div className="mt-10 overflow-hidden border border-[var(--color-line)] bg-[var(--color-paper)]"><iframe title="Map to Institute of Directors-Ghana" src="https://www.google.com/maps?q=Institute%20of%20Directors%20Ghana%2C%20SSNIT%20Emporium%2C%20Airport%20City%2C%20Accra&output=embed" className="h-64 w-full border-0" loading="lazy" referrerPolicy="no-referrer-when-downgrade" /></div>
-            <a href="https://www.google.com/maps/search/?api=1&query=Institute%20of%20Directors%20Ghana%2C%20SSNIT%20Emporium%2C%20Airport%20City%2C%20Accra" target="_blank" rel="noreferrer" className="link-arrow mt-5">Open in Google Maps <Icon name="external" className="h-4 w-4" /></a>
+            <div className="mt-10 overflow-hidden border border-[var(--color-line)] bg-[var(--color-paper)]"><iframe title="Map to Lexta Square, Dzorwulu" src="https://www.google.com/maps?q=Lexta%20Square%2C%20Olusegun%20Obasanjo%20Highway%2C%20Dzorwulu%2C%20Accra%2C%20Ghana&output=embed" className="h-64 w-full border-0" loading="lazy" referrerPolicy="no-referrer-when-downgrade" /></div>
+            <a href="https://www.google.com/maps/search/?api=1&query=Lexta%20Square%2C%20Olusegun%20Obasanjo%20Highway%2C%20Dzorwulu%2C%20Accra%2C%20Ghana" target="_blank" rel="noreferrer" className="link-arrow mt-5">Open in Google Maps <Icon name="external" className="h-4 w-4" /></a>
           </aside>
 
           <form onSubmit={submitEnquiry} className="border-t-4 border-[var(--color-ink)] bg-[var(--color-warm-white)] p-7 sm:p-10 lg:col-span-7 lg:col-start-6">
