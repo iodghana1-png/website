@@ -20,7 +20,7 @@ function calendarDate(event: EventCard): string {
   return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value ? value : "";
 }
 
-export function HomeEventsCalendar({ events }: { events: EventCard[] }) {
+export function EventsCalendar({ events }: { events: EventCard[] }) {
   // Ghana uses UTC year-round. Keep calendar arithmetic independent of the visitor's timezone.
   const [month, setMonth] = useState(() => {
     const today = new Date();
