@@ -24,6 +24,7 @@ from .admin_security import VerifiedExamAdmin, access_status, send_code, verify_
 from .models import Exam, ExamQuestion, ExamVersion, Question, ExamAttempt, ExamAnswer, ExamEligibility, ExamCandidateSession, ExamResult, ExamAuditLog
 from .serializers import ExamInput, QuestionInput, AnswerInput, AssignmentInput, CandidateAccessInput, QuestionViewedInput, AttemptFilters, ExportFilters
 from .services import audit, available, candidate_access, issue_candidate_code, issue_cohort_code, normalize_candidate_name, notify, open_candidate_session, start_attempt, save_question, retire_question, save_exam, public_attempt, public_questions, synchronize, finalize, release_result
+from .word_import import MAX_QUESTIONS, read_questions
 
 
 class VerifiedAccount(IsAuthenticated):
@@ -317,6 +318,24 @@ class StaffQuestions(StaffView):
     def post(self, request):
         question = save_question(validated(QuestionInput, request), request.user, request)
         return Response(staff_question(question), status=201)
+
+
+class StaffQuestionImportPreview(StaffView):
+    def post(self, request):
+        return Response({"questions": read_questions(request.FILES.get("file"))})
+
+
+class StaffQuestionImport(StaffView):
+    @transaction.atomic
+    def post(self, request):
+        questions = request.data.get("questions")
+        if not isinstance(questions, list) or not 1 <= len(questions) <= MAX_QUESTIONS:
+            raise ValidationError(f"Provide between 1 and {MAX_QUESTIONS} questions.")
+        serializer = QuestionInput(data=questions, many=True)
+        serializer.is_valid(raise_exception=True)
+        for question in serializer.validated_data:
+            save_question(question, request.user, request)
+        return Response({"imported": len(questions)}, status=201)
 
 
 class StaffQuestionDetail(StaffView):

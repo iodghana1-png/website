@@ -20,6 +20,8 @@ urlpatterns = [
     path("exams/staff/exams/<uuid:exam_id>/eligibility/", views.StaffEligibility.as_view()),
     path("exams/staff/exams/<uuid:exam_id>/eligibility/<int:eligibility_id>/", views.StaffEligibilityDetail.as_view()),
     path("exams/staff/questions/", views.StaffQuestions.as_view()),
+    path("exams/staff/questions/import/preview/", views.StaffQuestionImportPreview.as_view()),
+    path("exams/staff/questions/import/", views.StaffQuestionImport.as_view()),
     path("exams/staff/questions/<uuid:question_id>/", views.StaffQuestionDetail.as_view()),
     path("exams/staff/attempts/", views.StaffAttempts.as_view()),
     path("exams/staff/attempts/<uuid:attempt_id>/", views.StaffAttemptReview.as_view()),

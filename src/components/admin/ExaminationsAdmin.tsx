@@ -147,6 +147,8 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
   const [examActivity, setExamActivity] = useState<"" | "active" | "inactive">("");
   const [exam, setExam] = useState<Exam | null>(null);
   const [question, setQuestion] = useState<Question | null>(null);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importQuestions, setImportQuestions] = useState<Question[]>([]);
   const [selectedExam, setSelectedExam] = useState("");
   const [candidateName, setCandidateName] = useState("");
   const [assignments, setAssignments] = useState<Assignment[]>([]);
@@ -307,6 +309,39 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
         setQuestion(null);
         await loadQuestions(1, search);
       }
+    } catch (reason) {
+      fail(reason);
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function previewWordQuestions() {
+    if (!importFile) return;
+    setBusy(true);
+    setError("");
+    setNotice("");
+    setImportQuestions([]);
+    try {
+      const body = new FormData();
+      body.append("file", importFile);
+      const data = await apiRequest<{ questions: Question[] }>("/exams/staff/questions/import/preview/", { method: "POST", body });
+      setImportQuestions(data.questions);
+    } catch (reason) {
+      fail(reason);
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function importWordQuestions() {
+    setBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      const data = await apiRequest<{ imported: number }>("/exams/staff/questions/import/", { method: "POST", body: JSON.stringify({ questions: importQuestions }) });
+      setImportQuestions([]);
+      setImportFile(null);
+      setNotice(`${data.imported} questions added to the question bank.`);
+      await loadQuestions(1, search);
     } catch (reason) {
       fail(reason);
     } finally {
@@ -1269,6 +1304,26 @@ function ExaminationsWorkspace({ onAccessExpired }: { onAccessExpired: () => voi
       )}
       {tab === "questions" && (
         <div className="flex flex-col gap-4">
+          <div className="order-1">
+            <Panel title="Import questions from Word">
+              <p className="text-sm">Upload a .docx file (up to 2 MB and 200 questions). You can use Word numbering under a QUESTIONS heading or the format below. Tables and images are not supported. Each question needs 2 to 10 options; marks default to 1.</p>
+              <pre className="overflow-x-auto rounded-lg bg-slate-50 p-4 text-sm whitespace-pre-wrap">{`Question: Who oversees the organisation?\nA. The board\nB. Visitors\nC. Suppliers\nAnswer: A\nMarks: 2\n\nQuestion: Which is a governance principle?\nA. Accountability\nB. Secrecy\nAnswer: A`}</pre>
+              <label className="block text-sm font-semibold">Word document
+                <input className={inputClass} type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={(event) => { setImportFile(event.target.files?.[0] || null); setImportQuestions([]); }} />
+              </label>
+              <button type="button" className={buttonClass} disabled={busy || !importFile} onClick={() => void previewWordQuestions()}>Review questions</button>
+              {importQuestions.length > 0 && <div className="space-y-4">
+                <p className="text-sm font-semibold">Review {importQuestions.length} questions and select a correct answer for each. To change wording, edit the Word file and upload it again. {importQuestions.filter((item) => !item.options.some((option) => option.is_correct)).length} questions still need an answer.</p>
+                <div className="max-h-[32rem] space-y-3 overflow-y-auto">
+                  {importQuestions.map((item, index) => <article key={index} className="rounded-lg border p-4 text-sm">
+                    <div className="flex items-start justify-between gap-3"><p className="font-semibold">{index + 1}. {item.text} ({item.marks} marks)</p><button type="button" className={buttonClass} disabled={busy} onClick={() => setImportQuestions((items) => items.filter((_, i) => i !== index))}>Remove</button></div>
+                    <fieldset className="mt-2 space-y-1"><legend className="sr-only">Correct answer for question {index + 1}</legend>{item.options.map((option, i) => <label className="flex items-start gap-2" key={i}><input type="radio" name={`import-answer-${index}`} checked={option.is_correct} disabled={busy} onChange={() => setImportQuestions((items) => items.map((q, qi) => qi === index ? { ...q, options: q.options.map((o, oi) => ({ ...o, is_correct: oi === i })) } : q))} /><span>{option.text}</span></label>)}</fieldset>
+                  </article>)}
+                </div>
+                <button type="button" className={primaryClass} disabled={busy || importQuestions.some((item) => !item.options.some((option) => option.is_correct))} onClick={() => void importWordQuestions()}>Import {importQuestions.length} questions</button>
+              </div>}
+            </Panel>
+          </div>
           <div className="order-2 flex flex-wrap items-end gap-3">
             <button
               className={primaryClass}
