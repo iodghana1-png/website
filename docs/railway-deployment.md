@@ -71,6 +71,7 @@ CMS_MEDIA_S3_SECRET_ACCESS_KEY=${{cmsmedia.SECRET_ACCESS_KEY}}
 CMS_MEDIA_S3_BUCKET_NAME=${{cmsmedia.BUCKET}}
 CMS_MEDIA_S3_REGION=${{cmsmedia.REGION}}
 DEFAULT_FROM_EMAIL=<verified IoD-Gh sender>
+EXAM_EMAIL_NOTIFICATIONS=true
 # Railway Trial, Free and Hobby plans cannot open SMTP ports. Use this same
 # Resend API key for HTTPS email delivery on those plans.
 RESEND_API_KEY=<Resend API key>

@@ -23,7 +23,7 @@ from .authentication import CANDIDATE_SESSION_COOKIE, CandidateExamAuthenticatio
 from .admin_security import VerifiedExamAdmin, access_status, send_code, verify_code
 from .models import Exam, ExamQuestion, ExamVersion, Question, ExamAttempt, ExamAnswer, ExamEligibility, ExamCandidateSession, ExamResult, ExamAuditLog
 from .serializers import ExamInput, QuestionInput, AnswerInput, AssignmentInput, CandidateAccessInput, QuestionViewedInput, AttemptFilters, ExportFilters
-from .services import audit, available, candidate_access, issue_candidate_code, issue_cohort_code, normalize_candidate_name, open_candidate_session, start_attempt, save_question, retire_question, save_exam, public_attempt, public_questions, synchronize, finalize, release_result
+from .services import audit, available, candidate_access, issue_candidate_code, issue_cohort_code, normalize_candidate_name, notify, open_candidate_session, start_attempt, save_question, retire_question, save_exam, public_attempt, public_questions, synchronize, finalize, release_result
 
 
 class VerifiedAccount(IsAuthenticated):
@@ -151,6 +151,7 @@ class CandidateAccess(APIView):
             path="/api/v1/",
         )
         audit("CANDIDATE_ACCESS_GRANTED", user=eligibility.student, exam=eligibility.exam, request=request, metadata={"candidate_session": str(session.pk)})
+        notify(eligibility.email, eligibility.full_name, "SIGNED_IN", eligibility.exam.current_version.configuration["title"])
         return response
 
 

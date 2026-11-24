@@ -79,6 +79,19 @@ class ExamFixtures:
 
 
 class ExaminationSecurityTests(ExamFixtures, TestCase):
+    @override_settings(EXAM_EMAIL_NOTIFICATIONS=True)
+    def test_successful_candidate_sign_in_sends_email(self):
+        grant = ExamEligibility.objects.get(exam=self.exam, student=self.student)
+        code = issue_candidate_code(grant)
+        client = Client(enforce_csrf_checks=True)
+        client.defaults["HTTP_X_CSRFTOKEN"] = client.get("/api/v1/auth/csrf/").json()["csrfToken"]
+        with patch("apps.examinations.services.send_institutional_email") as send, self.captureOnCommitCallbacks(execute=True):
+            response = self.post("exams/candidate/access/", {"full_name": "Test Candidate", "email": self.student.email, "access_code": code}, client)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(send.call_count, 1)
+        self.assertEqual(send.call_args.kwargs["recipient"], self.student.email)
+        self.assertIn("signed in", send.call_args.kwargs["introduction"])
+
     def test_authentication_and_csrf_are_required(self):
         self.assertEqual(Client().get("/api/v1/exams/available/").status_code, 403)
         client = Client(enforce_csrf_checks=True)
@@ -267,7 +280,7 @@ class ExaminationSecurityTests(ExamFixtures, TestCase):
         with patch("apps.examinations.services.send_institutional_email") as send, self.captureOnCommitCallbacks(execute=True):
             self.assertEqual(self.post(f"exam-attempts/{attempt}/submit/").status_code, 200)
         self.assertEqual(send.call_count, 1)
-        self.assertEqual(send.call_args.kwargs["details"], [("Percentage", "100.00%")])
+        self.assertEqual(send.call_args.kwargs["details"], [("Score", "2.00 / 2.00"), ("Percentage", "100.00%"), ("Grade", "A"), ("Result", "Pass")])
 
     def test_incorrect_answers_fail_and_frontend_scores_are_ignored(self):
         attempt = self.start()
@@ -393,7 +406,7 @@ class ExaminationSecurityTests(ExamFixtures, TestCase):
         with override_settings(EXAM_EMAIL_NOTIFICATIONS=True), patch("apps.examinations.services.send_institutional_email") as send, self.captureOnCommitCallbacks(execute=True):
             self.assertEqual(self.post(f"exam-attempts/{attempt}/submit/", client=candidate).status_code, 200)
         self.assertEqual(send.call_args.kwargs["recipient"], "ama@example.com")
-        self.assertEqual(send.call_args.kwargs["details"], [("Percentage", "100.00%")])
+        self.assertEqual(send.call_args.kwargs["details"], [("Score", "2.00 / 2.00"), ("Percentage", "100.00%"), ("Grade", "A"), ("Result", "Pass")])
 
     def test_cohort_candidates_require_first_and_last_name(self):
         staff = self.client_for(self.staff)

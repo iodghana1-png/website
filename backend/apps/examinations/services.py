@@ -48,7 +48,7 @@ def notify_submission_result(attempt, result):
             recipient_name=attempt.full_name or "Candidate",
             heading="Examination submitted successfully",
             introduction=f"Your submission for {title} has been recorded.",
-            details=[("Percentage", f"{result.percentage}%")],
+            details=[("Score", f"{result.score} / {result.total_marks}"), ("Percentage", f"{result.percentage}%"), ("Grade", result.grade), ("Result", "Pass" if result.passed else "Fail")],
             closing="Your percentage was calculated from the answers submitted before the examination closed.",
             action_label="Open Examination Portal",
             action_url=settings.EXAM_PORTAL_URL,
@@ -262,7 +262,6 @@ def start_attempt(exam_id, eligibility, request):
         option_order[str(question.id)] = options
     attempt = ExamAttempt.objects.create(student=eligibility.student, eligibility=eligibility, candidate_name=eligibility.full_name, candidate_email=eligibility.email, exam=exam, exam_version=exam.current_version, attempt_number=ExamAttempt.objects.filter(exam=exam, eligibility=eligibility).count() + 1, started_at=now, expires_at=min(now + timedelta(minutes=config["duration_minutes"]), parse_datetime(config["ends_at"])), question_order=[str(q.id) for q in questions], option_order=option_order)
     audit("EXAM_STARTED", user=eligibility.student, attempt=attempt, request=request)
-    notify(attempt.email, attempt.full_name, "EXAM_STARTED", config["title"])
     return attempt
 
 
