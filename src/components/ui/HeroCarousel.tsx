@@ -93,13 +93,13 @@ export function HeroCarousel({ slides = fallbackSlides }: { slides?: HeroSlide[]
   };
 
   return (
-    <section className="relative isolate min-h-[565px] overflow-hidden bg-[var(--color-ink)] text-white sm:min-h-[605px]" aria-roledescription="carousel" aria-label="IoD-Gh highlights">
+    <section className="relative isolate min-h-[640px] overflow-hidden bg-[var(--color-ink)] text-white sm:min-h-[720px]" aria-roledescription="carousel" aria-label="IoD-Gh highlights">
       {slides.map((slide, index) => (
         <div
           key={slide.id}
           role="img"
           aria-label={index === currentIndex ? slide.alt : undefined}
-          className={`absolute inset-0 -z-20 bg-cover bg-center transition-[opacity,transform] duration-1000 ease-in-out motion-reduce:transition-none ${index === currentIndex ? "hero-image-motion opacity-100" : "scale-[1.025] opacity-0"}`}
+          className={`absolute inset-0 -z-20 transition-opacity duration-1000 ease-in-out motion-reduce:transition-none ${index === currentIndex ? "opacity-100" : "opacity-0"}`}
         >
           <Image
             src={slide.imageUrl}
@@ -107,12 +107,12 @@ export function HeroCarousel({ slides = fallbackSlides }: { slides?: HeroSlide[]
             fill
             preload={index === 0}
             sizes="100vw"
-            className="object-cover object-center"
+            className="object-cover object-top"
           />
         </div>
       ))}
       <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(39,27,84,0.97)_0%,rgba(39,27,84,0.86)_38%,rgba(39,27,84,0.34)_70%,rgba(39,27,84,0.18)_100%)] sm:bg-[linear-gradient(90deg,rgba(39,27,84,0.95)_0%,rgba(39,27,84,0.8)_42%,rgba(39,27,84,0.12)_76%)]" />
-      <div className="site-container flex min-h-[565px] flex-col pb-8 pt-24 sm:min-h-[605px] sm:pb-10 sm:pt-28 lg:pt-32">
+      <div className="site-container flex min-h-[640px] flex-col pb-8 pt-24 sm:min-h-[720px] sm:pb-10 sm:pt-28 lg:pt-32">
         <div className="flex flex-1 items-center py-6 sm:py-8">
           <div className="relative min-h-[270px] w-full sm:min-h-[290px]">
             {slides.map((slide, index) => (
