@@ -107,7 +107,7 @@ export function HeroCarousel({ slides = fallbackSlides }: { slides?: HeroSlide[]
             fill
             preload={index === 0}
             sizes="100vw"
-            className="object-cover object-top"
+            className={`object-cover object-top ${index === currentIndex ? "hero-image-motion" : ""}`}
           />
         </div>
       ))}
