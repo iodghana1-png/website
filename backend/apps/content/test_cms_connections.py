@@ -46,6 +46,7 @@ class CmsEventConnectionTests(TestCase):
 
     def test_event_migration_preserves_published_and_private_card_edits(self):
         migration = import_module("apps.content.migrations.0024_connect_event_cards")
+        CMSPage.objects.filter(path="/events").delete()
         item = ContentItem.objects.create(section="events", title="Original event", summary="Original summary", href="/events/original", status="published")
         page = CMSPage.objects.create(path="/events", slug="events-page", label="Events", template_key="legacy")
         live = CMSPageRevision.objects.create(page=page, number=1, state="published", title="Events")
@@ -65,6 +66,19 @@ class CmsEventConnectionTests(TestCase):
         page.refresh_from_db()
         self.assertEqual(page.published_revision_id, live.id)
         self.assertEqual(page.current_draft_revision_id, draft.id)
+
+    def test_events_calendar_page_is_registered_without_overwriting_edits(self):
+        migration = import_module("apps.content.migrations.0032_add_events_calendar_page")
+        page = CMSPage.objects.get(path="/events")
+        self.assertEqual(page.label, "Events calendar")
+        self.assertEqual(page.template_key, "legacy")
+        section = page.published_revision.sections.get(slot="event_cards")
+        section.data["items"] = [{"id": "example", "title": "Saved event", "metadata": {"calendar_date": "2027-01-15"}}]
+        section.save(update_fields=["data"])
+        migration.add_events_calendar_page(apps, None)
+        section.refresh_from_db()
+        self.assertEqual(section.data["items"][0]["title"], "Saved event")
+        self.assertEqual(CMSPage.objects.filter(path="/events").count(), 1)
 
     def test_council_migration_keeps_photos_and_populates_existing_copy(self):
         migration = import_module("apps.content.migrations.0025_connect_council_profiles")
