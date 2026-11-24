@@ -6,6 +6,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { api, ApiError, Attempt, Exam, ExamResult, mainSite } from "../lib/api";
 import { ArrowRightIcon } from "./Icon";
 import { deadlineLabel, durationLabel } from "../lib/time";
+import { LoadingSkeleton } from "./LoadingSkeleton";
 
 export function SignIn() {
   const router = useRouter();
@@ -188,7 +189,7 @@ export function Available({ examId }: { examId?: string }) {
           {error}
         </p>
       )}
-      {!data && !error && <p role="status">Loading your examinations…</p>}
+      {!data && !error && <LoadingSkeleton kind="exams" />}
       {active.map((attempt) => (
         <article className="panel" key={attempt.id}>
           <span className="badge">In progress</span>
@@ -392,9 +393,7 @@ export function Result({ id }: { id: string }) {
             </p>
           )}
         </div>
-      ) : (
-        <p>Loading result…</p>
-      )}
+      ) : !error ? <LoadingSkeleton kind="result" /> : null}
       <Link className="text-link" href="/exams">
         Return to examinations
       </Link>
