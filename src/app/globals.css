@@ -13,6 +13,67 @@
 .cms-rich-text a { text-decoration: underline; }
 .cms-rich-text blockquote { border-left: 3px solid var(--color-accent); padding-left: 1em; }
 
+.home-testimonial {
+  position: relative;
+  display: grid;
+  align-items: center;
+  min-height: clamp(26rem, 43vw, 50rem);
+  overflow: hidden;
+  background: white;
+  color: #101010;
+}
+.home-testimonial-art {
+  position: absolute;
+  left: -4.5%;
+  top: 4vw;
+  width: 43%;
+  aspect-ratio: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  pointer-events: none;
+}
+.home-testimonial-art i {
+  border-radius: 50%;
+  background-color: #fafafa;
+  background-repeat: no-repeat;
+}
+.home-testimonial-art i:nth-child(1) {
+  background-image: radial-gradient(circle at 100% 0, #c5c5c5 0 35.2%, transparent 35.5%), conic-gradient(from 180deg, #e2e5e5 90deg, transparent 90deg);
+}
+.home-testimonial-art i:nth-child(2) {
+  background-image: radial-gradient(circle at 100% 100%, #d7d7d7 0 35.2%, transparent 35.5%), conic-gradient(from 270deg, #c5c5c5 90deg, transparent 90deg);
+}
+.home-testimonial-art i:nth-child(3) {
+  background-color: #d7d7d7;
+  background-image: radial-gradient(circle at 100% 100%, #e2e5e5 0 35.2%, transparent 35.5%), conic-gradient(from 270deg, #fafafa 90deg, transparent 90deg);
+}
+.home-testimonial-art i:nth-child(4) {
+  background-color: #c5c5c5;
+  background-image: radial-gradient(circle at 100% 0, #d7d7d7 0 35.2%, transparent 35.5%), conic-gradient(from 180deg, #e2e5e5 90deg, transparent 90deg);
+}
+.home-testimonial figure { margin: 0 8% 0 50.7%; padding-block: 4rem; max-width: 48rem; }
+.home-testimonial-mark {
+  display: block;
+  height: .62em;
+  color: #dedede;
+  font: 700 clamp(6rem, 9vw, 10rem)/.85 Arial, sans-serif;
+}
+.home-testimonial blockquote .cms-rich-text {
+  font-size: clamp(1.375rem, 1.66vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -.02em;
+  line-height: 1.27;
+  text-align: start;
+  hyphens: none;
+}
+.home-testimonial figcaption { display: flex; align-items: center; gap: 1rem; margin-top: 1.8em; font-size: clamp(1rem, 1.24vw, 1.5rem); line-height: 1.4; }
+@media (max-width: 47.99rem) {
+  .home-testimonial { min-height: auto; }
+  .home-testimonial-art { top: -5rem; left: auto; right: -1rem; width: 11rem; }
+  .home-testimonial figure { position: relative; margin-inline: 1.5rem; padding-block: 6.5rem 3.5rem; }
+}
+
 /* Most editable page write-ups are rendered through EditableCopy rather than
    RichContent. Apply the same readable text treatment to their paragraph
    container, not the inline editable span. */

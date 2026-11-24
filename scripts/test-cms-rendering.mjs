@@ -224,7 +224,7 @@ test("CMS empty homepage remains empty after the last section is removed", () =>
 
 test("Homepage renders a published testimonial before partners and respects its visibility", () => {
   const quote = { section_type: "quote", slot: "main", position: 0, is_enabled: true,
-    data: { heading: "Testimonials", copy: "A member's own words.", attribution: "Example speaker" } };
+    data: { heading: "Testimonials", copy: "A member's own words.", attribution: "Example speaker, Director, Example organisation" } };
   const partners = { section_type: "card_grid", slot: "main", position: 1, is_enabled: true,
     data: { home_section: "partners", heading: "Corporate partners" } };
   const render = (section) => renderToStaticMarkup(React.createElement(HomepageContent, {
@@ -232,7 +232,7 @@ test("Homepage renders a published testimonial before partners and respects its 
   }));
   const html = render(quote);
   assert.match(html, /<blockquote[^>]*>.*A member&#x27;s own words\..*<\/blockquote>/);
-  assert.match(html, /<figcaption[^>]*>Example speaker<\/figcaption>/);
+  assert.match(html, /<figcaption[^>]*>.*<strong>Example speaker<\/strong><div>Director, Example organisation<\/div>.*<\/figcaption>/);
   assert.ok(html.indexOf("Example speaker") < html.indexOf("Corporate partners"));
   assert.doesNotMatch(render({ ...quote, is_enabled: false }), /Example speaker/);
 });
