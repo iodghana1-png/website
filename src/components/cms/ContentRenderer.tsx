@@ -49,6 +49,26 @@ export function SectionRenderer({ section }: { section: CmsSection }) {
   const image = section.primary_media?.file_url || copy(data, "image_url");
   const items = Array.isArray(data.items) ? data.items.filter((item): item is Record<string, unknown> => !!item && typeof item === "object") : [];
   const href = linkUrl(copy(data, "button_href"));
+  if (section.section_type === "quote") {
+    const quote = copy(data, "copy", "text", "description", "summary");
+    if (!quote.trim()) return null;
+    const attribution = copy(data, "attribution");
+    return <section aria-label={title || "Testimonial"} className="border-t border-[var(--color-line)] bg-[var(--color-paper)] py-16 text-[var(--color-ink)] sm:py-24">
+      <div className="site-container grid gap-7 lg:grid-cols-[1fr_3fr] lg:gap-16">
+        <h2 className="eyebrow text-[var(--color-accent-dark)]">{brandText(title || "Testimonial")}</h2>
+        <figure className="max-w-4xl border-l-2 border-[var(--color-gold)] pl-6 sm:pl-10">
+          <blockquote className="font-serif text-3xl tracking-tight sm:text-4xl [&_.cms-rich-text]:text-start [&_.cms-rich-text]:leading-snug">
+            <RichContent value={quote} />
+          </blockquote>
+          {(attribution || image) && <figcaption className="mt-6 flex items-center gap-4 text-sm font-semibold">
+            {image && linkUrl(image) && <Image src={image} width={56} height={56} alt={section.primary_media?.alt_text || copy(data, "alt_text")} className="h-14 w-14 rounded-full object-cover" />}
+            {brandText(attribution)}
+          </figcaption>}
+          {href && <a href={href} className="link-arrow mt-5">{brandText(copy(data, "button_label") || "Learn more")}</a>}
+        </figure>
+      </div>
+    </section>;
+  }
   return <section className="border-t border-[var(--color-line)] py-12"><div className="site-container">
     {title && <h2 className="mb-5 text-3xl tracking-tight">{brandText(title)}</h2>}
     <div className={image ? "grid gap-8 md:grid-cols-2 md:items-center" : ""}>{image && linkUrl(image) && <Image width={640} height={480} sizes="(max-width: 768px) 100vw, 640px" src={image} alt={section.primary_media?.alt_text || copy(data, "alt_text") || title} className="max-h-[480px] w-full object-contain" />}<div className="text-lg leading-8"><RichContent value={copy(data, "copy", "text", "description", "summary")} />{copy(data, "attribution") && <p className="mt-4 text-sm font-semibold">{brandText(copy(data, "attribution"))}</p>}{href && <a href={href} className="mt-6 inline-block bg-[var(--color-ink)] px-5 py-3 text-sm font-semibold text-white">{brandText(copy(data, "button_label") || "Learn more")}</a>}</div></div>

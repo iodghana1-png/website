@@ -222,6 +222,21 @@ test("CMS empty homepage remains empty after the last section is removed", () =>
   assert.equal(html, "<main></main>");
 });
 
+test("Homepage renders a published testimonial before partners and respects its visibility", () => {
+  const quote = { section_type: "quote", slot: "main", position: 0, is_enabled: true,
+    data: { heading: "Testimonials", copy: "A member's own words.", attribution: "Example speaker" } };
+  const partners = { section_type: "card_grid", slot: "main", position: 1, is_enabled: true,
+    data: { home_section: "partners", heading: "Corporate partners" } };
+  const render = (section) => renderToStaticMarkup(React.createElement(HomepageContent, {
+    revision: { ...revision, sections: [partners, section] },
+  }));
+  const html = render(quote);
+  assert.match(html, /<blockquote[^>]*>.*A member&#x27;s own words\..*<\/blockquote>/);
+  assert.match(html, /<figcaption[^>]*>Example speaker<\/figcaption>/);
+  assert.ok(html.indexOf("Example speaker") < html.indexOf("Corporate partners"));
+  assert.doesNotMatch(render({ ...quote, is_enabled: false }), /Example speaker/);
+});
+
 test("Existing Examinations navigation launches the separate app without duplication", async () => {
   const { navigation } = load(path.join(root, "src/data/navigation"));
   const { examinationPortalUrl, examinationHref } = load(path.join(root, "src/lib/examinationPortal"));
