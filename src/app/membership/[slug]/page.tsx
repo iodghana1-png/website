@@ -58,7 +58,7 @@ const content: Record<
     eyebrow: "Member verification",
     title: "Verify an IoD-Gh member.",
     description:
-      "Use a member's name or membership number to check their standing. This Phase 1 form is non-functional.",
+      "Enter all or part of a member's name to check whether they are listed in the IoD-Gh register of members in good standing.",
   },
   "members-in-good-standing": {
     eyebrow: "Membership register",
