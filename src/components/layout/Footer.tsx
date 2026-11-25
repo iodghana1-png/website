@@ -36,21 +36,29 @@ export function FooterContent({ settings }: { settings: Record<string, unknown> 
     <div className={`grid gap-12 border-b border-white/20 pb-14 md:grid-cols-2 ${grid} xl:gap-8`}>
       <div>{footer.show_logo && (logoUrl ? <Link href="/" aria-label="Home"><Image src={logoUrl} alt={typeof settings.website_name === "string" ? settings.website_name : "Institute of Directors Ghana"} width={240} height={96} className="h-20 w-auto max-w-full object-contain" /></Link> : <Logo inverse />)}
         {footer.description && <p className="mt-7 max-w-xs whitespace-pre-line leading-7 text-[var(--color-mist)]">{brandText(footer.description)}</p>}
-        <div className="mt-7">
-          <p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--color-gold-light)]">Member of</p>
-          <a href="https://afcgn.com/" className="group mt-3 inline-flex max-w-xs items-center gap-4 rounded-sm">
-            <span className="shrink-0 rounded-sm bg-white p-2">
-              <Image src="/images/acgn-logo.png" alt="" width={751} height={987} sizes="64px" className="h-auto w-16" />
-            </span>
-            <span className="max-w-44 text-sm font-semibold leading-5 group-hover:underline">African Corporate Governance Network (ACGN)</span>
-          </a>
-        </div>
         <SiteContact settings={settings} showContact={footer.show_contact} showSocial={footer.show_social} inverse />
       </div>
       {columns.map((column, index) => <div key={index}><h2 className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--color-gold-light)]">{brandText(column.title)}</h2><ul className="mt-5 space-y-3 text-sm text-[var(--color-mist)]"><FooterLinks links={column.links} /></ul></div>)}
       {footer.newsletter_enabled && <div><h2 className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--color-gold-light)]">{brandText(footer.newsletter_heading)}</h2><p className="mt-5 whitespace-pre-line text-sm leading-6 text-[var(--color-mist)]">{brandText(footer.newsletter_description)}</p>{footer.newsletter_label && linkUrl(footer.newsletter_href) && <Link href={linkUrl(footer.newsletter_href)} className="mt-5 inline-flex items-center border-b border-[var(--color-gold)] pb-3 text-xs font-bold uppercase tracking-[0.1em] text-[var(--color-gold-light)] hover:text-white">{brandText(footer.newsletter_label)} <Icon name="arrow-right" className="ml-4 h-4 w-4" /></Link>}</div>}
     </div>
-    <div className="flex flex-col justify-between gap-3 pt-7 text-xs text-[var(--color-mist)] sm:flex-row"><p>{brandText(footer.copyright.replaceAll("{year}", String(new Date().getFullYear())))}</p><ul className="flex flex-wrap gap-5"><FooterLinks links={bottomLinks} /></ul></div>
+    <div className="flex flex-col gap-7 pt-7 lg:flex-row lg:items-end lg:justify-between">
+      <div className="order-last space-y-3 text-xs text-[var(--color-mist)] lg:order-first">
+        <p>{brandText(footer.copyright.replaceAll("{year}", String(new Date().getFullYear())))}</p>
+        <ul className="flex flex-wrap gap-5"><FooterLinks links={bottomLinks} /></ul>
+      </div>
+      <div className="ml-auto flex max-w-full flex-wrap justify-end gap-x-7 gap-y-5">
+        <a href="https://afcgn.com/" className="group flex items-center gap-3">
+          <span className="rounded-sm bg-white p-1.5">
+            <Image src="/images/acgn-logo.png" alt="African Corporate Governance Network" width={751} height={987} sizes="48px" className="h-auto w-12" />
+          </span>
+          <span><span className="block text-xs text-[var(--color-gold-light)]">Member of</span><strong className="group-hover:underline">ACGN</strong></span>
+        </a>
+        <Link href="/about/history" className="group flex items-center gap-3">
+          <Image src="/images/iod-logo-white.png" alt="Institute of Directors-Ghana" width={4674} height={4778} sizes="56px" className="h-auto w-14" />
+          <span><span className="block text-xs text-[var(--color-gold-light)]">Registered professional body</span><strong className="group-hover:underline">PB-71</strong></span>
+        </Link>
+      </div>
+    </div>
   </div></footer>;
 }
 
